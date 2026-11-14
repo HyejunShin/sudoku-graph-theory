@@ -93,7 +93,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   if (play.parentNode !== $('undo').parentNode || play.parentNode !== $('speed').parentNode || $('reset').textContent !== 'Reset' || !play.closest('.board')) throw new Error('Play, speed, Undo and Reset should share one row inside the board card');
   if ([...play.parentNode.children].pop() !== play) throw new Error('Play should be the last control in its row');
   const speeds = [...$('speed').options].map(o => o.textContent + '=' + o.value + (o.selected ? '*' : '')).join(' ');
-  if (speeds !== 'Slow=1700 Normal=600 Fast=250* Moves=1000') throw new Error('unexpected speeds: ' + speeds);
+  if (speeds !== 'Slow=1700 Normal=600* Fast=250 Moves only=1000') throw new Error('unexpected speeds: ' + speeds);
   click(play);
   if (play.textContent !== 'Pause' || play.getAttribute('aria-pressed') !== 'true') throw new Error('play did not start');
   await until(() => play.textContent !== 'Pause', 20000, 'play to finish the tour puzzle');
@@ -153,7 +153,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   // 6g. "Moves only" goes from the loop straight to the removal, without highlighting any step
   loadSample(4);
   $('speed').selectedIndex = [...$('speed').options].findIndex(o => o.getAttribute('data-skip') === '1');
-  if ($('speed').selectedIndex < 0) throw new Error('no "Moves" speed');
+  if ($('speed').selectedIndex < 0) throw new Error('no "Moves only" speed');
   let sawStep = false;
   click(play);
   await until(() => { if (document.querySelector('#steps li.on')) sawStep = true; return $('grid').querySelector('g.going'); }, 5000, 'the first removal in "Moves only"');

@@ -38,20 +38,24 @@ p { margin: 0; }
 .board { padding: 8px; }
 .board .controls { margin-top: 8px; gap: 6px; flex-wrap: nowrap; }
 /* every control has a fixed width, so nothing moves when a label or the speed changes; Play sits at the right end */
-.board .controls select { flex: 0 0 5.6em; width: 5.6em; min-width: 0; padding: 7px 4px; }
+.board .controls select { flex: 0 0 7.2em; width: 7.2em; min-width: 0; padding: 7px 4px; }
 .board .controls button { flex: 0 0 auto; padding: 7px 10px; }
 .board .controls #play { margin-left: auto; flex: 0 0 6.4em; width: 6.4em; padding: 7px 0; text-align: center; }
 @media (max-width: 420px) {
-  .board .controls { gap: 4px; }
+  .board .controls { gap: 3px; }
   .board .controls select, .board .controls button { font-size: 14px; }
-  .board .controls select { flex-basis: 6em; width: 6em; padding: 6px 2px; font-size: 13px; }
-  .board .controls button { padding: 6px 7px; }
-  .board .controls #play { flex-basis: 5.2em; width: 5.2em; }
+  .board .controls select { flex: 0 0 auto; width: auto; padding: 6px 0 6px 2px; font-size: 13px; }
+  .board .controls button { padding: 6px 5px; }
+  .board .controls #play { flex-basis: 5em; width: 5em; }
+}
+@media (max-width: 350px) {
+  .board .controls button { font-size: 13px; padding: 6px 4px; }
+  .board .controls #play { flex-basis: 4.6em; width: 4.6em; }
 }
 /* the running commentary stays available to screen readers, but is only shown when something went wrong */
 #status:not(.bad) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 #status.bad { margin: 6px 2px 0; }
-#key { padding: 2px 4px; }
+#key { padding: 2px 4px; grid-column: 1 / -1; }
 .tech-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
 .tech-head label.check { margin-top: 0; font-size: 13px; }
 .digits-row { margin-top: 10px; gap: 6px; }
@@ -152,7 +156,6 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   </section>
 
   <div class="cols">
-    <div class="stack">
       <div class="legend" id="key" aria-label="Key">
         <span><i class="sw"></i>strong link: exactly one end true</span>
         <span><i class="sw weak"></i>link: at most one end true</span>
@@ -161,14 +164,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         <span><i class="dot f"></i>false in this step</span>
         <span><i class="dot a"></i><i class="dot b"></i>the two colors of a chain</span>
       </div>
+    <div class="stack">
       <section class="card board" aria-label="Board">
         <svg id="grid" viewBox="0 0 544 544" role="img" aria-label="Sudoku board with candidates"></svg>
         <div class="row controls">
           <select id="speed" aria-label="Playback speed">
             <option value="1700">Slow</option>
-            <option value="600">Normal</option>
-            <option value="250" selected>Fast</option>
-            <option value="1000" data-skip="1">Moves</option>
+            <option value="600" selected>Normal</option>
+            <option value="250">Fast</option>
+            <option value="1000" data-skip="1">Moves only</option>
           </select>
           <button id="undo" type="button">Undo</button>
           <button id="reset" type="button">Reset</button>
