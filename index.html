@@ -618,10 +618,11 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const elim = []; for (const c of cells) if (!cs.includes(c)) for (const d of digits(st.cand[c] & m)) elim.push(cid(c, d));
         if (!elim.length) continue;
         const res = mkResult('Naked ' + word, 'Theorem 7.5, the sets rule: ' + k + ' cells need ' + k + ' digits');
-        for (const c of cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
+        res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
-        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so ' + digitList(digits(m)) + ' are all used up inside these cells, whichever way round. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
-        say(res, 'No other cell of ' + unitName(u) + ' can hold them. That removes: ' + list(elim) + '.');
+        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue dot. The count proves every blue dot true.');
+        say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
       const ds = []; for (let d = 1; d <= 9; d++) if (cells.some(c => has(st, c, d))) ds.push(d);
@@ -631,10 +632,11 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const elim = []; for (const c of where) for (const d of digits(st.cand[c])) if (!dd.includes(d)) elim.push(cid(c, d));
         if (!elim.length) continue;
         const res = mkResult('Hidden ' + word, 'Theorem 7.5, the sets rule: ' + k + ' digits need ' + k + ' cells');
-        for (const c of where) for (const d of dd) if (has(st, c, d)) res.nodes.set(cid(c, d), 'loop');
+        res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
-        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so these cells are all used up by ' + digitList(dd) + '. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
-        say(res, 'Nothing else fits in these cells. That removes: ' + list(elim) + '.');
+        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue dot. The count proves every blue dot true.');
+        say(res, 'Any other candidate in these cells shares its cell with a true dot, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
     }
@@ -655,11 +657,12 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const key = elim.join(','); if (!elim.length || seen.has(key)) continue; seen.add(key);
         const num = k === 3 ? 'three' : 'four';
         const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5, the sets rule: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
-        for (const l of ls) for (const c of l.cs) res.nodes.set(cid(c, d), 'loop');
+        res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
-        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so all ' + num + ' ' + cn + ' get their ' + d + ' from these ' + bn + '. This counts ' + num + ' things at once, which no link can do.');
-        say(res, 'No other cell of those ' + cn + ' can hold ' + d + '. That removes: ' + list(elim) + '.');
+        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue dot. The count proves every blue dot true.');
+        say(res, 'Any other ' + d + ' in those ' + cn + ' is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
         out.push(res);
       }
     }
@@ -970,6 +973,15 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
       var res = view.res, step = view.step === null ? null : res.steps[view.step];
       /* a group is one dot: draw one outline round its candidates */
       (res.groups || []).forEach(function (g) {
+        if (res.groupStyle === 'arc') {   // a band that bows between members, so it passes beside any candidate lying between them
+          var qs = g.map(pos).sort(function (m, n) { return m.x - n.x || m.y - n.y; }), dpath = '';
+          for (var gi = 0; gi + 1 < qs.length; gi++) {
+            var A = qs[gi], B = qs[gi + 1], dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy) || 1, bow = Math.min(16, 6 + len * 0.12);
+            dpath += 'M' + A.x + ' ' + A.y + ' Q' + ((A.x + B.x) / 2 + dy / len * bow) + ' ' + ((A.y + B.y) / 2 - dx / len * bow) + ' ' + B.x + ' ' + B.y + ' ';
+          }
+          if (dpath) links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-opacity="0.5" stroke-width="5" stroke-linecap="round"/>';
+          return;
+        }
         var ps = g.map(pos), xs = ps.map(function (q) { return q.x; }), ys = ps.map(function (q) { return q.y; });
         var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), x1 = Math.max.apply(null, xs), y1 = Math.max.apply(null, ys);
         if (x0 === x1 || y0 === y1) links += '<rect class="group" x="' + (x0 - 14) + '" y="' + (y0 - 14) + '" width="' + (x1 - x0 + 28) + '" height="' + (y1 - y0 + 28) + '" rx="14" fill="var(--k0)" fill-opacity="0.1" stroke="var(--k0)" stroke-width="2"/>';

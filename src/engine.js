@@ -430,10 +430,11 @@
         const elim = []; for (const c of cells) if (!cs.includes(c)) for (const d of digits(st.cand[c] & m)) elim.push(cid(c, d));
         if (!elim.length) continue;
         const res = mkResult('Naked ' + word, 'Theorem 7.5, the sets rule: ' + k + ' cells need ' + k + ' digits');
-        for (const c of cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
+        res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
-        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so ' + digitList(digits(m)) + ' are all used up inside these cells, whichever way round. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
-        say(res, 'No other cell of ' + unitName(u) + ' can hold them. That removes: ' + list(elim) + '.');
+        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue dot. The count proves every blue dot true.');
+        say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
       const ds = []; for (let d = 1; d <= 9; d++) if (cells.some(c => has(st, c, d))) ds.push(d);
@@ -443,10 +444,11 @@
         const elim = []; for (const c of where) for (const d of digits(st.cand[c])) if (!dd.includes(d)) elim.push(cid(c, d));
         if (!elim.length) continue;
         const res = mkResult('Hidden ' + word, 'Theorem 7.5, the sets rule: ' + k + ' digits need ' + k + ' cells');
-        for (const c of where) for (const d of dd) if (has(st, c, d)) res.nodes.set(cid(c, d), 'loop');
+        res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
-        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so these cells are all used up by ' + digitList(dd) + '. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
-        say(res, 'Nothing else fits in these cells. That removes: ' + list(elim) + '.');
+        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue dot. The count proves every blue dot true.');
+        say(res, 'Any other candidate in these cells shares its cell with a true dot, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
     }
@@ -467,11 +469,12 @@
         const key = elim.join(','); if (!elim.length || seen.has(key)) continue; seen.add(key);
         const num = k === 3 ? 'three' : 'four';
         const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5, the sets rule: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
-        for (const l of ls) for (const c of l.cs) res.nodes.set(cid(c, d), 'loop');
+        res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
-        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so all ' + num + ' ' + cn + ' get their ' + d + ' from these ' + bn + '. This counts ' + num + ' things at once, which no link can do.');
-        say(res, 'No other cell of those ' + cn + ' can hold ' + d + '. That removes: ' + list(elim) + '.');
+        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue dot. The count proves every blue dot true.');
+        say(res, 'Any other ' + d + ' in those ' + cn + ' is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
         out.push(res);
       }
     }

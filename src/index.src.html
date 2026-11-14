@@ -256,6 +256,15 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
       var res = view.res, step = view.step === null ? null : res.steps[view.step];
       /* a group is one dot: draw one outline round its candidates */
       (res.groups || []).forEach(function (g) {
+        if (res.groupStyle === 'arc') {   // a band that bows between members, so it passes beside any candidate lying between them
+          var qs = g.map(pos).sort(function (m, n) { return m.x - n.x || m.y - n.y; }), dpath = '';
+          for (var gi = 0; gi + 1 < qs.length; gi++) {
+            var A = qs[gi], B = qs[gi + 1], dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy) || 1, bow = Math.min(16, 6 + len * 0.12);
+            dpath += 'M' + A.x + ' ' + A.y + ' Q' + ((A.x + B.x) / 2 + dy / len * bow) + ' ' + ((A.y + B.y) / 2 - dx / len * bow) + ' ' + B.x + ' ' + B.y + ' ';
+          }
+          if (dpath) links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-opacity="0.5" stroke-width="5" stroke-linecap="round"/>';
+          return;
+        }
         var ps = g.map(pos), xs = ps.map(function (q) { return q.x; }), ys = ps.map(function (q) { return q.y; });
         var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), x1 = Math.max.apply(null, xs), y1 = Math.max.apply(null, ys);
         if (x0 === x1 || y0 === y1) links += '<rect class="group" x="' + (x0 - 14) + '" y="' + (y0 - 14) + '" width="' + (x1 - x0 + 28) + '" height="' + (y1 - y0 + 28) + '" rx="14" fill="var(--k0)" fill-opacity="0.1" stroke="var(--k0)" stroke-width="2"/>';

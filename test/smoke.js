@@ -203,6 +203,13 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=group]:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
   click(document.querySelector('#techs button[data-key=group]'));
   if ($('grid').querySelectorAll('.group').length !== 1) throw new Error('the locked triple is not drawn as one outlined group');
+  for (const [nm, key] of [['Naked triple', 'subset'], ['Swordfish', 'fish']]) {
+    const o = [...sel.options].find(x => x.textContent === nm); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=' + key + ']:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
+    click(document.querySelector('#techs button[data-key=' + key + ']'));
+    if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error(nm + ' is not drawn with group dots');
+    if (!/blue dot/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
+  }
   const xz = [...sel.options].find(o => o.textContent === 'XYZ-Wing'); sel.value = xz.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error('the XYZ-Wing does not show its group dot');
   if (document.querySelectorAll('#techs .beyond').length !== 3) throw new Error('expected three dividers: counting, one-solution, last resort');
