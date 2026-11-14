@@ -585,15 +585,15 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const targets = cellsFor(st, u2, d).filter(c => !cs.includes(c)).map(c => cid(c, d));
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
-        const res = mkResult('Locked triple', 'A group as one dot: three candidates act as one');
-        group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim'));
+        const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one dot');
+        group.forEach(g => res.nodes.set(g, 'k0')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
         group.forEach(g => res.links.push({ a: v, b: g, strong: false }));
         res.elim = targets;
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
-        say(res, 'One of the three circled ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
+        say(res, 'One of the three blue ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
-        group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three circled ' + d + 's are false: each shares ' + unitName(u2) + ' with it.', snap());
+        group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three ' + d + 's of the group are false: each shares ' + unitName(u2) + ' with it.', snap());
         say(res, 'Now ' + unitName(u) + ' has no place for ' + d + '. Contradiction, so ' + candName(v) + ' is false.', snap());
         if (targets.length > 1) say(res, 'The same argument removes: ' + list(targets.slice(1)) + '.');
         out.push(res);
@@ -617,7 +617,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         if (bits(m) !== k) continue;
         const elim = []; for (const c of cells) if (!cs.includes(c)) for (const d of digits(st.cand[c] & m)) elim.push(cid(c, d));
         if (!elim.length) continue;
-        const res = mkResult('Naked ' + word, 'Beyond links: ' + k + ' cells need ' + k + ' digits');
+        const res = mkResult('Naked ' + word, 'Theorem 7.5, the sets rule: ' + k + ' cells need ' + k + ' digits');
         for (const c of cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
         say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so ' + digitList(digits(m)) + ' are all used up inside these cells, whichever way round. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
@@ -630,7 +630,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         if (where.length !== k) continue;
         const elim = []; for (const c of where) for (const d of digits(st.cand[c])) if (!dd.includes(d)) elim.push(cid(c, d));
         if (!elim.length) continue;
-        const res = mkResult('Hidden ' + word, 'Beyond links: ' + k + ' digits need ' + k + ' cells');
+        const res = mkResult('Hidden ' + word, 'Theorem 7.5, the sets rule: ' + k + ' digits need ' + k + ' cells');
         for (const c of where) for (const d of dd) if (has(st, c, d)) res.nodes.set(cid(c, d), 'loop');
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
         say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so these cells are all used up by ' + digitList(dd) + '. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
@@ -654,7 +654,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         for (const x of cv) for (const c of UNITS[cover + x]) if (!bi.includes(baseOf(c)) && has(st, c, d)) elim.push(cid(c, d));
         const key = elim.join(','); if (!elim.length || seen.has(key)) continue; seen.add(key);
         const num = k === 3 ? 'three' : 'four';
-        const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Beyond links: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
+        const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5, the sets rule: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
         for (const l of ls) for (const c of l.cs) res.nodes.set(cid(c, d), 'loop');
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
@@ -728,10 +728,11 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         if (!hit) continue;
         const path = []; for (let x = hit; x && x.f !== null; x = x.prev) path.unshift(x);
         if (!path.some(x => nodes[x.f].length > 1 || nodes[x.t].length > 1)) continue;      // no group in it: an ordinary loop, left to the link techniques
-        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Theorem 5.2 with a group as one dot'), marks = {}, snap = () => Object.assign({}, marks);
+        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Lemma 7.4 and Theorem 5.2: an odd loop with a group as one dot'), marks = {}, snap = () => Object.assign({}, marks);
         const ids = A => A.map(c => cid(c, d)), near = (A, B) => { let best = null; for (const a of A) for (const b of B) { const dist = Math.abs(ROW(a) - ROW(b)) + Math.abs(COL(a) - COL(b)); if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
         const link = (A, B, strongLink) => { const pr = near(A, B); res.links.push({ a: cid(pr[0], d), b: cid(pr[1], d), strong: strongLink, group: true }); };
-        for (const x of path) for (const A of [nodes[x.f], nodes[x.t]]) ids(A).forEach(id => res.nodes.set(id, A.length > 1 ? 'k0' : 'loop'));
+        res.groups = [];
+        for (const x of path) for (const A of [nodes[x.f], nodes[x.t]]) { ids(A).forEach(id => res.nodes.set(id, A.length > 1 ? 'k0' : 'loop')); if (A.length > 1) res.groups.push(ids(A)); }
         res.nodes.set(vid, 'elim'); res.elim = [vid];
         let prev = nodes[v];
         for (const x of path) { link(prev, nodes[x.f], false); link(nodes[x.f], nodes[x.t], true); prev = nodes[x.t]; }
@@ -828,11 +829,11 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     { key: 'group', name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
     { key: 'gchain', name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
     /* Beyond links. These are tried only after every loop and colouring above has failed. */
-    { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true },
-    { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true },
-    { key: 'xyz', name: 'XYZ-Wing', loop: 'three-candidate pivot', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.', beyond: true },
-    { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true },
-    { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, lastResort: true }
+    { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
+    { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
+    { key: 'xyz', name: 'XYZ-Wing', loop: 'three-candidate pivot', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.', beyond: true, section: 'other' },
+    { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'other' },
+    { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, section: 'other', lastResort: true }
   ];
 
   /* ---------- random puzzles ---------- */
@@ -910,11 +911,11 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     { name: 'Locked triple', puzzle: '4.29......9...2.....7.1...8..5....46...37.8..3.18....5.1.....7..6...1..9..3...6..', tech: null },
     { name: 'Grouped chain', puzzle: '..32.....7..9.....82...7...9...5..4....4.6..9..2.8.37.6.....1...387...2...7..5...', tech: null },
     /* Rare techniques, shown as soon as the puzzle loads. */
-    { name: 'Beyond links: Swordfish', puzzle: '......6......9...2.1..248.3624.19........8.1.18...5....5.7............76..3...9..', tech: 'fish' },
+    { name: 'Swordfish', puzzle: '......6......9...2.1..248.3624.19........8.1.18...5....5.7............76..3...9..', tech: 'fish' },
     { name: 'Beyond links: XYZ-Wing', puzzle: '7........14..5.....351.7........32.88........3.....51..2..957..4.18....2....2.4.9', tech: 'xyz' },
     { name: 'Beyond links: unique rectangle', puzzle: '4....8............7..53.........15.6.....2..9...95..3....1...231.5..9.4..42.6..9.', tech: 'ur' },
     /* Puzzles that links alone cannot finish. Each starts with loops and then needs the named step. */
-    { name: 'Beyond links: naked triple', puzzle: '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....', tech: null },
+    { name: 'Naked triple', puzzle: '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....', tech: null },
     { name: 'Beyond links: trial and error', puzzle: '...4......3.86......23..1.7.78..13..35.....2.1.9....8.......63....5....8....839..', tech: null }
   ];
   var $ = function (id) { return document.getElementById(id); };
@@ -955,6 +956,12 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     var links = '', rings = '', marked = {};
     if (view.kind === 'result') {
       var res = view.res, step = view.step === null ? null : res.steps[view.step];
+      /* a group is one dot: draw one outline round its candidates */
+      (res.groups || []).forEach(function (g) {
+        var ps = g.map(pos), xs = ps.map(function (q) { return q.x; }), ys = ps.map(function (q) { return q.y; });
+        var x0 = Math.min.apply(null, xs) - 14, y0 = Math.min.apply(null, ys) - 14, w = Math.max.apply(null, xs) - x0 + 14, hgt = Math.max.apply(null, ys) - y0 + 14;
+        links += '<rect class="group" x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + hgt + '" rx="14" fill="var(--k0)" fill-opacity="0.1" stroke="var(--k0)" stroke-width="2"/>';
+      });
       res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash ? 'clash' : l.strong ? 'strong' : 'weak'); });
       if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');
       res.nodes.forEach(function (role, id) {
@@ -1026,10 +1033,10 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
   function scan() { avail = {}; var any = false; E.TECHNIQUES.forEach(function (t) { avail[t.key] = E.solved(st) || (t.lastResort && any) ? [] : t.find(st); if (avail[t.key].length) any = true; }); }
   function drawTechs() {
     var h = '';
-    var divided = false;
+    var section = '', heads = { count: 'Counting across sets (the sets rule): used when no loop or colouring applies', other: 'Beyond both rules: rare steps and the last resort' };
     E.TECHNIQUES.forEach(function (t) {
       if (t.easy && autoFill) return;
-      if (t.beyond && !divided) { divided = true; h += '<p class="beyond">Beyond links: rarer steps, used only when no loop or colouring applies</p>'; }
+      if (t.section && t.section !== section) { section = t.section; h += '<p class="beyond">' + heads[section] + '</p>'; }
       var n = avail[t.key].length, on = view.kind === 'result' && view.tech === t.key;
       h += '<button type="button" class="tech" data-key="' + t.key + '" aria-pressed="' + on + '"' + (n ? '' : ' disabled') + ' title="' + t.blurb + '"><span class="n">' + t.name + (n ? '<span class="c">' + n + '</span>' : '') + '</span><span class="k">' + t.loop + '</span></button>';
     });

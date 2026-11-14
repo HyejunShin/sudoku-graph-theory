@@ -177,7 +177,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   log.push('random: 6 different proper puzzles, each finished by play; Start over keeps the puzzle');
   // 6i. the three "Beyond links" examples sit at the bottom of the list, and play finishes each using the named step
   document.documentElement.setAttribute('data-instant', '1');
-  const lastThree = ['Locked triple', 'Beyond links: naked triple', 'Beyond links: trial and error'].map(nm => [...sel.options].find(o => o.textContent === nm));
+  const lastThree = ['Locked triple', 'Naked triple', 'Beyond links: trial and error'].map(nm => [...sel.options].find(o => o.textContent === nm));
   if (lastThree.some(o => !o)) throw new Error('an expected example is missing from the list');
   const wanted = [['locked triple', 'Locked triple'], ['naked triple', 'Naked triple'], ['trial and error', 'Trial and error']];
   for (let n = 0; n < 3; n++) {
@@ -198,6 +198,12 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     log.push(opt.textContent + ' -> solved, using ' + [...names].join(', '));
   }
   if (!document.querySelector('#techs .beyond')) throw new Error('no "Beyond links" divider in the technique list');
+  // a group is drawn as one outlined dot
+  const lt = [...sel.options].find(o => o.textContent === 'Locked triple'); sel.value = lt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=group]:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
+  click(document.querySelector('#techs button[data-key=group]'));
+  if ($('grid').querySelectorAll('rect.group').length !== 1) throw new Error('the locked triple is not drawn as one outlined group');
+  if (document.querySelectorAll('#techs .beyond').length !== 2) throw new Error('expected two dividers: counting, and beyond both');
   // 6j. the easy-cell switch and "Random easy sudoku"
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
   loadSample(4);

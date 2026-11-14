@@ -459,6 +459,10 @@ The Cycle Lemma and Theorem 5.2 used nothing about a dot except these two rules.
 
 - **Empty Rectangle** and **grouped X-Cycles**. These are odd loops of one digit in which one or more dots are groups.
 
+![A group as one dot · a locked triple](figures/fig25.png)
+
+*Figure 25. A group as one dot · a locked triple*
+
 **2. Counting across sets.** Links look at two candidates at a time. The next rule looks at whole constraint sets.
 
 **Theorem 7.5 (the sets rule).** Let B1, ..., Bk be constraint sets that share no candidate with each other, and C1, ..., Ck be k constraint sets. Suppose every candidate still in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.
@@ -467,7 +471,15 @@ The Cycle Lemma and Theorem 5.2 used nothing about a dot except these two rules.
 
 In colours: the k true candidates of the B's are exactly the k true candidates of the C's. Counting them twice is the whole proof, as counting round the loop was for the Cycle Lemma.
 
+![The sets rule on a naked triple · k = 3](figures/fig26.png)
+
+*Figure 26. The sets rule on a naked triple · k = 3*
+
 There is a second graph behind this. Make every constraint set a dot, and draw a candidate as an edge joining two sets it belongs to, for example its cell and its row-and-digit set. That graph is bipartite: cells on one side, row-and-digit sets on the other. A solution picks edges so that every dot is used once, which graph theory calls a perfect matching. The sets rule is the counting behind Hall's theorem for that graph: k dots on one side whose edges reach only k dots on the other must be matched with exactly those.
+
+![The second graph · sets as dots, candidates as edges](figures/fig27.png)
+
+*Figure 27. The second graph · sets as dots, candidates as edges*
 
 What the sets rule covers:
 

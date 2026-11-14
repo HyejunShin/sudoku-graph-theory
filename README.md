@@ -77,10 +77,13 @@ A search for everything links can prove, on a smaller sample, solved nothing the
 
 **Groups extend the loop rule.** Let a dot stand for a group: two or three cells of one box that share a row or column, true when one of them holds the digit. The same odd-loop argument then covers **Locked triple** and **Grouped chain** (Empty Rectangle, grouped X-Cycle). These sit with the other loop techniques. The write-up proves this in its last step.
 
-**Beyond links.** The rest need a different kind of argument. They are kept apart and tried only when no loop or colouring applies:
+**Counting across sets.** Triples, quads and bigger fish need a rule about whole sets, not pairs. The write-up proves it as the *sets rule*: count the true candidates of k sets twice. It is the counting behind Hall's theorem on a second bipartite graph, where sets are dots and candidates are edges, and X-Wing and the pairs are its smallest case.
 
-- **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. A counting argument on the cells and digits of one row, column or box. The write-up proves it as the *sets rule*: count the true candidates of k sets twice. It is the counting behind Hall's theorem on a second bipartite graph, where sets are dots and candidates are edges, and X-Wing and the pairs are its smallest case.
-- **Bigger fish** (Swordfish, Jellyfish): the same counting, on the rows and columns of one digit.
+- **Triples and quads**, naked or hidden: k cells of a unit against the k digits they hold.
+- **Bigger fish** (Swordfish, Jellyfish): one digit in k rows against k columns.
+
+**Beyond both rules.** Three steps remain outside, tried last:
+
 - **XYZ-Wing**: a pivot with three candidates and two wings.
 - **Unique rectangle**: four corners that would allow two solutions. It uses the fact that a proper sudoku has one.
 - **Trial and error**, the last resort: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is offered only when nothing else applies.
