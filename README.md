@@ -4,11 +4,23 @@ Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and ot
 
 **Try it:** [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
+[![The Sudoku Loop Finder explaining an X-Wing: the loop drawn on the board, with the steps of the argument beside it](writeup/figures/loop-finder.png)](https://hyejunshin.github.io/sudoku-graph-theory/)
+
+*The Loop Finder explaining an X-Wing on a real puzzle. Click the picture to open it.*
+
 The idea in three lines:
 
 1. Every pencil mark is a dot. Two dots are linked when the rules forbid both from being true.
 2. A link is strong when exactly one of the two must be true.
 3. Round any loop of k dots, the links with both ends false number k minus twice the true dots. Strong links are never among them.
+
+![A strong link forces one end true; a weak link only forbids both](writeup/figures/fig06.png)
+
+That counting rule is all it takes. For example, on a loop of five where two links are strong, assuming the top pencil mark is true leads straight to a contradiction, so it can be removed. Skyscraper, Two-String Kite and Turbot Fish are all this picture:
+
+![An odd loop forces a pencil mark out, in four steps](writeup/figures/fig10.png)
+
+The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) has 24 pictures like these.
 
 ## The Loop Finder
 
