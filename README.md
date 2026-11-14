@@ -2,6 +2,8 @@
 
 Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they are one idea from graph theory, proves it step by step, and lets you watch it work on real puzzles.
 
+**Try it:** [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
+
 The idea in three lines:
 
 1. Every pencil mark is a dot. Two dots are linked when the rules forbid both from being true.
@@ -44,6 +46,6 @@ python3 proofs/verify_cycles.py
 
 `npm test` fails loudly if any technique ever removes a candidate that belongs to the solution.
 
-## Publishing as a website
+## The website
 
-The repository is laid out so GitHub Pages can serve it from the root of the main branch. The Loop Finder is then the home page and the write-up is at `/writeup/`. Note that a GitHub Pages site is public even when it is built from a private repository, and on a free personal account the repository itself must be public.
+GitHub Pages serves this repository from the root of the main branch: the Loop Finder is the [home page](https://hyejunshin.github.io/sudoku-graph-theory/) and the write-up is at [`/writeup/`](https://hyejunshin.github.io/sudoku-graph-theory/writeup/). Every push to `main` updates the site.
