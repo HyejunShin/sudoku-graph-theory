@@ -89,7 +89,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   // 6a. play solves the tour puzzle on its own and then stops
   loadSample(0);
   if (play.disabled) throw new Error('play is disabled on a fresh puzzle');
-  if (play.textContent !== 'Play all steps') throw new Error('fresh puzzle: button says ' + play.textContent);
+  if (play.textContent !== 'Play') throw new Error('fresh puzzle: button says ' + play.textContent);
   if (!(play.compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !($('speed').compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING)) throw new Error('play and speed are not above the manual buttons');
   const speeds = [...$('speed').options].map(o => o.textContent + '=' + o.value + (o.selected ? '*' : '')).join(' ');
   if (speeds !== 'Slow=1700 Normal=600 Fast=250* Moves only=1000') throw new Error('unexpected speeds: ' + speeds);
@@ -98,7 +98,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   await until(() => play.textContent !== 'Pause', 20000, 'play to finish the tour puzzle');
   if ($('tname').textContent !== 'Solved' || $('grid').querySelector('rect[data-id]')) throw new Error('play stopped before the puzzle was solved: ' + $('status').textContent);
   if (!play.disabled) throw new Error('play should be disabled once the puzzle is solved');
-  if (play.textContent !== 'Play all steps') throw new Error('after finishing, button says ' + play.textContent);
+  if (play.textContent !== 'Play') throw new Error('after finishing, button says ' + play.textContent);
   log.push('play: tour puzzle solved automatically | ' + $('status').textContent);
   // 6b. play can be paused from the board, and nothing changes after the pause
   loadSample(4);
@@ -114,9 +114,9 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   click(play);
   if (play.textContent !== 'Resume') throw new Error('Pause button did not pause');
   loadSample(4);
-  if (play.textContent !== 'Play all steps') throw new Error('a new puzzle should reset the button, but it says ' + play.textContent);
+  if (play.textContent !== 'Play') throw new Error('a new puzzle should reset the button, but it says ' + play.textContent);
   click(play); click($('grid')); click($('reset'));
-  if (play.textContent !== 'Play all steps') throw new Error('Start over should reset the button, but it says ' + play.textContent);
+  if (play.textContent !== 'Play') throw new Error('Start over should reset the button, but it says ' + play.textContent);
   // 6c. any manual button also stops play
   click(play); click($('undo'));
   if (play.textContent !== 'Resume') throw new Error('a manual button did not stop play');
@@ -175,7 +175,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     if (!chk.ok) throw new Error('random puzzle is not a proper sudoku: ' + chk.reason + ' ' + p);
     if ($('loadmsg').className.includes('bad') || !$('loadmsg').textContent.includes('random puzzle')) throw new Error('random puzzle did not load: ' + $('loadmsg').textContent);
     if ($('tname').textContent === 'Solved') throw new Error('random puzzle was solved by easy cells alone: ' + p);
-    if (play.textContent !== 'Play all steps') throw new Error('a new random puzzle should reset the play button');
+    if (play.textContent !== 'Play') throw new Error('a new random puzzle should reset the play button');
     seen.add(p);
     click(play);
     await until(() => play.textContent !== 'Pause', 20000, 'play to finish a random puzzle');

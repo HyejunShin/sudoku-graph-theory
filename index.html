@@ -88,10 +88,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
 label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
-/* The play button always has the width of its longest label, so it does not resize between Play all steps, Pause and Resume.
+/* The play button always has the width of its longest label, so it does not resize between Play, Pause and Resume.
    The hidden ::after holds that longest label and takes no height. */
 #play { display: inline-grid; justify-items: center; }
-#play::after { content: 'Play all steps'; height: 0; overflow: hidden; visibility: hidden; }
+#play::after { content: 'Resume'; height: 0; overflow: hidden; visibility: hidden; }
 /* While playing, the play button gets a ring so it reads as active. */
 #play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
@@ -114,8 +114,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
-    <p class="lede">Draw the relationships between candidates as a graph, color it with two colors, and find the flaw: a place where two adjacent nodes would have to share a color.</p>
-    <p class="lede">Press <b>Play all steps</b> to watch the whole puzzle being solved.</p>
+    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. Pick one candidate, assume it's true, and color the graph: true or false. If two adjacent nodes are both true, the assumption is false.</p>
+    <p class="lede">Press <b>Play</b> to solve the puzzle.</p>
   </header>
 
   <section class="card" aria-label="Load a puzzle">
@@ -139,7 +139,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       </section>
       <section class="card" aria-label="Moves">
         <div class="row">
-          <button id="play" type="button" class="primary" aria-pressed="false">Play all steps</button>
+          <button id="play" type="button" class="primary" aria-pressed="false">Play</button>
           <label for="speed">Speed</label>
           <select id="speed" aria-label="Playback speed">
             <option value="1700">Slow</option>
@@ -1432,7 +1432,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var ex = $('explain');
     if (playing) { var h = ex.offsetHeight || 0; if (h > (ex._minH || 0)) { ex._minH = h; ex.style.minHeight = h + 'px'; } }
     else if (ex._minH) { ex._minH = 0; ex.style.minHeight = ''; }
-    var pb = $('play'); pb.disabled = E.solved(st) && !playing; pb.textContent = playing ? 'Pause' : (paused && !E.solved(st) ? 'Resume' : 'Play all steps'); pb.setAttribute('aria-pressed', String(playing));
+    var pb = $('play'); pb.disabled = E.solved(st) && !playing; pb.textContent = playing ? 'Pause' : (paused && !E.solved(st) ? 'Resume' : 'Play'); pb.setAttribute('aria-pressed', String(playing));
   }
   function say(text, bad) { var el = $('status'); el.textContent = text; el.className = 'msg' + (bad ? ' bad' : ''); }
 
