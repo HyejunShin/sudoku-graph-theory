@@ -177,11 +177,11 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   log.push('random: 6 different proper puzzles, each finished by play; Start over keeps the puzzle');
   // 6i. the three "Beyond links" examples sit at the bottom of the list, and play finishes each using the named step
   document.documentElement.setAttribute('data-instant', '1');
-  const lastThree = [...sel.options].slice(-3);
-  const wanted = [['needs a locked triple', 'Locked triple'], ['needs a naked triple', 'Naked triple'], ['needs a guess', 'Trial and error']];
+  const lastThree = ['Locked triple', 'Beyond links: naked triple', 'Beyond links: trial and error'].map(nm => [...sel.options].find(o => o.textContent === nm));
+  if (lastThree.some(o => !o)) throw new Error('an expected example is missing from the list');
+  const wanted = [['locked triple', 'Locked triple'], ['naked triple', 'Naked triple'], ['trial and error', 'Trial and error']];
   for (let n = 0; n < 3; n++) {
     const opt = lastThree[n];
-    if (!opt.textContent.startsWith('Beyond links') || !opt.textContent.includes(wanted[n][0])) throw new Error('unexpected example at the bottom of the list: ' + opt.textContent);
     sel.value = opt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
     const names = new Set(); let lastResortAlone = true;
     const watch = setInterval(() => {

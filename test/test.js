@@ -82,7 +82,7 @@ console.log(JSON.stringify(firstAfterSingles, null, 1));
       let res = null, tech = null;
       for (const t of E.TECHNIQUES) { const rs = t.find(st); for (const r of rs) check(st, sol, r, t.key + ' on ' + puzzle); if (rs.length && !res) { res = rs[0]; tech = t; } if (res && t === tech) break; }
       if (!res) throw new Error('nothing applies on ' + puzzle);
-      if (tech.beyond) { linkOnlyStuck = true; seen.add(res.tech); }
+      if (tech.beyond || tech.key === 'group' || tech.key === 'gchain') { linkOnlyStuck = true; seen.add(res.tech); }
       if (tech.lastResort && E.TECHNIQUES.some(t => !t.lastResort && t.find(st).length)) throw new Error('a guess was used while a pattern was available');
       E.apply(st, res); E.fillSingles(st);
     }

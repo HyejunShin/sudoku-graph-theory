@@ -73,17 +73,19 @@ Links join two candidates at a time, so some puzzles cannot be finished by loops
 | Solved by the link techniques | 965 |
 | Stuck: no link argument exists | 64 (3.2%) |
 
-A search for everything links can prove, on a smaller sample, solved nothing the Loop Finder had missed. So the stuck puzzles are a limit of pairwise reasoning, not of the tool. For those, the Loop Finder has three further steps, kept apart under **Beyond links** and tried only when no loop or colouring applies:
+A search for everything links can prove, on a smaller sample, solved nothing the Loop Finder had missed. So the stuck puzzles are a limit of reasoning about two candidates at a time, not of the tool.
 
-- **Locked triple**: a digit confined to three cells that share a second line or box. The three act as one candidate.
+**Groups extend the loop rule.** Let a dot stand for a group: two or three cells of one box that share a row or column, true when one of them holds the digit. The same odd-loop argument then covers **Locked triple** and **Grouped chain** (Empty Rectangle, grouped X-Cycle). These sit with the other loop techniques.
+
+**Beyond links.** The rest need a different kind of argument. They are kept apart and tried only when no loop or colouring applies:
+
 - **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. A counting argument on the cells and digits of one row, column or box.
-- **Grouped chain** (Empty Rectangle, grouped X-Cycle): the odd loop again, where a dot may be a group of cells in one box that share a row or column. This one still follows the loop rule.
-- **Bigger fish** (Swordfish, Jellyfish): the same counting as a triple, on the rows and columns of one digit.
+- **Bigger fish** (Swordfish, Jellyfish): the same counting, on the rows and columns of one digit.
 - **XYZ-Wing**: a pivot with three candidates and two wings.
 - **Unique rectangle**: four corners that would allow two solutions. It uses the fact that a proper sudoku has one.
 - **Trial and error**, the last resort: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is offered only when nothing else applies.
 
-Of the 64 stuck puzzles above, 22 were finished with locked triples and triples or quads alone, before the other steps were added. With all of them, a second test on 3,000 random puzzles ended with 36 (1.2%) still needing a guess. Swordfish, Jellyfish, XYZ-Wing and unique rectangles were never needed there: they exist, but random puzzles almost never require them. With the guess every puzzle can be finished. The last entries of the example list show these steps.
+In a test on 6,000 random puzzles with all of these, 106 used a group step (locked triple or grouped chain), 34 a naked triple, 1 a unique rectangle, and 75 (1.2%) still needed a guess. Bigger fish and XYZ-Wing were never needed: they exist, but random puzzles almost never require them. With the guess every puzzle can be finished. The last entries of the example list show these steps.
 
 ## The website
 

@@ -585,13 +585,13 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const targets = cellsFor(st, u2, d).filter(c => !cs.includes(c)).map(c => cid(c, d));
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
-        const res = mkResult('Locked triple', 'Beyond links: three candidates act as one');
+        const res = mkResult('Locked triple', 'A group as one dot: three candidates act as one');
         group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim'));
         group.forEach(g => res.links.push({ a: v, b: g, strong: false }));
         res.elim = targets;
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
-        say(res, 'One of the three circled ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so no loop can say this. Treat the three as one group.');
+        say(res, 'One of the three circled ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
         group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three circled ' + d + 's are false: each shares ' + unitName(u2) + ' with it.', snap());
         say(res, 'Now ' + unitName(u) + ' has no place for ' + d + '. Contradiction, so ' + candName(v) + ' is false.', snap());
@@ -825,10 +825,10 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     { key: 'xchain', name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Colouring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
     { key: 'medusa', name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
     { key: 'chain', name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
+    { key: 'group', name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
+    { key: 'gchain', name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
     /* Beyond links. These are tried only after every loop and colouring above has failed. */
-    { key: 'group', name: 'Locked triple', loop: 'three candidates as one', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.', beyond: true },
     { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true },
-    { key: 'gchain', name: 'Grouped chain', loop: 'Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.', beyond: true },
     { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true },
     { key: 'xyz', name: 'XYZ-Wing', loop: 'three-candidate pivot', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.', beyond: true },
     { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true },
@@ -894,7 +894,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
   'use strict';
   var E = window.SudokuEngine;
   var SAMPLES = [
-    { name: 'Tour puzzle: needs all eleven techniques', puzzle: '...65.37.37...9.....2........47.6.9.......5.4....2...6....65......2..1.51......48', tech: null },
+    { name: 'Tour puzzle: uses eleven techniques', puzzle: '...65.37.37...9.....2........47.6.9.......5.4....2...6....65......2..1.51......48', tech: null },
     { name: 'Locked pair', puzzle: '....1.93.5...9.2.7.6....1......6..9.1..9....5.47.....3.2..3......47.2..18........', tech: 'locked' },
     { name: 'Naked pair', puzzle: '...943............39.5718......3...7......29.6..8.93........6...3.1.8..28..29..7.', tech: 'naked' },
     { name: 'Hidden pair', puzzle: '...6.3...2.9...3.6.......14.563..1.....24.........8....8..2...1....56....1....42.', tech: 'hidden' },
@@ -906,15 +906,16 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     { name: 'One-digit odd loop (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
     { name: '3D Medusa', puzzle: '5.........8.....4...2.1...6.9...6.31.4.8.......6...9..2....7.....7...68...1.6.3.4', tech: 'medusa' },
     { name: 'Alternating chain', puzzle: '.23..5.96....7..2.........5.5.........9.24......893..4.753.....24875..3......2..1', tech: 'chain' },
+    /* The loop rule with a group of cells as one dot. */
+    { name: 'Locked triple', puzzle: '4.29......9...2.....7.1...8..5....46...37.8..3.18....5.1.....7..6...1..9..3...6..', tech: null },
+    { name: 'Grouped chain', puzzle: '..32.....7..9.....82...7...9...5..4....4.6..9..2.8.37.6.....1...387...2...7..5...', tech: null },
     /* Rare techniques, shown as soon as the puzzle loads. */
     { name: 'Beyond links: Swordfish', puzzle: '......6......9...2.1..248.3624.19........8.1.18...5....5.7............76..3...9..', tech: 'fish' },
     { name: 'Beyond links: XYZ-Wing', puzzle: '7........14..5.....351.7........32.88........3.....51..2..957..4.18....2....2.4.9', tech: 'xyz' },
     { name: 'Beyond links: unique rectangle', puzzle: '4....8............7..53.........15.6.....2..9...95..3....1...231.5..9.4..42.6..9.', tech: 'ur' },
-    { name: 'Beyond links: needs a grouped chain', puzzle: '..32.....7..9.....82...7...9...5..4....4.6..9..2.8.37.6.....1...387...2...7..5...', tech: null },
     /* Puzzles that links alone cannot finish. Each starts with loops and then needs the named step. */
-    { name: 'Beyond links: needs a locked triple', puzzle: '4.29......9...2.....7.1...8..5....46...37.8..3.18....5.1.....7..6...1..9..3...6..', tech: null },
-    { name: 'Beyond links: needs a naked triple', puzzle: '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....', tech: null },
-    { name: 'Beyond links: needs a guess', puzzle: '...4......3.86......23..1.7.78..13..35.....2.1.9....8.......63....5....8....839..', tech: null }
+    { name: 'Beyond links: naked triple', puzzle: '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....', tech: null },
+    { name: 'Beyond links: trial and error', puzzle: '...4......3.86......23..1.7.78..13..35.....2.1.9....8.......63....5....8....839..', tech: null }
   ];
   var $ = function (id) { return document.getElementById(id); };
   var st = null, original = '', solution = null, history = [], avail = {}, pick = {};

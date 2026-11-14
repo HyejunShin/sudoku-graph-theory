@@ -397,13 +397,13 @@
         const targets = cellsFor(st, u2, d).filter(c => !cs.includes(c)).map(c => cid(c, d));
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
-        const res = mkResult('Locked triple', 'Beyond links: three candidates act as one');
+        const res = mkResult('Locked triple', 'A group as one dot: three candidates act as one');
         group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim'));
         group.forEach(g => res.links.push({ a: v, b: g, strong: false }));
         res.elim = targets;
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
-        say(res, 'One of the three circled ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so no loop can say this. Treat the three as one group.');
+        say(res, 'One of the three circled ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
         group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three circled ' + d + 's are false: each shares ' + unitName(u2) + ' with it.', snap());
         say(res, 'Now ' + unitName(u) + ' has no place for ' + d + '. Contradiction, so ' + candName(v) + ' is false.', snap());
@@ -637,10 +637,10 @@
     { key: 'xchain', name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Colouring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
     { key: 'medusa', name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
     { key: 'chain', name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
+    { key: 'group', name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
+    { key: 'gchain', name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
     /* Beyond links. These are tried only after every loop and colouring above has failed. */
-    { key: 'group', name: 'Locked triple', loop: 'three candidates as one', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.', beyond: true },
     { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true },
-    { key: 'gchain', name: 'Grouped chain', loop: 'Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.', beyond: true },
     { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true },
     { key: 'xyz', name: 'XYZ-Wing', loop: 'three-candidate pivot', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.', beyond: true },
     { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true },
