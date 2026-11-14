@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sudoku Loop Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* layout: board on the left, explanation on the right; one column on phones */
+  --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78;
+  --true: #1b8f4b; --false: #86919d; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf;
+    --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf;
+  --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-size: 24px; font-weight: 600; margin: 0; text-wrap: balance; }
+h2 { font-size: 16px; font-weight: 600; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 65ch; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); } }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.board { padding: 8px; }
+@media (max-width: 899px) {
+  /* phone: the board stays in view while the steps scroll beneath it */
+  .cols, .cols > .stack { display: contents; }
+  .board { position: sticky; top: 0; z-index: 5; max-width: 460px; width: 100%; align-self: center; box-shadow: 0 6px 14px -10px var(--ink); }
+  #explain { scroll-margin-top: calc(min(100vw - 32px, 460px) + 12px); }
+}
+@media (min-width: 900px) { .cols > .stack:first-child { position: sticky; top: 16px; } }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+label { font-size: 13px; color: var(--muted); }
+select, input[type="text"] { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+input[type="text"] { font-family: var(--font-mono); font-size: 13px; flex: 1 1 220px; }
+select { flex: 1 1 220px; }
+button { font: inherit; font-weight: 500; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.msg { font-size: 13px; color: var(--muted); min-height: 1.4em; }
+.msg.bad { color: var(--out); }
+svg#grid { width: 100%; height: auto; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.techs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.tech { text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; }
+.tech .n { font-weight: 600; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.tech .k { font-size: 12px; color: var(--muted); }
+.tech .c { font-family: var(--font-mono); font-size: 12px; line-height: 18px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 0 7px; flex: none; }
+.tech[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+ol#steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+ol#steps li { padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.theorem { font-size: 13px; color: var(--muted); }
+.digits button { font-family: var(--font-mono); padding: 6px 0; width: 34px; text-align: center; }
+.digits button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 22px; height: 0; border-top: 3px solid var(--ink); }
+.sw.weak { border-top: 2px dashed var(--muted); }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
+.dot.t { background: var(--true); border-color: var(--true); }
+.dot.f { background: var(--false); border-color: var(--false); }
+.dot.o { border-color: var(--out); background: color-mix(in srgb, var(--out) 25%, transparent); }
+.dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
+.dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="stack" style="gap:6px">
+    <h1>Sudoku Loop Finder</h1>
+    <p class="lede">Load a real puzzle, pick a technique, and see the loop of pencil marks that makes it work. Each move comes with the chain of forced steps behind it.</p>
+  </header>
+
+  <section class="card" aria-label="Load a puzzle">
+    <div class="row">
+      <label for="sample">Example</label>
+      <select id="sample"></select>
+    </div>
+    <div class="row">
+      <label for="puzzle">Your own puzzle</label>
+      <input type="text" id="puzzle" spellcheck="false" autocomplete="off" placeholder="81 characters, row by row, . or 0 for empty cells">
+      <button id="load" type="button">Load</button>
+    </div>
+    <p class="msg" id="loadmsg" role="status"></p>
+  </section>
+
+  <div class="cols">
+    <div class="stack">
+      <section class="card board" aria-label="Board">
+        <svg id="grid" viewBox="0 0 544 544" role="img" aria-label="Sudoku board with pencil marks"></svg>
+      </section>
+      <section class="card" aria-label="Moves">
+        <div class="row">
+          <button id="next" type="button" class="primary">Next step</button>
+          <button id="easy" type="button">Fill easy cells</button>
+          <button id="undo" type="button">Undo</button>
+          <button id="reset" type="button">Start over</button>
+        </div>
+        <p class="msg" id="status" role="status"></p>
+        <div class="legend" aria-label="Key">
+          <span><i class="sw"></i>strong link: exactly one end true</span>
+          <span><i class="sw weak"></i>link: at most one end true</span>
+          <span><i class="dot o"></i>can be removed</span>
+          <span><i class="dot t"></i>true in this step</span>
+          <span><i class="dot f"></i>false in this step</span>
+          <span><i class="dot a"></i><i class="dot b"></i>the two colours of a chain</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="card" aria-label="Techniques">
+        <h2>Techniques available now</h2>
+        <div class="techs" id="techs"></div>
+      </section>
+
+      <section class="card" id="explain" aria-label="Explanation">
+        <h2 id="tname">Pick a technique</h2>
+        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Tap it to see the loop.</p>
+        <ol id="steps"></ol>
+        <div class="row" id="stepnav" hidden>
+          <button id="prev" type="button">Previous step</button>
+          <button id="fwd" type="button">Next step in the argument</button>
+          <button id="apply" type="button" class="primary">Apply to the board</button>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Explore links">
+        <h2>Look at the links yourself</h2>
+        <p class="theorem">Tap any pencil mark on the board to see everything it is linked to. Or pick a digit to see its strong links, coloured in two colours.</p>
+        <div class="row digits" id="digits"></div>
+      </section>
+    </div>
+  </div>
+</div>
+<script>
+/* Sudoku link-graph engine. Candidates are ids cell*9 + (digit-1); cells are 0..80 (row*9 + col). */
+(function (root) {
+  'use strict';
+  const ROW = c => (c / 9) | 0, COL = c => c % 9, BOX = c => (((c / 27) | 0) * 3 + (((c % 9) / 3) | 0));
+  const UNITS = [];
+  for (let r = 0; r < 9; r++) UNITS.push(Array.from({ length: 9 }, (_, c) => r * 9 + c));
+  for (let c = 0; c < 9; c++) UNITS.push(Array.from({ length: 9 }, (_, r) => r * 9 + c));
+  for (let b = 0; b < 9; b++) {
+    const br = ((b / 3) | 0) * 3, bc = (b % 3) * 3, u = [];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) u.push((br + i) * 9 + bc + j);
+    UNITS.push(u);
+  }
+  const cellUnits = cell => [ROW(cell), 9 + COL(cell), 18 + BOX(cell)];
+  const sees = (a, b) => a !== b && (ROW(a) === ROW(b) || COL(a) === COL(b) || BOX(a) === BOX(b));
+  const PEERS = Array.from({ length: 81 }, (_, c) => { const out = []; for (let x = 0; x < 81; x++) if (sees(c, x)) out.push(x); return out; });
+  const unitName = u => u < 9 ? 'row ' + (u + 1) : u < 18 ? 'column ' + (u - 8) : 'box ' + (u - 17);
+  const cellName = c => 'r' + (ROW(c) + 1) + 'c' + (COL(c) + 1);
+  const cid = (cell, d) => cell * 9 + d - 1, cCell = id => (id / 9) | 0, cDig = id => id % 9 + 1;
+  const candName = id => cDig(id) + ' in ' + cellName(cCell(id));
+  const bits = m => { let n = 0; while (m) { n += m & 1; m >>= 1; } return n; };
+  const digits = m => { const out = []; for (let d = 1; d <= 9; d++) if ((m >> d) & 1) out.push(d); return out; };
+  const commonUnits = (a, b) => cellUnits(a).filter(u => UNITS[u].includes(b));
+
+  function emptyState() { return { val: new Array(81).fill(0), cand: new Array(81).fill(0), given: new Array(81).fill(false) }; }
+  function clone(st) { return { val: st.val.slice(), cand: st.cand.slice(), given: st.given.slice() }; }
+  function fromString(s) {
+    const t = String(s).replace(/[^0-9.]/g, '');
+    if (t.length !== 81) return null;
+    const st = emptyState();
+    for (let i = 0; i < 81; i++) { const d = t[i] === '.' ? 0 : +t[i]; st.val[i] = d; st.given[i] = d > 0; }
+    for (let i = 0; i < 81; i++) for (const p of PEERS[i]) if (st.val[i] && st.val[i] === st.val[p]) return null;
+    for (let i = 0; i < 81; i++) if (!st.val[i]) { let m = 0x3FE; for (const p of PEERS[i]) if (st.val[p]) m &= ~(1 << st.val[p]); st.cand[i] = m; }
+    return st;
+  }
+  const toString = st => st.val.map(v => v || '.').join('');
+  const has = (st, cell, d) => st.val[cell] === 0 && ((st.cand[cell] >> d) & 1) === 1;
+  const alive = (st, id) => has(st, cCell(id), cDig(id));
+  function place(st, cell, d) { st.val[cell] = d; st.cand[cell] = 0; for (const p of PEERS[cell]) st.cand[p] &= ~(1 << d); }
+  function eliminate(st, id) { st.cand[cCell(id)] &= ~(1 << cDig(id)); }
+  const cellsFor = (st, u, d) => UNITS[u].filter(c => has(st, c, d));
+
+  /* Brute-force solver: returns {count: 0|1|2, solution} */
+  function solve(vals) {
+    const v = vals.slice(); let count = 0, solution = null;
+    const mask = cell => { let m = 0x3FE; for (const p of PEERS[cell]) if (v[p]) m &= ~(1 << v[p]); return m; };
+    (function rec() {
+      let best = -1, bm = 0, bn = 10;
+      for (let i = 0; i < 81; i++) if (!v[i]) { const m = mask(i), n = bits(m); if (n < bn) { bn = n; best = i; bm = m; if (n <= 1) break; } }
+      if (best < 0) { count++; if (!solution) solution = v.slice(); return; }
+      if (bn === 0) return;
+      for (let d = 1; d <= 9 && count < 2; d++) if ((bm >> d) & 1) { v[best] = d; rec(); v[best] = 0; }
+    })();
+    return { count, solution };
+  }
+
+  /* Links */
+  function linked(a, b) { if (a === b) return false; const ca = cCell(a), cb = cCell(b); if (ca === cb) return true; return cDig(a) === cDig(b) && sees(ca, cb); }
+  function linkInfo(a, b) { const ca = cCell(a), cb = cCell(b); if (ca === cb) return { kind: 'cell', cell: ca }; return { kind: 'unit', unit: commonUnits(ca, cb)[0] }; }
+  function strongInfo(st, a, b) {
+    if (!linked(a, b)) return null;
+    const ca = cCell(a), cb = cCell(b);
+    if (ca === cb) return bits(st.cand[ca]) === 2 ? { kind: 'cell', cell: ca } : null;
+    for (const u of commonUnits(ca, cb)) if (cellsFor(st, u, cDig(a)).length === 2) return { kind: 'unit', unit: u };
+    return null;
+  }
+  function neighbours(st, id) {
+    const cell = cCell(id), d = cDig(id), out = [];
+    for (const e of digits(st.cand[cell])) if (e !== d) out.push(cid(cell, e));
+    for (const p of PEERS[cell]) if (has(st, p, d)) out.push(cid(p, d));
+    return out;
+  }
+  function strongPartners(st, id) {
+    const cell = cCell(id), d = cDig(id), out = [];
+    if (bits(st.cand[cell]) === 2) out.push(cid(cell, digits(st.cand[cell]).find(e => e !== d)));
+    for (const u of cellUnits(cell)) { const cs = cellsFor(st, u, d); if (cs.length === 2) { const o = cid(cs[0] === cell ? cs[1] : cs[0], d); if (!out.includes(o)) out.push(o); } }
+    return out;
+  }
+  const linkWhy = (a, b) => { const i = linkInfo(a, b); return i.kind === 'cell' ? 'they share cell ' + cellName(i.cell) : 'both are ' + cDig(a) + 's in ' + unitName(i.unit); };
+  const strongWhy = (st, a, b) => { const i = strongInfo(st, a, b); return i.kind === 'cell' ? 'cell ' + cellName(i.cell) + ' has only ' + cDig(a) + ' and ' + cDig(b) + ' left' : cDig(a) + ' has only two places left in ' + unitName(i.unit); };
+  const list = ids => ids.map(candName).join(', ');
+
+  /* ---------- result builders ---------- */
+  function mkResult(tech, theorem) { return { tech, theorem, nodes: new Map(), links: [], elim: [], place: [], steps: [] }; }
+  const say = (res, text, marks, clash) => res.steps.push({ text, marks: marks || null, clash: clash || null });
+  function addLink(res, st, a, b, forceStrong) { const s = forceStrong === undefined ? !!strongInfo(st, a, b) : forceStrong; res.links.push({ a, b, strong: s }); }
+
+  /* Odd loop (Theorem 5.2): chain = [a1..a2j], strong a1=a2, a3=a4, ...; each target is linked to a1 and a2j. */
+  function oddLoop(st, tech, chain, targets, intro) {
+    for (let i = 0; i < chain.length; i += 2) if (!strongInfo(st, chain[i], chain[i + 1])) return null;
+    for (let i = 1; i + 1 < chain.length; i += 2) if (!linked(chain[i], chain[i + 1])) return null;
+    targets = targets.filter(t => alive(st, t) && !chain.includes(t) && linked(t, chain[0]) && linked(t, chain[chain.length - 1]));
+    if (!targets.length) return null;
+    const res = mkResult(tech, 'Theorem 5.2: an odd loop forces a false');
+    chain.forEach(c => res.nodes.set(c, 'loop'));
+    targets.forEach(t => res.nodes.set(t, 'elim'));
+    for (let i = 0; i + 1 < chain.length; i++) addLink(res, st, chain[i], chain[i + 1], i % 2 === 0);
+    for (const t of targets) { res.links.push({ a: t, b: chain[0], strong: false }); res.links.push({ a: chain[chain.length - 1], b: t, strong: false }); }
+    res.elim = targets;
+    const v = targets[0], marks = {};
+    const snap = () => Object.assign({}, marks);
+    if (intro) say(res, intro);
+    say(res, 'The loop has ' + (chain.length + 1) + ' candidates: the red one plus ' + chain.length + ' that the strong links pair up.');
+    marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
+    marks[chain[0]] = 'f'; say(res, 'Then ' + candName(chain[0]) + ' is false: ' + linkWhy(v, chain[0]) + '.', snap());
+    for (let i = 1; i < chain.length; i++) {
+      if (i % 2 === 1) { marks[chain[i]] = 't'; say(res, 'Then ' + candName(chain[i]) + ' is true: ' + strongWhy(st, chain[i - 1], chain[i]) + '.', snap()); }
+      else { marks[chain[i]] = 'f'; say(res, 'Then ' + candName(chain[i]) + ' is false: ' + linkWhy(chain[i - 1], chain[i]) + '.', snap()); }
+    }
+    say(res, 'But ' + candName(chain[chain.length - 1]) + ' and ' + candName(v) + ' cannot both be true: ' + linkWhy(chain[chain.length - 1], v) + '. Contradiction, so ' + candName(v) + ' is false.', snap(), [chain[chain.length - 1], v]);
+    if (targets.length > 1) say(res, 'The same argument removes: ' + list(targets.slice(1)) + '.');
+    return res;
+  }
+
+  /* Even loop (Theorem 5.4): loop = [l0..l(2m-1)], strong l0=l1, l2=l3, ... */
+  function evenLoop(st, tech, loop, intro) {
+    const n = loop.length;
+    for (let i = 0; i < n; i += 2) if (!strongInfo(st, loop[i], loop[i + 1])) return null;
+    for (let i = 1; i < n; i += 2) if (!linked(loop[i], loop[(i + 1) % n])) return null;
+    const res = mkResult(tech, 'Theorem 5.4: an even loop makes every link either-or');
+    loop.forEach(c => res.nodes.set(c, 'loop'));
+    const elim = new Set();
+    for (let i = 0; i < n; i++) {
+      const a = loop[i], b = loop[(i + 1) % n];
+      addLink(res, st, a, b, i % 2 === 0);
+      for (const x of neighbours(st, a)) if (!loop.includes(x) && linked(x, b)) elim.add(x);
+    }
+    if (!elim.size) return null;
+    res.elim = [...elim]; res.elim.forEach(t => res.nodes.set(t, 'elim'));
+    const pat = k => { const m = {}; loop.forEach((c, i) => { m[c] = i % 2 === k ? 't' : 'f'; }); res.elim.forEach(c => { m[c] = 'f'; }); return m; };
+    if (intro) say(res, intro);
+    say(res, 'The ' + n + ' circled candidates form a loop. Its ' + (n / 2) + ' strong links pair them all up, so exactly ' + (n / 2) + ' of them are true.');
+    say(res, 'True candidates are never linked, so true and false alternate round the loop. Only two patterns do that.');
+    say(res, 'Pattern A: ' + list(loop.filter((_, i) => i % 2 === 0)) + ' are true.', pat(0));
+    say(res, 'Pattern B: ' + list(loop.filter((_, i) => i % 2 === 1)) + ' are true.', pat(1));
+    say(res, 'In both patterns every dashed link has exactly one true end. A candidate linked to both ends of a dashed link is therefore false.');
+    say(res, 'That removes: ' + list(res.elim) + '.');
+    return res;
+  }
+
+  /* ---------- finders: each returns an array of results ---------- */
+  function findLockedPair(st) {
+    const out = [];
+    for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) {
+      const cs = cellsFor(st, u, d); if (cs.length !== 2) continue;
+      for (const u2 of commonUnits(cs[0], cs[1])) if (u2 !== u) {
+        const targets = cellsFor(st, u2, d).filter(c => c !== cs[0] && c !== cs[1]).map(c => cid(c, d));
+        const r = oddLoop(st, 'Locked pair', [cid(cs[0], d), cid(cs[1], d)], targets,
+          'In ' + unitName(u) + ' the digit ' + d + ' has only two places, and both lie in ' + unitName(u2) + '. This is the smallest loop: a triangle.');
+        if (r) out.push(r);
+      }
+    }
+    return out;
+  }
+  function findNakedPair(st) {
+    const out = [];
+    for (let u = 0; u < 27; u++) {
+      const bi = UNITS[u].filter(c => !st.val[c] && bits(st.cand[c]) === 2);
+      for (let i = 0; i < bi.length; i++) for (let j = i + 1; j < bi.length; j++) if (st.cand[bi[i]] === st.cand[bi[j]]) {
+        const [a, b] = digits(st.cand[bi[i]]), X = bi[i], Y = bi[j];
+        const r = evenLoop(st, 'Naked pair', [cid(X, a), cid(X, b), cid(Y, b), cid(Y, a)],
+          'Cells ' + cellName(X) + ' and ' + cellName(Y) + ' both hold only ' + a + ' and ' + b + ', and they see each other.');
+        if (r && !out.some(o => o.elim.join() === r.elim.join())) out.push(r);
+      }
+    }
+    return out;
+  }
+  function findHiddenPair(st) {
+    const out = [];
+    for (let u = 0; u < 27; u++) for (let a = 1; a <= 9; a++) for (let b = a + 1; b <= 9; b++) {
+      const ca = cellsFor(st, u, a), cb = cellsFor(st, u, b);
+      if (ca.length === 2 && cb.length === 2 && ca[0] === cb[0] && ca[1] === cb[1]) {
+        const [X, Y] = ca;
+        const r = evenLoop(st, 'Hidden pair', [cid(X, a), cid(Y, a), cid(Y, b), cid(X, b)],
+          'In ' + unitName(u) + ' the digits ' + a + ' and ' + b + ' each fit only cells ' + cellName(X) + ' and ' + cellName(Y) + '.');
+        if (r) out.push(r);
+      }
+    }
+    return out;
+  }
+  function findXWing(st) {
+    const out = [];
+    for (let d = 1; d <= 9; d++) for (const base of [0, 9]) {
+      const lines = [];
+      for (let u = base; u < base + 9; u++) { const cs = cellsFor(st, u, d); if (cs.length === 2) lines.push(cs); }
+      const cross = c => base === 0 ? COL(c) : ROW(c);
+      for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+        const A = lines[i], B = lines[j];
+        if (cross(A[0]) === cross(B[0]) && cross(A[1]) === cross(B[1])) {
+          const word = base === 0 ? ['rows', 'columns'] : ['columns', 'rows'];
+          const r = evenLoop(st, 'X-Wing', [cid(A[0], d), cid(A[1], d), cid(B[1], d), cid(B[0], d)],
+            'Digit ' + d + ' has only two places in each of two ' + word[0] + ', and they line up in the same two ' + word[1] + '.');
+          if (r) out.push(r);
+        }
+      }
+    }
+    return out;
+  }
+  function findSkyscraper(st) {
+    const out = [];
+    for (let d = 1; d <= 9; d++) for (const base of [0, 9]) {
+      const lines = [];
+      for (let u = base; u < base + 9; u++) { const cs = cellsFor(st, u, d); if (cs.length === 2) lines.push(cs); }
+      const cross = c => base === 0 ? COL(c) : ROW(c);
+      for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) for (const [p1, q1] of [lines[i], lines[i].slice().reverse()]) for (const [p2, q2] of [lines[j], lines[j].slice().reverse()]) {
+        if (cross(p1) !== cross(p2) || cross(q1) === cross(q2)) continue;
+        const targets = PEERS[q1].filter(c => sees(c, q2) && has(st, c, d)).map(c => cid(c, d));
+        const r = oddLoop(st, 'Skyscraper', [cid(q1, d), cid(p1, d), cid(p2, d), cid(q2, d)], targets,
+          'Digit ' + d + ' has only two places in each of two parallel lines, and one end of each shares a line.');
+        if (r) out.push(r);
+      }
+    }
+    return out;
+  }
+  function findKite(st) {
+    const out = [];
+    for (let d = 1; d <= 9; d++) for (let ru = 0; ru < 9; ru++) {
+      const rc = cellsFor(st, ru, d); if (rc.length !== 2) continue;
+      for (let cu = 9; cu < 18; cu++) {
+        const cc = cellsFor(st, cu, d); if (cc.length !== 2) continue;
+        for (const [A, B] of [rc, rc.slice().reverse()]) for (const [C, D] of [cc, cc.slice().reverse()]) {
+          if (B === C || A === C || A === D || B === D) continue;
+          if (BOX(B) !== BOX(C) || BOX(A) === BOX(B) || BOX(D) === BOX(C)) continue;
+          const targets = PEERS[A].filter(c => sees(c, D) && has(st, c, d)).map(c => cid(c, d));
+          const r = oddLoop(st, 'Two-String Kite', [cid(A, d), cid(B, d), cid(C, d), cid(D, d)], targets,
+            'Digit ' + d + ' has only two places in ' + unitName(ru) + ' and only two in ' + unitName(cu) + '. One end of each lies in the same box.');
+          if (r) out.push(r);
+        }
+      }
+    }
+    return out;
+  }
+  function findXYWing(st) {
+    const out = [];
+    const bi = []; for (let c = 0; c < 81; c++) if (!st.val[c] && bits(st.cand[c]) === 2) bi.push(c);
+    for (const P of bi) {
+      const [a, b] = digits(st.cand[P]);
+      const wings = PEERS[P].filter(c => bi.includes(c));
+      for (const W1 of wings) for (const W2 of wings) {
+        if (W1 === W2) continue;
+        const d1 = digits(st.cand[W1]), d2 = digits(st.cand[W2]);
+        if (!d1.includes(a) || d1.includes(b) || !d2.includes(b) || d2.includes(a)) continue;
+        const c = d1.find(x => x !== a); if (!d2.includes(c)) continue;
+        const targets = PEERS[W1].filter(z => sees(z, W2) && z !== P && has(st, z, c)).map(z => cid(z, c));
+        const r = oddLoop(st, 'XY-Wing', [cid(W1, c), cid(W1, a), cid(P, a), cid(P, b), cid(W2, b), cid(W2, c)], targets,
+          'Pivot ' + cellName(P) + ' holds ' + a + ' and ' + b + '. Wing ' + cellName(W1) + ' holds ' + a + ' and ' + c + ', wing ' + cellName(W2) + ' holds ' + b + ' and ' + c + '.');
+        if (r) out.push(r);
+      }
+    }
+    return out;
+  }
+
+  /* Generic odd loop: breadth-first search for a closed alternating walk (Proposition 7.2), kept only when it is a simple cycle. */
+  function chainFor(st, v, sameDigit, maxPairs) {
+    const ok = x => !sameDigit || cDig(x) === cDig(v);
+    const parent = new Map(); parent.set(v, null);
+    let frontier = [v];
+    for (let depth = 1; depth <= maxPairs && frontier.length; depth++) {
+      const next = [];
+      for (const x of frontier) for (const y of neighbours(st, x)) {
+        if (y === v || !ok(y)) continue;
+        for (const z of strongPartners(st, y)) {
+          if (!ok(z) || parent.has(z)) continue;
+          parent.set(z, { x, y }); next.push(z);
+          if (depth >= 2 && linked(z, v)) {
+            const chain = []; let cur = z;
+            while (cur !== v) { const p = parent.get(cur); chain.unshift(p.y, cur); cur = p.x; }
+            if (new Set(chain).size === chain.length && !chain.includes(v)) return chain;
+          }
+        }
+      }
+      frontier = next;
+    }
+    return null;
+  }
+  function nameChain(st, v, chain) {
+    const all = [v].concat(chain), one = all.every(x => cDig(x) === cDig(v)), k = all.length;
+    const kinds = []; for (let i = 0; i < chain.length; i += 2) kinds.push(strongInfo(st, chain[i], chain[i + 1]).kind);
+    if (one) return k === 5 ? 'Turbot Fish' : 'X-Cycle (odd loop of ' + k + ')';
+    if (kinds.every(x => x === 'cell')) return k === 7 ? 'XY-Wing' : 'XY-Chain (loop of ' + k + ')';
+    if (k === 7 && kinds.join() === 'cell,unit,cell' && st.cand[cCell(chain[0])] === st.cand[cCell(chain[5])]) return 'W-Wing';
+    return 'Alternating chain (loop of ' + k + ')';
+  }
+  function findChains(st, sameDigit, maxPairs, limit) {
+    const out = [];
+    for (let id = 0; id < 729 && out.length < (limit || 1); id++) if (alive(st, id)) {
+      const chain = chainFor(st, id, sameDigit, maxPairs || 5);
+      if (!chain) continue;
+      const r = oddLoop(st, nameChain(st, id, chain), chain, [id], 'A chain of alternating links starts and ends next to the red candidate.');
+      if (r) out.push(r);
+    }
+    return out;
+  }
+
+  /* Colouring (Theorem 5.1 and Corollary 5.5). digit = 1..9 for Simple Colouring, 0 for 3D Medusa (all strong links). */
+  function findColouring(st, digit) {
+    const out = [], seen = new Set();
+    const okNode = id => digit === 0 || cDig(id) === digit;
+    const partners = id => strongPartners(st, id).filter(okNode);
+    for (let start = 0; start < 729; start++) {
+      if (!alive(st, start) || !okNode(start) || seen.has(start) || !partners(start).length) continue;
+      const colour = new Map([[start, 0]]), stack = [start], edges = [];
+      while (stack.length) { const x = stack.pop(); for (const y of partners(x)) { if (!colour.has(y)) { colour.set(y, 1 - colour.get(x)); stack.push(y); } if (x < y) edges.push([x, y]); } }
+      colour.forEach((_, k) => seen.add(k));
+      const nodes = [...colour.keys()];
+      if (nodes.length < 4) continue;
+      if (digit === 0 && !edges.some(([x, y]) => cCell(x) === cCell(y))) continue;
+      const cls = [nodes.filter(n => colour.get(n) === 0), nodes.filter(n => colour.get(n) === 1)];
+      const base = (tech) => { const r = mkResult(tech, 'Theorem 5.1 and Corollary 5.5: colouring'); nodes.forEach(n => r.nodes.set(n, colour.get(n) === 0 ? 'k0' : 'k1')); edges.forEach(([x, y]) => r.links.push({ a: x, b: y, strong: true }));
+        say(r, (digit ? 'For digit ' + digit + ', ' : 'Across all digits, ') + nodes.length + ' candidates are chained together by strong links.');
+        say(r, 'Along a strong link exactly one end is true. So colouring the chain alternately gives two colours, and one whole colour is true while the other is false.'); return r; };
+      const name = digit ? 'Simple Colouring' : '3D Medusa';
+      let wrap = null;
+      for (let k = 0; k < 2 && !wrap; k++) for (let i = 0; i < cls[k].length && !wrap; i++) for (let j = i + 1; j < cls[k].length; j++) if (linked(cls[k][i], cls[k][j])) { wrap = [k, cls[k][i], cls[k][j]]; break; }
+      if (wrap) {
+        const [k, a, b] = wrap, r = base(name + ' (wrap)'), word = k === 0 ? 'blue' : 'orange', otherWord = k === 0 ? 'orange' : 'blue';
+        r.links.push({ a, b, strong: false, clash: true });
+        r.elim = cls[k].slice(); r.place = cls[1 - k].slice();
+        say(r, 'Two ' + word + ' candidates, ' + candName(a) + ' and ' + candName(b) + ', are linked: ' + linkWhy(a, b) + '. They cannot both be true.', null, [a, b]);
+        say(r, 'So ' + word + ' is not the true colour. Every ' + word + ' candidate goes, and every ' + otherWord + ' candidate is placed.');
+        r.wrapClass = k; out.push(r); continue;
+      }
+      const trap = [];
+      for (let id = 0; id < 729; id++) if (alive(st, id) && !colour.has(id)) {
+        const s0 = cls[0].find(n => linked(id, n)), s1 = cls[1].find(n => linked(id, n));
+        if (s0 !== undefined && s1 !== undefined) trap.push([id, s0, s1]);
+      }
+      if (trap.length) {
+        const r = base(name + ' (trap)');
+        for (const [id, s0, s1] of trap) { r.elim.push(id); r.nodes.set(id, 'elim'); r.links.push({ a: id, b: s0, strong: false }); r.links.push({ a: id, b: s1, strong: false }); }
+        const [id, s0, s1] = trap[0];
+        say(r, candName(id) + ' is linked to a blue candidate (' + candName(s0) + ') and to an orange one (' + candName(s1) + ').');
+        say(r, 'One of the two colours is true, so ' + candName(id) + ' is linked to a true candidate. It is false.');
+        if (trap.length > 1) say(r, 'The same argument removes: ' + list(trap.slice(1).map(t => t[0])) + '.');
+        out.push(r);
+      }
+    }
+    return out;
+  }
+  function findSimpleColouring(st) { let out = []; for (let d = 1; d <= 9; d++) out = out.concat(findColouring(st, d)); return out; }
+
+  /* Singles (not loop techniques; used to advance a puzzle) */
+  function findSingle(st) {
+    for (let c = 0; c < 81; c++) if (!st.val[c] && bits(st.cand[c]) === 1) return { cell: c, d: digits(st.cand[c])[0], why: 'Only digit left in ' + cellName(c) };
+    for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) { const cs = cellsFor(st, u, d); if (cs.length === 1) return { cell: cs[0], d, why: 'Only place for ' + d + ' in ' + unitName(u) }; }
+    return null;
+  }
+  function fillSingles(st) { let n = 0, s; while ((s = findSingle(st))) { place(st, s.cell, s.d); n++; } return n; }
+  function apply(st, res) { for (const id of res.elim) eliminate(st, id); for (const id of res.place) if (alive(st, id)) place(st, cCell(id), cDig(id)); }
+  const solved = st => st.val.every(v => v > 0);
+  const broken = st => st.val.some((v, c) => !v && st.cand[c] === 0);
+
+  const TECHNIQUES = [
+    { key: 'locked', name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
+    { key: 'naked', name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
+    { key: 'hidden', name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
+    { key: 'xwing', name: 'X-Wing', loop: 'loop of 4', find: findXWing, blurb: 'One digit, two lines, the same two crossing lines.' },
+    { key: 'sky', name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong links that share a line at one end.' },
+    { key: 'kite', name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row link and a column link joined inside a box.' },
+    { key: 'xywing', name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
+    { key: 'colour', name: 'Simple Colouring', loop: '2-colouring', find: findSimpleColouring, blurb: 'Colour one digit’s strong links with two colours.' },
+    { key: 'xchain', name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
+    { key: 'medusa', name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
+    { key: 'chain', name: 'Alternating chain', loop: 'odd loop', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' }
+  ];
+
+  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, toString, clone, has, alive, place, eliminate, cellsFor,
+    solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColouring };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var E = window.SudokuEngine;
+  var SAMPLES = [
+    { name: 'Tour puzzle: needs all eleven techniques', puzzle: '...65.37.37...9.....2........47.6.9.......5.4....2...6....65......2..1.51......48', tech: null },
+    { name: 'Locked pair', puzzle: '....1.93.5...9.2.7.6....1......6..9.1..9....5.47.....3.2..3......47.2..18........', tech: 'locked' },
+    { name: 'Naked pair', puzzle: '...943............39.5718......3...7......29.6..8.93........6...3.1.8..28..29..7.', tech: 'naked' },
+    { name: 'Hidden pair', puzzle: '...6.3...2.9...3.6.......14.563..1.....24.........8....8..2...1....56....1....42.', tech: 'hidden' },
+    { name: 'X-Wing', puzzle: '.1....36.6....8.959.54.61.....9..41.....27.........2.8..........8...4.21..1.859.3', tech: 'xwing' },
+    { name: 'Skyscraper', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'sky' },
+    { name: 'Two-String Kite', puzzle: '.4...52.....1..7...619....8.2.4.....9....3..7......36....5...2..3.7.6..949....6..', tech: 'kite' },
+    { name: 'XY-Wing', puzzle: '..41.5....7.4......8..7..2...5.173......3..8.6......794.8.....6...6..2...9.....1.', tech: 'xywing' },
+    { name: 'Simple Colouring', puzzle: '......7...6...2.3.35.6...4..1......3..5.8...47.9.2.6..6..2.3.5......1..75.1..4...', tech: 'colour' },
+    { name: 'One-digit odd loop (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
+    { name: '3D Medusa', puzzle: '5.........8.....4...2.1...6.9...6.31.4.8.......6...9..2....7.....7...68...1.6.3.4', tech: 'medusa' },
+    { name: 'Alternating chain', puzzle: '.23..5.96....7..2.........5.5.........9.24......893..4.753.....24875..3......2..1', tech: 'chain' }
+  ];
+  var $ = function (id) { return document.getElementById(id); };
+  var st = null, original = '', solution = null, history = [], avail = {}, pick = {};
+  var view = { kind: 'none' };   // 'result' {res, step}, 'probe' {id}, 'digit' {d}
+
+  /* ---------- geometry ---------- */
+  var S = 60, M = 2;
+  function pos(id) { var cell = E.cCell(id), d = E.cDig(id) - 1; return { x: M + E.COL(cell) * S + 10 + 20 * (d % 3), y: M + E.ROW(cell) * S + 10 + 20 * Math.floor(d / 3) }; }
+  function seg(a, b, cls, pad) {
+    var p = pos(a), q = pos(b), dx = q.x - p.x, dy = q.y - p.y, len = Math.sqrt(dx * dx + dy * dy) || 1, r = pad === undefined ? 9 : pad;
+    var x1 = p.x + dx / len * r, y1 = p.y + dy / len * r, x2 = q.x - dx / len * r, y2 = q.y - dy / len * r;
+    var style = cls === 'strong' ? 'stroke="var(--ink)" stroke-width="3"' : cls === 'clash' ? 'stroke="var(--out)" stroke-width="4"' : 'stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4"';
+    return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" ' + style + ' stroke-linecap="round"/>';
+  }
+  function ring(id, kind) {
+    var p = pos(id), map = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
+    var m = map[kind] || map.loop;
+    var out = '<circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="var(--panel)"/><circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="' + m[1] + '" fill-opacity="' + m[2] + '" stroke="' + m[0] + '" stroke-width="2"/>';
+    if (kind === 'f') out += '<line x1="' + (p.x - 6) + '" y1="' + (p.y + 6) + '" x2="' + (p.x + 6) + '" y2="' + (p.y - 6) + '" stroke="var(--false)" stroke-width="2"/>';
+    return out;
+  }
+
+  /* ---------- overlay for the current view ---------- */
+  function overlay() {
+    var links = '', rings = '', marked = {};
+    if (view.kind === 'result') {
+      var res = view.res, step = view.step === null ? null : res.steps[view.step];
+      res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash ? 'clash' : l.strong ? 'strong' : 'weak'); });
+      if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');
+      res.nodes.forEach(function (role, id) {
+        var kind = role;
+        if (step && step.marks) kind = step.marks[id] ? step.marks[id] : (role === 'elim' ? 'loop' : role);
+        if (res.wrapClass !== undefined && view.step === null) kind = role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+        rings += ring(id, kind); marked[id] = 1;
+      });
+    } else if (view.kind === 'probe') {
+      var v = view.id, strong = E.strongPartners(st, v);
+      E.neighbours(st, v).forEach(function (n) { links += seg(v, n, strong.indexOf(n) >= 0 ? 'strong' : 'weak'); rings += ring(n, 'loop'); marked[n] = 1; });
+      rings += ring(v, 'probe'); marked[v] = 1;
+    } else if (view.kind === 'digit') {
+      var d = view.d, colour = {}, ids = [];
+      for (var c = 0; c < 81; c++) if (E.has(st, c, d)) ids.push(E.cid(c, d));
+      ids.forEach(function (start) {
+        if (colour[start] !== undefined) return;
+        var partners = function (x) { return E.strongPartners(st, x).filter(function (y) { return E.cDig(y) === d; }); };
+        if (!partners(start).length) return;
+        colour[start] = 0; var stack = [start];
+        while (stack.length) { var x = stack.pop(); partners(x).forEach(function (y) { if (colour[y] === undefined) { colour[y] = 1 - colour[x]; stack.push(y); } if (x < y) links += seg(x, y, 'strong'); }); }
+      });
+      ids.forEach(function (id) { if (colour[id] !== undefined) { rings += ring(id, colour[id] ? 'k1' : 'k0'); marked[id] = 1; } });
+    }
+    return { links: links, rings: rings, marked: marked };
+  }
+
+  /* ---------- board ---------- */
+  function draw() {
+    var o = overlay(), s = '<rect x="0" y="0" width="544" height="544" fill="var(--panel)"/>';
+    for (var i = 0; i <= 9; i++) {
+      var w = i % 3 === 0 ? 2.2 : 0.8, col = i % 3 === 0 ? 'var(--ink)' : 'var(--line)', p = M + i * S;
+      s += '<line x1="' + p + '" y1="' + M + '" x2="' + p + '" y2="' + (M + 540) + '" stroke="' + col + '" stroke-width="' + w + '"/><line x1="' + M + '" y1="' + p + '" x2="' + (M + 540) + '" y2="' + p + '" stroke="' + col + '" stroke-width="' + w + '"/>';
+    }
+    s += o.links + o.rings;
+    for (var c = 0; c < 81; c++) {
+      var x = M + E.COL(c) * S, y = M + E.ROW(c) * S;
+      if (st.val[c]) {
+        s += '<text x="' + (x + 30) + '" y="' + (y + 42) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="34" font-weight="' + (st.given[c] ? 600 : 400) + '" fill="' + (st.given[c] ? 'var(--ink)' : 'var(--accent)') + '">' + st.val[c] + '</text>';
+      } else {
+        E.digits(st.cand[c]).forEach(function (d) {
+          var id = E.cid(c, d), q = pos(id);
+          s += '<text x="' + q.x + '" y="' + (q.y + 4.5) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="13" font-weight="' + (o.marked[id] ? 600 : 400) + '" fill="' + (o.marked[id] ? 'var(--ink)' : 'var(--muted)') + '">' + d + '</text>';
+          s += '<rect data-id="' + id + '" x="' + (q.x - 10) + '" y="' + (q.y - 10) + '" width="20" height="20" fill="transparent" style="cursor:pointer"/>';
+        });
+      }
+    }
+    $('grid').innerHTML = s;
+  }
+
+  /* ---------- panels ---------- */
+  function left() { var n = 0; for (var c = 0; c < 81; c++) if (!st.val[c]) n++; return n; }
+  function scan() { avail = {}; E.TECHNIQUES.forEach(function (t) { avail[t.key] = E.solved(st) ? [] : t.find(st); }); }
+  function drawTechs() {
+    var h = '';
+    E.TECHNIQUES.forEach(function (t) {
+      var n = avail[t.key].length, on = view.kind === 'result' && view.tech === t.key;
+      h += '<button type="button" class="tech" data-key="' + t.key + '" aria-pressed="' + on + '"' + (n ? '' : ' disabled') + ' title="' + t.blurb + '"><span class="n">' + t.name + (n ? '<span class="c">' + n + '</span>' : '') + '</span><span class="k">' + t.loop + '</span></button>';
+    });
+    $('techs').innerHTML = h;
+  }
+  function drawExplain() {
+    var nav = $('stepnav'), ol = $('steps');
+    if (view.kind === 'result') {
+      var res = view.res, total = avail[view.tech] ? avail[view.tech].length : 1;
+      $('tname').textContent = res.tech + (total > 1 ? ' (' + (view.index + 1) + ' of ' + total + ', tap again for the next)' : '');
+      $('theorem').textContent = res.theorem + '. Tap a step, or walk through with the buttons.';
+      ol.innerHTML = res.steps.map(function (sp, i) { return '<li data-i="' + i + '"' + (view.step === i ? ' class="on"' : '') + '>' + sp.text + '</li>'; }).join('');
+      nav.hidden = false;
+      $('prev').disabled = view.step === null || view.step === 0;
+      $('fwd').disabled = view.step === res.steps.length - 1;
+    } else if (view.kind === 'probe') {
+      var v = view.id, sp = E.strongPartners(st, v), all = E.neighbours(st, v);
+      $('tname').textContent = 'Links of ' + E.candName(v);
+      $('theorem').textContent = 'It has ' + all.length + ' links, ' + sp.length + ' of them strong.';
+      ol.innerHTML = all.map(function (n) { var strong = sp.indexOf(n) >= 0; return '<li>' + E.candName(n) + ': ' + (strong ? 'strong, because ' + E.strongWhy(st, v, n) : 'weak, because ' + E.linkWhy(v, n)) + '.</li>'; }).join('');
+      nav.hidden = true;
+    } else if (view.kind === 'digit') {
+      $('tname').textContent = 'Strong links of digit ' + view.d;
+      $('theorem').textContent = 'Each chain is coloured with two colours. In every chain one colour is all true and the other all false (Theorem 5.1).';
+      ol.innerHTML = ''; nav.hidden = true;
+    } else {
+      $('tname').textContent = E.solved(st) ? 'Solved' : 'Pick a technique';
+      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Tap it to see the loop.';
+      ol.innerHTML = ''; nav.hidden = true;
+    }
+    var dg = '';
+    for (var d = 1; d <= 9; d++) dg += '<button type="button" data-d="' + d + '" aria-pressed="' + (view.kind === 'digit' && view.d === d) + '" aria-label="Strong links of digit ' + d + '">' + d + '</button>';
+    $('digits').innerHTML = dg;
+  }
+  function render() { draw(); drawTechs(); drawExplain(); $('undo').disabled = !history.length; $('next').disabled = E.solved(st); $('easy').disabled = !E.findSingle(st); }
+  function say(text, bad) { var el = $('status'); el.textContent = text; el.className = 'msg' + (bad ? ' bad' : ''); }
+
+  /* ---------- actions ---------- */
+  function reveal() { var el = $('explain'); if (el.scrollIntoView && window.matchMedia && window.matchMedia('(max-width: 899px)').matches) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  function show(key, index, quiet) { var list = avail[key]; if (!list || !list.length) return; index = index % list.length; pick[key] = index; view = { kind: 'result', tech: key, index: index, res: list[index], step: null }; render(); if (!quiet) reveal(); }
+  function snapshot() { history.push(E.clone(st)); if (history.length > 200) history.shift(); }
+  function afterChange(text) { view = { kind: 'none' }; pick = {}; scan(); render(); say(text + (E.solved(st) ? ' The puzzle is solved.' : ' ' + left() + ' cells left.')); }
+  function load(str, techKey) {
+    var s = E.fromString(str), msg = $('loadmsg');
+    if (!s) { msg.textContent = 'That is not a valid grid. Enter 81 characters row by row, digits 1 to 9 with . or 0 for empty cells, and no digit twice in a row, column or box.'; msg.className = 'msg bad'; return false; }
+    var sol = E.solve(s.val);
+    if (sol.count === 0) { msg.textContent = 'This puzzle has no solution, so nothing can be shown.'; msg.className = 'msg bad'; return false; }
+    st = s; original = E.toString(s); solution = sol.count === 1 ? sol.solution : null; history = [];
+    msg.className = 'msg'; msg.textContent = sol.count === 1 ? 'Loaded. The puzzle has exactly one solution.' : 'Loaded. This puzzle has more than one solution; the techniques are still valid.';
+    var n = E.fillSingles(st);
+    afterChange(n ? 'Filled ' + n + ' easy cells first (cells or digits with only one place).' : 'No easy cells to fill.');
+    if (techKey && avail[techKey] && avail[techKey].length) show(techKey, 0, true);
+    return true;
+  }
+  function applyCurrent() {
+    if (view.kind !== 'result') return;
+    var res = view.res;
+    if (solution) {
+      var wrong = res.elim.some(function (id) { return solution[E.cCell(id)] === E.cDig(id); }) || res.place.some(function (id) { return solution[E.cCell(id)] !== E.cDig(id); });
+      if (wrong) { say('Internal check failed: this move disagrees with the solution, so it was not applied.', true); return; }
+    }
+    snapshot(); E.apply(st, res); var n = E.fillSingles(st);
+    afterChange(res.tech + ': removed ' + res.elim.length + ' pencil mark' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') + (n ? ', then filled ' + n + ' easy cells.' : '.'));
+  }
+  function nextStep(quiet) {
+    if (E.findSingle(st)) { snapshot(); var n = E.fillSingles(st); afterChange('Filled ' + n + ' easy cells.'); return; }
+    for (var i = 0; i < E.TECHNIQUES.length; i++) { var k = E.TECHNIQUES[i].key; if (avail[k].length) { show(k, 0, quiet === true); say('Simplest move available: ' + E.TECHNIQUES[i].name + '. Read the steps, then apply it.'); return; } }
+    say('None of these techniques applies here. The puzzle needs something beyond links, such as a triple or a larger fish.', true);
+  }
+
+  /* ---------- wiring ---------- */
+  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>'; }).join('');
+  $('sample').addEventListener('change', function () { var sm = SAMPLES[+this.value]; $('puzzle').value = sm.puzzle; load(sm.puzzle, sm.tech); });
+  $('load').addEventListener('click', function () { load($('puzzle').value, null); });
+  $('puzzle').addEventListener('keydown', function (e) { if (e.key === 'Enter') load(this.value, null); });
+  $('next').addEventListener('click', function () { nextStep(false); });
+  $('easy').addEventListener('click', function () { snapshot(); var n = E.fillSingles(st); afterChange('Filled ' + n + ' easy cells.'); });
+  $('undo').addEventListener('click', function () { if (!history.length) return; st = history.pop(); afterChange('Went back one move.'); });
+  $('reset').addEventListener('click', function () { load(original, null); });
+  $('apply').addEventListener('click', applyCurrent);
+  $('prev').addEventListener('click', function () { if (view.kind === 'result' && view.step) { view.step--; render(); } });
+  $('fwd').addEventListener('click', function () { if (view.kind !== 'result') return; view.step = view.step === null ? 0 : Math.min(view.step + 1, view.res.steps.length - 1); render(); });
+  $('steps').addEventListener('click', function (e) { var li = e.target.closest('li[data-i]'); if (li && view.kind === 'result') { var i = +li.getAttribute('data-i'); view.step = view.step === i ? null : i; render(); } });
+  $('techs').addEventListener('click', function (e) { var b = e.target.closest('button[data-key]'); if (!b) return; var k = b.getAttribute('data-key'); show(k, view.kind === 'result' && view.tech === k ? view.index + 1 : (pick[k] || 0)); });
+  $('digits').addEventListener('click', function (e) { var b = e.target.closest('button[data-d]'); if (!b) return; var d = +b.getAttribute('data-d'); view = view.kind === 'digit' && view.d === d ? { kind: 'none' } : { kind: 'digit', d: d }; render(); });
+  $('grid').addEventListener('click', function (e) { var id = e.target.getAttribute && e.target.getAttribute('data-id'); if (id === null || id === undefined) return; id = +id; view = view.kind === 'probe' && view.id === id ? { kind: 'none' } : { kind: 'probe', id: id }; render(); });
+
+  $('puzzle').value = SAMPLES[0].puzzle;
+  load(SAMPLES[0].puzzle, null);
+  nextStep(true);
+})();
+</script>
+</body>
+</html>
