@@ -90,7 +90,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   loadSample(0);
   if (play.disabled) throw new Error('play is disabled on a fresh puzzle');
   if (play.textContent !== 'Play') throw new Error('fresh puzzle: button says ' + play.textContent);
-  if (!(play.compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !($('speed').compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING)) throw new Error('play and speed are not above the manual buttons');
+  if (play.parentNode !== $('undo').parentNode || play.parentNode !== $('speed').parentNode || $('reset').textContent !== 'Reset' || !play.closest('.board')) throw new Error('Play, speed, Undo and Reset should share one row inside the board card');
   const speeds = [...$('speed').options].map(o => o.textContent + '=' + o.value + (o.selected ? '*' : '')).join(' ');
   if (speeds !== 'Slow=1700 Normal=600 Fast=250* Moves only=1000') throw new Error('unexpected speeds: ' + speeds);
   click(play);
@@ -238,7 +238,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   }
   const xz = [...sel.options].find(o => o.textContent === 'XYZ-Wing'); sel.value = xz.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error('the XYZ-Wing does not show its group dot');
-  if (document.querySelectorAll('#techs .beyond').length !== 3) throw new Error('expected three dividers: counting, one-solution, last resort');
+  if (document.querySelectorAll('#techs .beyond').length !== 2) throw new Error('expected two dividers: counting, and outside the coloring');
   // 6j. the easy-cell switch and "Random easy sudoku"
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
   loadSample(4);
