@@ -414,12 +414,24 @@
     return out;
   }
 
+  /* For a counting pattern: a dashed link from every removed candidate to the nearest member of the group dot it is linked to. */
+  function linkToGroups(res) {
+    for (const e of res.elim) {
+      let best = null;
+      for (const g of res.groups) for (const m of g) if (linked(e, m)) {
+        const dist = Math.abs(ROW(cCell(e)) - ROW(cCell(m))) * 3 + Math.abs(COL(cCell(e)) - COL(cCell(m))) * 3 + Math.abs(cDig(e) - cDig(m)) * 0.1;
+        if (!best || dist < best[1]) best = [m, dist];
+      }
+      if (best) res.links.push({ a: e, b: best[0], strong: false });
+    }
+  }
+
   /* Triples and quads. Naked: k cells of a unit hold only k digits between them, so those digits are used up there.
      Hidden: k digits fit only in k cells of a unit, so those cells hold nothing else.
      Both are counting arguments (Hall's theorem on the cells and digits of the unit), not link arguments. */
   function findSubsets(st) {
     const out = [], seen = new Set();
-    const push = (res, elim) => { const key = elim.slice().sort((a, b) => a - b).join(','); if (seen.has(key)) return; seen.add(key); res.elim = elim; elim.forEach(e => res.nodes.set(e, 'elim')); out.push(res); };
+    const push = (res, elim) => { const key = elim.slice().sort((a, b) => a - b).join(','); if (seen.has(key)) return; seen.add(key); res.elim = elim; elim.forEach(e => res.nodes.set(e, 'elim')); linkToGroups(res); out.push(res); };
     for (const k of [3, 4]) for (let u = 0; u < 27; u++) {
       const cells = UNITS[u].filter(c => !st.val[c]);
       if (cells.length <= k) continue;
@@ -475,6 +487,7 @@
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
         say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue dot. The count proves every blue dot true.');
         say(res, 'Any other ' + d + ' in those ' + cn + ' is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
+        linkToGroups(res);
         out.push(res);
       }
     }
