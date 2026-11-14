@@ -149,7 +149,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     <div class="row">
       <label for="sample">Example</label>
       <select id="sample"></select>
-      <button id="again" type="button" hidden>Another random puzzle</button>
+      <button id="rand" type="button">Random</button>
+      <button id="randEasy" type="button">Random (single cells only)</button>
     </div>
     <div class="row">
       <label for="puzzle">Your own puzzle</label>
@@ -1536,27 +1537,26 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   }
 
   /* ---------- wiring ---------- */
-  /* The list: the example puzzle, then the two random choices, then one example per technique. */
-  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>' + (i === 0 ? '<option value="random">Random</option><option value="easy">Random (single cells only)</option>' : ''); }).join('');
+  /* The list holds only fixed puzzles. A random puzzle shows as "Random puzzle" in it, an entry that cannot be picked. */
+  $('sample').innerHTML = '<option value="" disabled hidden>Random puzzle</option>' + SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>'; }).join('');
   function setAuto(on) { autoFill = on; $('autofill').checked = on; }
   function loadRandom(easy) {
+    if (easy && autoFill) { setAuto(false); forcedOff = true; }
+    if (!easy && forcedOff) { setAuto(true); forcedOff = false; }
     var made = E.randomPuzzle(null, easy);
-    $('puzzle').value = made.puzzle;
+    $('puzzle').value = made.puzzle; $('sample').value = '';
     if (!load(made.puzzle, null)) return;
     $('loadmsg').textContent = easy ? 'Loaded a new puzzle that single candidate cells alone finish. Skipping them is off, so each cell is a step you can watch.'
       : 'Loaded a new random puzzle with exactly one solution.' + (made.finishes ? ' It needs ' + made.moves + ' move' + (made.moves === 1 ? '' : 's') + ' beyond the single candidate cells.' : '');
   }
   function pickSample() {
-    var v = $('sample').value, easy = v === 'easy';
-    $('again').hidden = !(v === 'random' || easy);
-    $('again').textContent = 'Another random puzzle';
-    if (easy && autoFill) { setAuto(false); forcedOff = true; }
-    if (!easy && forcedOff) { setAuto(true); forcedOff = false; }
-    if (v === 'random' || easy) { loadRandom(easy); return; }
+    var v = $('sample').value; if (v === '') return;
+    if (forcedOff) { setAuto(true); forcedOff = false; }
     var sm = SAMPLES[+v]; $('puzzle').value = sm.puzzle; load(sm.puzzle, sm.tech);
   }
   $('sample').addEventListener('change', function () { interrupt(); pickSample(); });
-  $('again').addEventListener('click', function () { interrupt(); loadRandom($('sample').value === 'easy'); });
+  $('rand').addEventListener('click', function () { interrupt(); loadRandom(false); });
+  $('randEasy').addEventListener('click', function () { interrupt(); loadRandom(true); });
   /* Switching automatic filling on fills what is easy right now; switching it off changes nothing on the board. */
   $('autofill').addEventListener('change', function () {
     interrupt(); forcedOff = false; autoFill = this.checked;

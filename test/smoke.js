@@ -41,7 +41,7 @@ while ($('tname').textContent !== 'Solved' && guard++ < 300) {
 log.push('tour: ' + $('tname').textContent + ' after ' + guard + ' clicks; techniques shown: ' + [...techs].join(', '));
 // 4. every sample loads and shows its technique
 const sel = $('sample');
-if (sel.options[0].value !== '0' || sel.options[1].value !== 'random' || sel.options[1].textContent !== 'Random') throw new Error('"Random" is not right after the tour puzzle');
+if ([...sel.options].some(o => /random|easy/.test(o.value)) || sel.options[1].value !== '0' || !$('rand') || !$('randEasy') || $('again')) throw new Error('the list should hold only fixed puzzles, with Random buttons beside it');
 for (const opt of [...sel.options].filter(o => /^[1-9]\d*$/.test(o.value))) {
   sel.value = opt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   const name = opt.textContent, shown = $('tname').textContent;
@@ -163,12 +163,11 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   log.push('moves only: loop shown, then removal, no steps');
   // 6h. "Random sudoku": a fresh proper puzzle each time, which play can finish
   document.documentElement.setAttribute('data-instant', '1');
-  const again = $('again');
+  const again = $('rand');
   loadSample(4);
-  if (!again.hidden) throw new Error('"Another random puzzle" should be hidden for built-in examples');
-  const pickRandom = () => { sel.value = 'random'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true })); };
+  const pickRandom = () => click(again);
   pickRandom();
-  if (again.hidden) throw new Error('"Another random puzzle" is not shown');
+  if (sel.value !== '' || sel.options[sel.selectedIndex].textContent !== 'Random puzzle') throw new Error('the list should read Random puzzle while a random puzzle is loaded');
   const seen = new Set();
   for (let n = 0; n < 6; n++) {
     if (n) click(again);
@@ -244,10 +243,9 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
   loadSample(4);
   if (!auto.checked || easyBtn()) throw new Error('automatic filling should be on by default, with no Easy cell button');
-  if (sel.options[2].value !== 'easy' || sel.options[2].textContent !== 'Random (single cells only)') throw new Error('"Random easy sudoku" is not after "Random sudoku"');
-  sel.value = 'easy'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  const againEasy = $('randEasy'); if (againEasy.textContent !== 'Random (single cells only)') throw new Error('no Random (single cells only) button');
+  click(againEasy);
   if (auto.checked) throw new Error('an easy puzzle should switch automatic filling off');
-  if (again.hidden || again.textContent !== 'Another random puzzle') throw new Error('no "Another random puzzle" button');
   const ep = $('puzzle').value, givens = ep.replace(/\./g, '').length;
   if (!E.check(ep).ok) throw new Error('easy puzzle is not a proper sudoku');
   if ($('grid').querySelectorAll('text[font-size="34"]').length !== givens) throw new Error('cells were filled in although automatic filling is off');
@@ -258,7 +256,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   const kinds = new Set(); const w2 = setInterval(() => { if (!$('stepnav').hidden) kinds.add($('tname').textContent.replace(/ \(.*/, '')); }, 0);
   click(play); await until(() => play.textContent !== 'Pause', 30000, 'play to finish an easy puzzle'); clearInterval(w2);
   if ($('tname').textContent !== 'Solved' || [...kinds].join() !== 'Single candidate') throw new Error('easy puzzle: ' + $('tname').textContent + ' using ' + [...kinds].join(', '));
-  click(again); if ($('puzzle').value === ep || auto.checked) throw new Error('"Another easy sudoku" did not give a new easy puzzle');
+  click(againEasy); if ($('puzzle').value === ep || auto.checked) throw new Error('a second click did not give a new single-cells puzzle');
   loadSample(4);
   if (!auto.checked || easyBtn()) throw new Error('leaving the easy puzzle should switch automatic filling back on');
   auto.checked = false; auto.dispatchEvent(new dom.window.Event('change', { bubbles: true })); click($('reset'));

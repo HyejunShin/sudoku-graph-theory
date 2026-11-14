@@ -58,8 +58,8 @@ The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves
 Open `index.html` directly; it needs no server and no build step.
 
 - Paste a puzzle as 81 characters, row by row, with `.` or `0` for empty cells (spaces and line breaks are fine). Or pick one of the built-in examples.
-- Choose **Random** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
-- **Skip single candidate cells** is on by default: cells with one candidate left, and digits with one place left, are filled without being shown. Switch it off to start from every candidate and have each such cell appear as its own step. **Random (single cells only)** gives a puzzle those cells alone finish, with the switch off so there is something to watch.
+- **Random**, next to the example list, gives a fresh puzzle on every click. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
+- **Skip single candidate cells** is on by default: cells with one candidate left, and digits with one place left, are filled without being shown. Switch it off to start from every candidate and have each such cell appear as its own step. The **Random (single cells only)** button gives a puzzle those cells alone finish, with the switch off so there is something to watch.
 - Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
 - Choose a technique to see a move of that kind. Each move lists the chain of forced steps behind it; click a step (or use the arrow keys) and the board marks candidates true or false. **Apply** carries the move out.
 - **Play** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Click the board to pause.
