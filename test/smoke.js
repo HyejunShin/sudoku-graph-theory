@@ -261,6 +261,27 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   auto.checked = true; auto.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   if ($('grid').querySelectorAll('text[font-size="34"]').length <= before81 || easyBtn() || $('stepnav').hidden) throw new Error('switching it on should fill the easy cells and show the next move');
   log.push('easy cells: switch, one-line steps, Random easy sudoku finished by play using only Easy cell');
+  // 6k. the graph view: one dot per candidate or group, the same marks as the board, and no two dots on top of each other
+  document.documentElement.setAttribute('data-instant', '1');
+  for (const nm of ['Skyscraper', 'X-Wing', 'XY-Wing', '3D Medusa', 'Locked pair']) {
+    const o = [...sel.options].find(x => x.textContent === nm); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    const gnodes = [...$('graph').querySelectorAll('g[data-node]')];
+    if (gnodes.length < 3) throw new Error(nm + ': the graph view has only ' + gnodes.length + ' dots');
+    const pts = gnodes.map(g => { const c = g.querySelector('circle'); return [+c.getAttribute('cx'), +c.getAttribute('cy')]; });
+    for (let a = 0; a < pts.length; a++) for (let b = a + 1; b < pts.length; b++) if (Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]) < 30) throw new Error(nm + ': two dots of the graph view overlap');
+    if (pts.some(q => q[0] < 15 || q[0] > 505 || q[1] < 15 || q[1] > 285)) throw new Error(nm + ': a dot of the graph view is off the picture');
+    const boardRed = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length, graphRed = $('graph').querySelectorAll('circle[stroke="var(--out)"]').length;
+    if (boardRed !== graphRed) throw new Error(nm + ': board shows ' + boardRed + ' red dots, graph ' + graphRed);
+    click($('fwd')); click($('fwd')); click($('fwd'));
+    const bt = $('grid').querySelectorAll('circle[stroke="var(--true)"]').length, gt = $('graph').querySelectorAll('circle[stroke="var(--true)"]').length;
+    if (bt !== gt) throw new Error(nm + ': at the same step the board has ' + bt + ' green dots and the graph ' + gt);
+  }
+  { const o = [...sel.options].find(x => x.textContent === 'Locked triple'); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=group]:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
+    click(document.querySelector('#techs button[data-key=group]'));
+    const blue = [...$('graph').querySelectorAll('g[data-node]')].filter(g => g.getAttribute('data-node').split(' ').length === 3);
+    if (blue.length !== 1) throw new Error('the locked triple should be one dot in the graph view'); }
+  log.push('graph view: dots match the board, none overlap, a group is one dot');
   if (scrolls) throw new Error('the page scrolled by itself ' + scrolls + ' times');
   log.push('scrolling: none');
   console.log(log.join('\n')); console.log('errors:', errors.length ? errors : 'none');

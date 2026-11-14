@@ -616,9 +616,15 @@
     const nearest = (X, Y) => { let best = null; for (const a of X) for (const b of Y) { const dist = Math.abs(ROW(cCell(a)) - ROW(cCell(b))) + Math.abs(COL(cCell(a)) - COL(cCell(b))) + Math.abs(cDig(a) - cDig(b)) * 0.1; if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
     const describe = (S, name) => 'Set ' + name + ': ' + cellList(S.cs) + ' hold' + (S.cs.length === 1 ? 's' : '') + ' ' + (S.cs.length + 1) + ' digits in ' + S.cs.length + (S.cs.length === 1 ? ' cell' : ' cells');
     const start = (name, theorem, used) => { const res = mkResult(name, theorem); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
-    const finish = (res, elim) => { elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim; linkToGroups(res); out.push(res); };
+    const finish = (res, elim) => {
+      elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+      // the first removed candidate closes the loop: a dashed link to every blue dot it sees whole; the others get one each
+      for (const g of res.groups) if (g.length && g.every(m => linked(elim[0], m))) dashedLater.push([res, [elim[0]], g]);
+      linkToGroups(res); out.push(res);
+    };
     const solid = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: true, group: true }); };
     const dashed = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: false, group: true }); };
+    const dashedLater = [];
 
     // weak links between sets: a digit whose places in one all see its places in the other
     const pairs = [];
@@ -636,7 +642,7 @@
         const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
         const ZA = dot(A, z), ZB = dot(B, z), XA = dot(A, x), XB = dot(B, x), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
         const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through two almost-locked sets', [A, B]);
-        XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB];
+        XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB]; res.dots = [XA, XB];
         solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, ZB);
         say(res, describe(A, 'A') + ', one too many. ' + describe(B, 'B') + '.');
         say(res, 'In such a set, two digits cannot both be missing: the cells would be short of digits. So inside A the blue ' + z + 's and the orange ' + x + 's cannot both be false (solid line), and the same inside B.');
@@ -676,7 +682,7 @@
           const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
           const ZA = dot(A, z), XA = dot(A, x), XB = dot(B, x), YB = dot(B, y), YC = dot(C, y), ZC = dot(C, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
           const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through three almost-locked sets', [A, B, C]);
-          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC];
+          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC]; res.dots = [XA, XB, YB, YC];
           solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, YB); dashed(res, YB, YC); solid(res, YC, ZC);
           say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. ' + describe(C, 'C') + '. Each has one digit too many.');
           say(res, 'Inside each set two digits cannot both be missing (solid lines). The ' + x + 's of A and B all see each other, and so do the ' + y + 's of B and C (dashed lines). With the red ' + z + ' this is an odd loop.');
@@ -692,6 +698,7 @@
         if (out.length >= LIMIT) break;
       }
     }
+    for (const [res, X, Y] of dashedLater) dashed(res, X, Y);
     return out;
   }
 

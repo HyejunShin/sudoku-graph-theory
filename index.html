@@ -42,6 +42,12 @@ p { margin: 0; }
   .board { position: sticky; top: 0; z-index: 5; max-width: 460px; width: 100%; align-self: center; box-shadow: 0 6px 14px -10px var(--ink); }
 }
 @media (min-width: 900px) { .cols > .stack:first-child { position: sticky; top: 16px; } }
+#graph { display: block; width: 100%; height: auto; }
+#graphcard[hidden] { display: none; }
+@media (max-width: 899px) {
+  /* phone: board, then its graph, then the controls */
+  .cols .card { order: 4; } .cols .board { order: 1; } #graphcard { order: 2; } .cols section[aria-label="Moves"] { order: 3; }
+}
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 label { font-size: 13px; color: var(--muted); }
 select, input[type="text"] { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
@@ -90,18 +96,18 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
 /* While playing, the play button gets a ring so it reads as active. */
 #play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
-#grid .going, #grid .landing { transform-box: fill-box; transform-origin: center; }
-#grid .going { animation: going var(--dur, 1100ms) ease-in forwards; }
-#grid .going .strike { stroke-dasharray: 26; stroke-dashoffset: 26; animation: strike calc(var(--dur, 1100ms) * 0.2) linear calc(var(--dur, 1100ms) * 0.45) forwards; }
-#grid .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
+svg .going, svg .landing { transform-box: fill-box; transform-origin: center; }
+svg .going { animation: going var(--dur, 1100ms) ease-in forwards; }
+svg .going .strike { stroke-dasharray: 26; stroke-dashoffset: 26; animation: strike calc(var(--dur, 1100ms) * 0.2) linear calc(var(--dur, 1100ms) * 0.45) forwards; }
+svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 #grid .fresh-bg { fill-opacity: 0; animation: freshbg 1000ms ease-out; }
 @keyframes going { 0% { transform: scale(1); opacity: 1; } 12% { transform: scale(1.55); } 24% { transform: scale(1); } 36% { transform: scale(1.55); } 48% { transform: scale(1); } 78% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.2); opacity: 0; } }
 @keyframes strike { to { stroke-dashoffset: 0; } }
 @keyframes landing { 0%, 100% { transform: scale(1); } 25%, 75% { transform: scale(1.55); } 50% { transform: scale(1.1); } }
 @keyframes freshbg { from { fill-opacity: 0.5; } to { fill-opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  #grid .going, #grid .landing, #grid .fresh-bg, #grid .going .strike { animation: none; }
-  #grid .going .strike { stroke-dashoffset: 0; }
+  svg .going, svg .landing, #grid .fresh-bg, svg .going .strike { animation: none; }
+  svg .going .strike { stroke-dashoffset: 0; }
 }
 </style>
 </head>
@@ -160,6 +166,12 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     </div>
 
     <div class="stack">
+
+      <section class="card" id="graphcard" aria-label="The move as a graph">
+        <h2>The same move as a graph</h2>
+        <p class="sub" id="graphnote">One dot per candidate, or per group of candidates that acts as one. Solid: at least one end is true. Dashed: not both. The colours follow the steps.</p>
+        <svg id="graph" viewBox="0 0 520 300" role="img" aria-label="The current move drawn as a graph"></svg>
+      </section>
 
       <section class="card" aria-label="Techniques">
         <h2>Techniques available now</h2>
@@ -804,9 +816,15 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     const nearest = (X, Y) => { let best = null; for (const a of X) for (const b of Y) { const dist = Math.abs(ROW(cCell(a)) - ROW(cCell(b))) + Math.abs(COL(cCell(a)) - COL(cCell(b))) + Math.abs(cDig(a) - cDig(b)) * 0.1; if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
     const describe = (S, name) => 'Set ' + name + ': ' + cellList(S.cs) + ' hold' + (S.cs.length === 1 ? 's' : '') + ' ' + (S.cs.length + 1) + ' digits in ' + S.cs.length + (S.cs.length === 1 ? ' cell' : ' cells');
     const start = (name, theorem, used) => { const res = mkResult(name, theorem); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
-    const finish = (res, elim) => { elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim; linkToGroups(res); out.push(res); };
+    const finish = (res, elim) => {
+      elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+      // the first removed candidate closes the loop: a dashed link to every blue dot it sees whole; the others get one each
+      for (const g of res.groups) if (g.length && g.every(m => linked(elim[0], m))) dashedLater.push([res, [elim[0]], g]);
+      linkToGroups(res); out.push(res);
+    };
     const solid = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: true, group: true }); };
     const dashed = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: false, group: true }); };
+    const dashedLater = [];
 
     // weak links between sets: a digit whose places in one all see its places in the other
     const pairs = [];
@@ -824,7 +842,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
         const ZA = dot(A, z), ZB = dot(B, z), XA = dot(A, x), XB = dot(B, x), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
         const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through two almost-locked sets', [A, B]);
-        XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB];
+        XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB]; res.dots = [XA, XB];
         solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, ZB);
         say(res, describe(A, 'A') + ', one too many. ' + describe(B, 'B') + '.');
         say(res, 'In such a set, two digits cannot both be missing: the cells would be short of digits. So inside A the blue ' + z + 's and the orange ' + x + 's cannot both be false (solid line), and the same inside B.');
@@ -864,7 +882,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
           const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
           const ZA = dot(A, z), XA = dot(A, x), XB = dot(B, x), YB = dot(B, y), YC = dot(C, y), ZC = dot(C, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
           const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through three almost-locked sets', [A, B, C]);
-          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC];
+          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC]; res.dots = [XA, XB, YB, YC];
           solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, YB); dashed(res, YB, YC); solid(res, YC, ZC);
           say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. ' + describe(C, 'C') + '. Each has one digit too many.');
           say(res, 'Inside each set two digits cannot both be missing (solid lines). The ' + x + 's of A and B all see each other, and so do the ' + y + 's of B and C (dashed lines). With the red ' + z + ' this is an odd loop.');
@@ -880,6 +898,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         if (out.length >= LIMIT) break;
       }
     }
+    for (const [res, X, Y] of dashedLater) dashed(res, X, Y);
     return out;
   }
 
@@ -1245,6 +1264,111 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     });
     $('techs').innerHTML = h;
   }
+  /* ---------- the move as a clean graph ----------
+     The same dots and links as on the board, laid out so that nothing overlaps. A group of candidates that acts as
+     one dot is drawn as one dot. Colours and marks are the ones the board shows at the same step. */
+  var layouts = new WeakMap();
+  function cellsLabel(cells) {
+    var rows = cells.map(E.ROW), cols = cells.map(E.COL), same = function (a) { return a.every(function (x) { return x === a[0]; }); };
+    if (cells.length === 1) return E.cellName(cells[0]);
+    if (same(rows)) return 'r' + (rows[0] + 1) + 'c' + cols.map(function (c) { return c + 1; }).join('');
+    if (same(cols)) return 'r' + rows.map(function (r) { return r + 1; }).join('') + 'c' + (cols[0] + 1);
+    return cells.map(E.cellName).join(' ');
+  }
+  function buildGraph(res) {
+    var owner = {}, nodes = [], byKey = {};
+    var add = function (ids) {
+      var cells = [], digs = [];
+      ids.forEach(function (id) { if (cells.indexOf(E.cCell(id)) < 0) cells.push(E.cCell(id)); if (digs.indexOf(E.cDig(id)) < 0) digs.push(E.cDig(id)); });
+      var n = { ids: ids, big: digs.sort().join(''), small: cellsLabel(cells), group: ids.length > 1, deg: 0 };
+      ids.forEach(function (id) { owner[id] = n; }); nodes.push(n); return n;
+    };
+    (res.groups || []).concat(res.dots || []).forEach(function (g) { if (g.length && owner[g[0]] === undefined) add(g.slice()); });
+    var node = function (id) { return owner[id] || add([id]); }, edges = [];
+    res.links.forEach(function (l) {
+      var a = node(l.a), b = node(l.b); if (a === b) return;
+      var ia = nodes.indexOf(a), ib = nodes.indexOf(b), key = Math.min(ia, ib) + '-' + Math.max(ia, ib);
+      if (byKey[key]) { byKey[key].strong = byKey[key].strong || l.strong; return; }
+      byKey[key] = { a: a, b: b, strong: l.strong }; edges.push(byKey[key]); a.deg++; b.deg++;
+    });
+    res.elim.concat(res.place).forEach(node);
+    if (!edges.length) res.nodes.forEach(function (role, id) { node(id); });
+    // layout: a single loop goes on an ellipse; anything else is spread by a small spring simulation
+    var W = 520, H = 300, cx = W / 2, cy = H / 2 - 4, n = nodes.length, adj = nodes.map(function () { return []; });
+    edges.forEach(function (e) { adj[nodes.indexOf(e.a)].push(nodes.indexOf(e.b)); adj[nodes.indexOf(e.b)].push(nodes.indexOf(e.a)); });
+    var order = [], seen = {}, startAt = 0;
+    nodes.forEach(function (x, i) { if (x.deg > nodes[startAt].deg) startAt = i; });
+    var walk = function (i) { seen[i] = 1; order.push(i); adj[i].forEach(function (j) { if (!seen[j]) walk(j); }); };
+    walk(startAt); nodes.forEach(function (x, i) { if (!seen[i]) walk(i); });
+    var rx = Math.min(205, 60 + n * 22), ry = Math.min(100, 40 + n * 10);
+    order.forEach(function (i, k) { var t = -Math.PI / 2 + 2 * Math.PI * k / n; nodes[i].x = cx + rx * Math.cos(t); nodes[i].y = cy + ry * Math.sin(t); });
+    // If the graph has a loop, the longest one through the first removed candidate goes on the ellipse, so the loop reads as a loop.
+    var fixed = {}, cyc = null;
+    if (n >= 3 && n <= 16) {
+      var s0 = res.elim.length && owner[res.elim[0]] ? nodes.indexOf(owner[res.elim[0]]) : startAt, path = [s0], on = {}; on[s0] = 1;
+      var dfs = function (i) {
+        adj[i].forEach(function (j) {
+          if (j === s0 && path.length >= 3 && (!cyc || path.length > cyc.length)) cyc = path.slice();
+          if (!on[j]) { on[j] = 1; path.push(j); dfs(j); path.pop(); on[j] = 0; }
+        });
+      };
+      if (adj[s0].length >= 2) dfs(s0);
+    }
+    if (cyc) {
+      var m = cyc.length, crx = Math.min(190, 70 + m * 20), cry = Math.min(92, 46 + m * 8);
+      cyc.forEach(function (i, k) { var t = -Math.PI / 2 + 2 * Math.PI * k / m; nodes[i].x = cx + crx * Math.cos(t); nodes[i].y = cy + cry * Math.sin(t); fixed[i] = 1; });
+      nodes.forEach(function (x, i) { if (fixed[i]) return; var nb = adj[i].filter(function (j) { return fixed[j]; })[0]; if (nb !== undefined) { x.x = cx + (nodes[nb].x - cx) * 1.5 + (i % 2 ? 9 : -9); x.y = cy + (nodes[nb].y - cy) * 1.5; } });
+    }
+    if (n > 2 && !(cyc && cyc.length === n)) {
+      var k0 = Math.sqrt(W * H / n) * 0.62;
+      for (var it = 0; it < 220; it++) {
+        var disp = nodes.map(function () { return { x: 0, y: 0 }; }), temp = (cyc ? 10 : 26) * (1 - it / 220) + 0.5;
+        for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = (nodes[i].y - nodes[j].y) * 1.5, d = Math.sqrt(dx * dx + dy * dy) || 0.01, f = k0 * k0 / d;
+          disp[i].x += dx / d * f; disp[i].y += dy / d * f; disp[j].x -= dx / d * f; disp[j].y -= dy / d * f;
+        }
+        edges.forEach(function (e) {
+          var a = nodes.indexOf(e.a), b = nodes.indexOf(e.b), dx = nodes[a].x - nodes[b].x, dy = nodes[a].y - nodes[b].y, d = Math.sqrt(dx * dx + dy * dy) || 0.01, f = d * d / k0;
+          disp[a].x -= dx / d * f; disp[a].y -= dy / d * f; disp[b].x += dx / d * f; disp[b].y += dy / d * f;
+        });
+        nodes.forEach(function (x, i) {
+          if (fixed[i]) return;
+          var d = Math.sqrt(disp[i].x * disp[i].x + disp[i].y * disp[i].y) || 0.01, mv = Math.min(d, temp);
+          x.x = Math.max(34, Math.min(W - 34, x.x + disp[i].x / d * mv + (cx - x.x) * 0.012)); x.y = Math.max(30, Math.min(H - 44, x.y + disp[i].y / d * mv + (cy - x.y) * 0.012));
+        });
+      }
+    }
+    return { nodes: nodes, edges: edges, owner: owner };
+  }
+  function drawGraph() {
+    var svg = $('graph'), card = $('graphcard');
+    if (view.kind !== 'result') { svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Tap a technique to see its graph.</text>'; return; }
+    var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
+    var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
+    if (removing) res.elim.forEach(function (id) { going[id] = 1; });
+    var colour = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3] };
+    var kindOf = function (n) {
+      var id = n.ids[0], role = res.nodes.get(id) || 'loop', kind = role;
+      if (step && step.marks) kind = step.marks[id] ? step.marks[id] : (role === 'elim' ? 'loop' : role);
+      if (res.wrapClass !== undefined && view.step === null) kind = role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+      return kind;
+    };
+    var line = function (a, b, style) { var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1, ra = a.group ? 22 : 17, rb = b.group ? 22 : 17;
+      return '<line x1="' + (a.x + dx / len * ra).toFixed(1) + '" y1="' + (a.y + dy / len * ra).toFixed(1) + '" x2="' + (b.x - dx / len * rb).toFixed(1) + '" y2="' + (b.y - dy / len * rb).toFixed(1) + '" ' + style + ' stroke-linecap="round"/>'; };
+    g.edges.forEach(function (e) { s += line(e.a, e.b, e.strong ? 'stroke="var(--ink)" stroke-width="3"' : 'stroke="var(--muted)" stroke-width="1.8" stroke-dasharray="6 5"'); });
+    if (step && step.clash && g.owner[step.clash[0]] && g.owner[step.clash[1]] && g.owner[step.clash[0]] !== g.owner[step.clash[1]]) s += line(g.owner[step.clash[0]], g.owner[step.clash[1]], 'stroke="var(--out)" stroke-width="4"');
+    g.nodes.forEach(function (n) {
+      var c = colour[kindOf(n)] || colour.loop, r = n.group ? 21 : 16, out = n.ids.some(function (id) { return going[id]; });
+      var body = (n.group ? '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + (r + 4) + '" fill="none" stroke="' + c[0] + '" stroke-width="1.5"/>' : '')
+        + '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="var(--panel)"/><circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="' + c[1] + '" fill-opacity="' + c[2] + '" stroke="' + c[0] + '" stroke-width="2.2"/>'
+        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
+        + (out ? '<line class="strike" x1="' + (n.x - 13) + '" y1="' + (n.y + 13) + '" x2="' + (n.x + 13) + '" y2="' + (n.y - 13) + '" stroke="var(--out)" stroke-width="2.5" stroke-linecap="round"/>' : '');
+      s += '<g' + (out ? ' class="going"' : '') + ' data-node="' + n.ids.join(' ') + '">' + body + '</g>'
+        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one dot' : '') + '</text>';
+    });
+    svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
+    svg.innerHTML = s;
+  }
   function drawExplain() {
     var nav = $('stepnav'), ol = $('steps');
     if (view.kind === 'result') {
@@ -1275,7 +1399,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     $('digits').innerHTML = dg;
   }
   function render() {
-    draw(); drawTechs(); drawExplain();
+    draw(); drawTechs(); drawExplain(); drawGraph();
     $('undo').disabled = !history.length;
     /* While playing, the explanation card never shrinks between moves, so the page below it does not jump. */
     var ex = $('explain');
