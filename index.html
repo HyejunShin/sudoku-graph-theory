@@ -78,7 +78,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
-#play[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* The play button is yellow in both themes so it is easy to find; the text stays dark for contrast. */
+#play { background: #f6c72a; border-color: #c99700; color: #18212b; font-weight: 600; }
+#play:hover:not(:disabled) { background: #eab308; border-color: #a87f00; }
+#play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #18212b; }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
 #grid .going, #grid .landing { transform-box: fill-box; transform-origin: center; }
 #grid .going { animation: going var(--dur, 1100ms) ease-in forwards; }
