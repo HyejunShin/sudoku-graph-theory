@@ -37,8 +37,17 @@ p { margin: 0; }
 .stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .board { padding: 8px; }
 .board .controls { margin-top: 8px; gap: 6px; flex-wrap: nowrap; }
-.board .controls select { flex: 0 1 auto; min-width: 0; padding: 7px 6px; }
-.board .controls button { padding: 7px 12px; }
+/* every control has a fixed width, so nothing moves when a label or the speed changes; Play sits at the right end */
+.board .controls select { flex: 0 0 5.6em; width: 5.6em; min-width: 0; padding: 7px 4px; }
+.board .controls button { flex: 0 0 auto; padding: 7px 10px; }
+.board .controls #play { margin-left: auto; flex: 0 0 6.4em; width: 6.4em; padding: 7px 0; text-align: center; }
+@media (max-width: 420px) {
+  .board .controls { gap: 4px; }
+  .board .controls select, .board .controls button { font-size: 14px; }
+  .board .controls select { flex-basis: 6em; width: 6em; padding: 6px 2px; font-size: 13px; }
+  .board .controls button { padding: 6px 7px; }
+  .board .controls #play { flex-basis: 5.2em; width: 5.2em; }
+}
 /* the running commentary stays available to screen readers, but is only shown when something went wrong */
 #status:not(.bad) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 #status.bad { margin: 6px 2px 0; }
@@ -102,8 +111,6 @@ label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; fo
 label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
 /* The play button always has the width of its longest label, so it does not resize between Play, Pause and Resume.
    The hidden ::after holds that longest label and takes no height. */
-#play { display: inline-grid; justify-items: center; }
-#play::after { content: 'Resume'; height: 0; overflow: hidden; visibility: hidden; }
 /* While playing, the play button gets a ring so it reads as active. */
 #play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
@@ -157,15 +164,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       <section class="card board" aria-label="Board">
         <svg id="grid" viewBox="0 0 544 544" role="img" aria-label="Sudoku board with candidates"></svg>
         <div class="row controls">
-          <button id="play" type="button" class="primary" aria-pressed="false">Play</button>
           <select id="speed" aria-label="Playback speed">
             <option value="1700">Slow</option>
             <option value="600">Normal</option>
             <option value="250" selected>Fast</option>
-            <option value="1000" data-skip="1">Moves only</option>
+            <option value="1000" data-skip="1">Moves</option>
           </select>
           <button id="undo" type="button">Undo</button>
           <button id="reset" type="button">Reset</button>
+          <button id="play" type="button" class="primary" aria-pressed="false">Play</button>
         </div>
         <p class="msg" id="status" role="status"></p>
       </section>
@@ -183,7 +190,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
 
       <section class="card" id="graphcard" aria-label="The move as a graph">
-        <h2>Bipartite graph</h2>
+        <h2>Graph of this move</h2>
         <svg id="graph" viewBox="0 0 520 300" role="img" aria-label="The current move drawn as a graph"></svg>
       </section>
 
@@ -1128,7 +1135,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   /* Tests set data-instant="1" on <html> to skip every wait. */
   function instant() { return document.documentElement.getAttribute('data-instant') === '1'; }
   function pace() { return instant() ? 0 : +$('speed').value; }
-  /* "Moves only" shows each loop and its removal, without walking through the argument. */
+  /* "Moves" shows each loop and its removal, without walking through the argument. */
   function skipSteps() { var sp = $('speed'), o = sp.options[sp.selectedIndex]; return !!o && o.getAttribute('data-skip') === '1'; }
   function removalMs() { return instant() ? 0 : Math.max(300, Math.min(1600, Math.round(pace() * 0.7))); }
 
