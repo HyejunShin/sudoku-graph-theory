@@ -28,9 +28,10 @@ while ($('tname').textContent !== 'Solved' && guard++ < 300) {
 log.push('tour: ' + $('tname').textContent + ' after ' + guard + ' clicks; techniques shown: ' + [...techs].join(', '));
 // 4. every sample loads and shows its technique
 const sel = $('sample');
-for (let i = 1; i < sel.options.length; i++) {
-  sel.value = String(i); sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-  const name = sel.options[i].textContent, shown = $('tname').textContent;
+if (sel.options[0].value !== '0' || sel.options[1].value !== 'random' || sel.options[1].textContent !== 'Random sudoku') throw new Error('"Random sudoku" is not right after the tour puzzle');
+for (const opt of [...sel.options].filter(o => /^[1-9]\d*$/.test(o.value))) {
+  sel.value = opt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  const name = opt.textContent, shown = $('tname').textContent;
   if ($('stepnav').hidden) throw new Error('sample ' + name + ' did not show a technique');
   log.push(name + ' -> ' + shown + ' | ' + $('steps').children.length + ' steps | ' + $('theorem').textContent.slice(0, 40));
   click($('fwd')); click($('fwd')); click($('prev')); click($('apply'));
@@ -144,6 +145,31 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   click($('grid'));
   if ($('grid').querySelector('g.going')) throw new Error('pausing did not cancel the removal in progress');
   log.push('moves only: loop shown, then removal, no steps');
+  // 6h. "Random sudoku": a fresh proper puzzle each time, which play can finish
+  document.documentElement.setAttribute('data-instant', '1');
+  const again = $('again');
+  loadSample(4);
+  if (!again.hidden) throw new Error('"Another random sudoku" should be hidden for built-in examples');
+  const pickRandom = () => { sel.value = 'random'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true })); };
+  pickRandom();
+  if (again.hidden) throw new Error('"Another random sudoku" is not shown');
+  const seen = new Set();
+  for (let n = 0; n < 6; n++) {
+    if (n) click(again);
+    const p = $('puzzle').value, chk = E.check(p);
+    if (!chk.ok) throw new Error('random puzzle is not a proper sudoku: ' + chk.reason + ' ' + p);
+    if ($('loadmsg').className.includes('bad') || !$('loadmsg').textContent.includes('random sudoku')) throw new Error('random puzzle did not load: ' + $('loadmsg').textContent);
+    if ($('tname').textContent === 'Solved') throw new Error('random puzzle was solved by easy cells alone: ' + p);
+    if (play.textContent !== 'Play all steps') throw new Error('a new random puzzle should reset the play button');
+    seen.add(p);
+    click(play);
+    await until(() => play.textContent !== 'Pause', 20000, 'play to finish a random puzzle');
+    if ($('tname').textContent !== 'Solved') throw new Error('play could not finish random puzzle ' + p + ': ' + $('status').textContent);
+  }
+  if (seen.size !== 6) throw new Error('random puzzles repeated: ' + seen.size + ' distinct out of 6');
+  click($('reset'));
+  if ($('puzzle').value !== [...seen].pop() || $('tname').textContent === 'Solved') throw new Error('Start over did not restore the same random puzzle');
+  log.push('random: 6 different proper puzzles, each finished by play; Start over keeps the puzzle');
   if (scrolls) throw new Error('the page scrolled by itself ' + scrolls + ' times');
   log.push('scrolling: none');
   console.log(log.join('\n')); console.log('errors:', errors.length ? errors : 'none');

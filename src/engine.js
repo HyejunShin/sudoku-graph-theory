@@ -379,6 +379,53 @@
     { key: 'chain', name: 'Alternating chain', loop: 'odd loop', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' }
   ];
 
-  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, toString, clone, has, alive, place, eliminate, cellsFor,
+  /* ---------- random puzzles ---------- */
+  /* A random full grid: fill the most constrained empty cell with its options in random order, backtracking when stuck. */
+  function randomGrid(rnd) {
+    const v = new Array(81).fill(0);
+    const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; };
+    const fits = (c, d) => { for (const q of PEERS[c]) if (v[q] === d) return false; return true; };
+    const go = () => {
+      let best = -1, opts = null;
+      for (let c = 0; c < 81; c++) if (!v[c]) {
+        const o = []; for (let d = 1; d <= 9; d++) if (fits(c, d)) o.push(d);
+        if (!opts || o.length < opts.length) { best = c; opts = o; if (o.length <= 1) break; }
+      }
+      if (best < 0) return true;
+      for (const d of shuffle(opts)) { v[best] = d; if (go()) return true; }
+      v[best] = 0; return false;
+    };
+    go();
+    return { grid: v, shuffle };
+  }
+  /* Solve a puzzle the way the page does: easy cells, then the simplest technique that applies, repeated. */
+  function playThrough(str) {
+    const st = fromString(str); fillSingles(st);
+    let moves = 0;
+    while (!solved(st) && moves < 200) {
+      let res = null;
+      for (const t of TECHNIQUES) { const rs = t.find(st); if (rs.length) { res = rs[0]; break; } }
+      if (!res) return { solved: false, moves };
+      apply(st, res); fillSingles(st); moves++;
+    }
+    return { solved: solved(st), moves };
+  }
+  /* A random puzzle with exactly one solution that needs at least one technique and that these techniques can finish.
+     Clues are removed in random order for as long as the solution stays unique. About half of such puzzles qualify,
+     so a few tries are enough; after 60 tries the last puzzle is returned whatever it needs. */
+  function randomPuzzle(rnd) {
+    rnd = rnd || Math.random;
+    let out = null;
+    for (let tries = 1; tries <= 60; tries++) {
+      const made = randomGrid(rnd), v = made.grid.slice();
+      for (const i of made.shuffle(Array.from({ length: 81 }, (_, k) => k))) { const keep = v[i]; v[i] = 0; if (solve(v).count !== 1) v[i] = keep; }
+      const puzzle = v.map(x => x || '.').join(''), run = playThrough(puzzle);
+      out = { puzzle, moves: run.moves, finishes: run.solved, tries };
+      if (run.solved && run.moves >= 1) break;
+    }
+    return out;
+  }
+
+  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, randomPuzzle, playThrough, toString, clone, has, alive, place, eliminate, cellsFor,
     solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColouring };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -109,6 +109,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
     <div class="row">
       <label for="sample">Example</label>
       <select id="sample"></select>
+      <button id="again" type="button" hidden>Another random sudoku</button>
     </div>
     <div class="row">
       <label for="puzzle">Your own puzzle</label>
@@ -429,8 +430,20 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
   }
 
   /* ---------- wiring ---------- */
-  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>'; }).join('');
-  $('sample').addEventListener('change', function () { interrupt(); var sm = SAMPLES[+this.value]; $('puzzle').value = sm.puzzle; load(sm.puzzle, sm.tech); });
+  /* The list: the tour puzzle, then "Random sudoku", then one example per technique. */
+  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>' + (i === 0 ? '<option value="random">Random sudoku</option>' : ''); }).join('');
+  function loadRandom() {
+    var made = E.randomPuzzle();
+    $('puzzle').value = made.puzzle;
+    if (load(made.puzzle, null)) $('loadmsg').textContent = 'Loaded a new random sudoku with exactly one solution.' + (made.finishes ? ' It needs ' + made.moves + ' move' + (made.moves === 1 ? '' : 's') + ' beyond the easy cells.' : '');
+  }
+  $('sample').addEventListener('change', function () {
+    interrupt();
+    var random = this.value === 'random'; $('again').hidden = !random;
+    if (random) { loadRandom(); return; }
+    var sm = SAMPLES[+this.value]; $('puzzle').value = sm.puzzle; load(sm.puzzle, sm.tech);
+  });
+  $('again').addEventListener('click', function () { interrupt(); loadRandom(); });
   $('load').addEventListener('click', function () { interrupt(); load($('puzzle').value, null); });
   $('puzzle').addEventListener('keydown', function (e) { if (e.key === 'Enter') { interrupt(); load(this.value, null); } });
   $('next').addEventListener('click', function () { interrupt(); nextStep(false); });

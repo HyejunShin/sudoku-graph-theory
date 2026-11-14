@@ -49,3 +49,21 @@ for (let n = 0; n < N; n++) {
 }
 console.log(JSON.stringify({ counts, used, ms: Date.now() - t0 }, null, 1));
 console.log(JSON.stringify(firstAfterSingles, null, 1));
+
+// Random puzzles from the engine: proper sudokus that need a technique and that the techniques can finish.
+{
+  let s2 = 2024; const rnd2 = () => (s2 = (s2 * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const t1 = Date.now(), M = 40; let tries = 0, moves = 0; const distinct = new Set();
+  for (let n = 0; n < M; n++) {
+    const made = E.randomPuzzle(rnd2), chk = E.check(made.puzzle);
+    if (!chk.ok) throw new Error('randomPuzzle made an improper sudoku: ' + chk.reason);
+    if (!made.finishes || made.moves < 1) throw new Error('randomPuzzle returned a puzzle the techniques cannot finish, or that needs none: ' + made.puzzle);
+    const st = E.fromString(made.puzzle); E.fillSingles(st);
+    if (E.solved(st)) throw new Error('randomPuzzle returned a puzzle solved by easy cells: ' + made.puzzle);
+    const again = E.playThrough(made.puzzle);
+    if (!again.solved || again.moves !== made.moves) throw new Error('playThrough disagrees with randomPuzzle on ' + made.puzzle);
+    tries += made.tries; moves += made.moves; distinct.add(made.puzzle);
+  }
+  if (distinct.size !== M) throw new Error('randomPuzzle repeated itself');
+  console.log('random puzzles: ' + M + ' made, ' + (tries / M).toFixed(1) + ' tries each, ' + (moves / M).toFixed(1) + ' moves each on average, ' + ((Date.now() - t1) / M).toFixed(0) + ' ms each');
+}
