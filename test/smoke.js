@@ -209,7 +209,13 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     click(document.querySelector('#techs button[data-key=' + key + ']'));
     if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error(nm + ' is not drawn with group dots');
     if (!/blue dot/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
-    if (!$('grid').querySelector('line[stroke-dasharray]')) throw new Error(nm + ' has no dashed links from the removed candidates to the group dots');
+    if (!$('grid').querySelector('[stroke-dasharray]')) throw new Error(nm + ' has no dashed links from the removed candidates to the group dots');
+  }
+  // every removed candidate has a dashed link, and links lying along one another are bowed apart
+  for (const i of [1, 2, 3, 4]) {
+    loadSample(i);
+    const reds = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length / 1, dashed = $('grid').querySelectorAll('[stroke-dasharray]').length;
+    if (!reds || dashed < reds) throw new Error(sel.options[sel.selectedIndex].textContent + ': ' + reds + ' removed candidates but only ' + dashed + ' dashed links');
   }
   const xz = [...sel.options].find(o => o.textContent === 'XYZ-Wing'); sel.value = xz.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error('the XYZ-Wing does not show its group dot');

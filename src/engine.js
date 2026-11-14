@@ -142,6 +142,8 @@
     }
     if (!elim.size) return null;
     res.elim = [...elim]; res.elim.forEach(t => res.nodes.set(t, 'elim'));
+    // every removed candidate gets one dashed link, to the nearer end of the loop link it is linked to (it is linked to both ends)
+    for (const x of res.elim) for (let i = 0; i < n; i++) { const a = loop[i], b = loop[(i + 1) % n]; if (linked(x, a) && linked(x, b)) { const far = c => Math.abs(ROW(cCell(x)) - ROW(cCell(c))) + Math.abs(COL(cCell(x)) - COL(cCell(c))); res.links.push({ a: x, b: far(a) <= far(b) ? a : b, strong: false }); break; } }
     const pat = k => { const m = {}; loop.forEach((c, i) => { m[c] = i % 2 === k ? 't' : 'f'; }); res.elim.forEach(c => { m[c] = 'f'; }); return m; };
     if (intro) say(res, intro);
     say(res, 'The ' + n + ' circled candidates form a loop. Its ' + (n / 2) + ' strong links pair them all up, so exactly ' + (n / 2) + ' of them are true.');
@@ -399,8 +401,7 @@
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
         const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one dot');
         group.forEach(g => res.nodes.set(g, 'k0')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
-        group.forEach(g => res.links.push({ a: v, b: g, strong: false }));
-        res.elim = targets;
+        res.elim = targets; linkToGroups(res);
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
         say(res, 'One of the three blue ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
@@ -517,6 +518,7 @@
         res.nodes.set(zp, 'k0'); res.nodes.set(zg, 'k0'); res.groups = first === undefined ? [] : [[zp, zg]];
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         res.links.push({ a: v, b: zp, strong: false }); res.links.push({ a: zg, b: zo, strong: true, group: true }); res.links.push({ a: zo, b: v, strong: false });
+        for (const e of elim.slice(1)) { res.links.push({ a: e, b: zp, strong: false }); res.links.push({ a: e, b: zo, strong: false }); }
         say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(ga) + ', which holds ' + digitList([xa, z].sort()) + ', and ' + cellName(gb) + ', which holds ' + digitList([xb, z].sort()) + '.');
         say(res, 'Take the two blue ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one dot: true when one of them is ' + z + '.');
         say(res, 'If the blue dot is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So the blue dot and ' + candName(zo) + ' cannot both be false: a link found by counting (solid line).');

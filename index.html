@@ -330,6 +330,8 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     }
     if (!elim.size) return null;
     res.elim = [...elim]; res.elim.forEach(t => res.nodes.set(t, 'elim'));
+    // every removed candidate gets one dashed link, to the nearer end of the loop link it is linked to (it is linked to both ends)
+    for (const x of res.elim) for (let i = 0; i < n; i++) { const a = loop[i], b = loop[(i + 1) % n]; if (linked(x, a) && linked(x, b)) { const far = c => Math.abs(ROW(cCell(x)) - ROW(cCell(c))) + Math.abs(COL(cCell(x)) - COL(cCell(c))); res.links.push({ a: x, b: far(a) <= far(b) ? a : b, strong: false }); break; } }
     const pat = k => { const m = {}; loop.forEach((c, i) => { m[c] = i % 2 === k ? 't' : 'f'; }); res.elim.forEach(c => { m[c] = 'f'; }); return m; };
     if (intro) say(res, intro);
     say(res, 'The ' + n + ' circled candidates form a loop. Its ' + (n / 2) + ' strong links pair them all up, so exactly ' + (n / 2) + ' of them are true.');
@@ -587,8 +589,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
         const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one dot');
         group.forEach(g => res.nodes.set(g, 'k0')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
-        group.forEach(g => res.links.push({ a: v, b: g, strong: false }));
-        res.elim = targets;
+        res.elim = targets; linkToGroups(res);
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
         say(res, 'One of the three blue ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
@@ -705,6 +706,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         res.nodes.set(zp, 'k0'); res.nodes.set(zg, 'k0'); res.groups = first === undefined ? [] : [[zp, zg]];
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         res.links.push({ a: v, b: zp, strong: false }); res.links.push({ a: zg, b: zo, strong: true, group: true }); res.links.push({ a: zo, b: v, strong: false });
+        for (const e of elim.slice(1)) { res.links.push({ a: e, b: zp, strong: false }); res.links.push({ a: e, b: zo, strong: false }); }
         say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(ga) + ', which holds ' + digitList([xa, z].sort()) + ', and ' + cellName(gb) + ', which holds ' + digitList([xb, z].sort()) + '.');
         say(res, 'Take the two blue ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one dot: true when one of them is ' + z + '.');
         say(res, 'If the blue dot is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So the blue dot and ' + candName(zo) + ' cannot both be false: a link found by counting (solid line).');
@@ -965,11 +967,25 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
   /* ---------- geometry ---------- */
   var S = 60, M = 2;
   function pos(id) { var cell = E.cCell(id), d = E.cDig(id) - 1; return { x: M + E.COL(cell) * S + 10 + 20 * (d % 3), y: M + E.ROW(cell) * S + 10 + 20 * Math.floor(d / 3) }; }
+  /* Links already drawn in this picture, so that one lying along another can be bowed aside instead of covering it. */
+  var drawn = [];
   function seg(a, b, cls, pad) {
     var p = pos(a), q = pos(b), dx = q.x - p.x, dy = q.y - p.y, len = Math.sqrt(dx * dx + dy * dy) || 1, r = pad === undefined ? 9 : pad;
     var x1 = p.x + dx / len * r, y1 = p.y + dy / len * r, x2 = q.x - dx / len * r, y2 = q.y - dy / len * r;
     var style = cls === 'strong' ? 'stroke="var(--ink)" stroke-width="3"' : cls === 'clash' ? 'stroke="var(--out)" stroke-width="4"' : 'stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4"';
-    return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" ' + style + ' stroke-linecap="round"/>';
+    var over = 0;
+    if (cls !== 'clash') {
+      drawn.forEach(function (o) {
+        var d1 = Math.abs((o.x1 - p.x) * dy - (o.y1 - p.y) * dx) / len, d2 = Math.abs((o.x2 - p.x) * dy - (o.y2 - p.y) * dx) / len;
+        if (o.cls === cls || d1 > 4 || d2 > 4) return;                  // dashed along dashed reads fine; only a dashed link hidden under a solid one (or the reverse) is moved
+        var t1 = ((o.x1 - p.x) * dx + (o.y1 - p.y) * dy) / len, t2 = ((o.x2 - p.x) * dx + (o.y2 - p.y) * dy) / len;
+        if (Math.min(len, Math.max(t1, t2)) - Math.max(0, Math.min(t1, t2)) > 12) over++;   // and they share a stretch
+      });
+      drawn.push({ x1: p.x, y1: p.y, x2: q.x, y2: q.y, cls: cls });
+    }
+    if (!over) return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" ' + style + ' stroke-linecap="round"/>';
+    var bow = Math.min(18, 9 + len * 0.05);
+    return '<path d="M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + ((p.x + q.x) / 2 + dy / len * bow).toFixed(1) + ' ' + ((p.y + q.y) / 2 - dx / len * bow).toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" fill="none" ' + style + ' stroke-linecap="round"/>';
   }
   function ring(id, kind) {
     var p = pos(id), map = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
@@ -981,24 +997,23 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
 
   /* ---------- overlay for the current view ---------- */
   function overlay(skip) {
-    var links = '', rings = '', marked = {};
+    var links = '', rings = '', marked = {}; drawn = [];
     if (view.kind === 'result') {
       var res = view.res, step = view.step === null ? null : res.steps[view.step];
-      /* a group is one dot: draw one outline round its candidates */
+      /* A group is one dot: one blue boundary round its candidates. The boundary is a tube from member to member.
+         Where a candidate that is not in the group lies in the way, the tube bends round it. */
+      var outside = res.elim.slice();   // only candidates being removed must stay outside a boundary
       (res.groups || []).forEach(function (g) {
-        if (res.groupStyle === 'arc') {   // a band that bows between members, so it passes beside any candidate lying between them
-          var qs = g.map(pos).sort(function (m, n) { return m.x - n.x || m.y - n.y; }), dpath = '';
-          for (var gi = 0; gi + 1 < qs.length; gi++) {
-            var A = qs[gi], B = qs[gi + 1], dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy) || 1, bow = Math.min(16, 6 + len * 0.12);
-            dpath += 'M' + A.x + ' ' + A.y + ' Q' + ((A.x + B.x) / 2 + dy / len * bow) + ' ' + ((A.y + B.y) / 2 - dx / len * bow) + ' ' + B.x + ' ' + B.y + ' ';
-          }
-          if (dpath) links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-opacity="0.5" stroke-width="5" stroke-linecap="round"/>';
-          return;
+        if (g.length < 2) return;
+        var qs = g.map(pos).sort(function (m, n) { return m.x - n.x || m.y - n.y; }), others = outside.filter(function (id) { return g.indexOf(id) < 0; }).map(pos), dpath = 'M' + qs[0].x + ' ' + qs[0].y;
+        for (var gi = 0; gi + 1 < qs.length; gi++) {
+          var A = qs[gi], B = qs[gi + 1], dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+          var blocked = others.some(function (o) { var t = ((o.x - A.x) * dx + (o.y - A.y) * dy) / len, dist = Math.abs((o.x - A.x) * dy - (o.y - A.y) * dx) / len; return t > 4 && t < len - 4 && dist < 22; });
+          dpath += blocked ? ' Q' + ((A.x + B.x) / 2 + dy / len * 42) + ' ' + ((A.y + B.y) / 2 - dx / len * 42) + ' ' + B.x + ' ' + B.y : ' L' + B.x + ' ' + B.y;
         }
-        var ps = g.map(pos), xs = ps.map(function (q) { return q.x; }), ys = ps.map(function (q) { return q.y; });
-        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), x1 = Math.max.apply(null, xs), y1 = Math.max.apply(null, ys);
-        if (x0 === x1 || y0 === y1) links += '<rect class="group" x="' + (x0 - 14) + '" y="' + (y0 - 14) + '" width="' + (x1 - x0 + 28) + '" height="' + (y1 - y0 + 28) + '" rx="14" fill="var(--k0)" fill-opacity="0.1" stroke="var(--k0)" stroke-width="2"/>';
-        else links += '<polyline class="group" points="' + ps.map(function (q) { return q.x + ',' + q.y; }).join(' ') + '" fill="none" stroke="var(--k0)" stroke-opacity="0.22" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>';   // members not in line: a slanted capsule
+        links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>'
+          + '<path d="' + dpath + '" fill="none" stroke="var(--panel)" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>'
+          + '<path d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-opacity="0.1" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>';
       });
       res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash ? 'clash' : l.strong ? 'strong' : 'weak'); });
       if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');

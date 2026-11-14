@@ -18,6 +18,8 @@ function check(st, sol, res, tag) {
   for (const id of res.elim) if (sol[E.cCell(id)] === E.cDig(id)) throw new Error(tag + ': eliminated a true candidate ' + E.candName(id));
   for (const id of res.place) if (sol[E.cCell(id)] !== E.cDig(id)) throw new Error(tag + ': placed a false candidate ' + E.candName(id));
   if (!res.elim.length && !res.place.length) throw new Error(tag + ': empty result');
+  // every removed candidate must have a line drawn to it, except where the argument is not about links at all
+  if (res.tech !== 'Unique rectangle' && res.tech !== 'Trial and error') for (const id of res.elim) if (!res.links.some(l => l.a === id || l.b === id)) throw new Error(tag + ': ' + res.tech + ' removes ' + E.candName(id) + ' without drawing a link to it');
   for (const l of res.links) { if (!l.group && !E.linked(l.a, l.b)) throw new Error(tag + ': drawn link is not a link'); if (l.strong && !l.group && !E.strongInfo(st, l.a, l.b)) throw new Error(tag + ': drawn strong link is not strong'); }
 }
 const used = {}, firstAfterSingles = {}, counts = { puzzles: 0, solvedByThese: 0, results: 0 };
