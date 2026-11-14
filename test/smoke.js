@@ -8,6 +8,9 @@ const click = el => el.dispatchEvent(new dom.window.MouseEvent('click', { bubble
 const E = dom.window.SudokuEngine;
 // The page waits between steps and animates removals. data-instant="1" turns every wait off, so the checks below can stay synchronous.
 document.documentElement.setAttribute('data-instant', '1');
+// The page must never scroll by itself: count any attempt.
+let scrolls = 0; dom.window.Element.prototype.scrollIntoView = () => { scrolls++; }; dom.window.scrollTo = () => { scrolls++; };
+if (/scrollIntoView|scrollTo\(|scrollBy\(/.test(html)) throw new Error('the page contains scrolling code');
 const log = [];
 // 1. initial state: tour puzzle loaded, first technique shown
 log.push('title: ' + $('tname').textContent + ' | steps: ' + $('steps').children.length + ' | status: ' + $('status').textContent);
@@ -72,24 +75,35 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   // 6a. play solves the tour puzzle on its own and then stops
   loadSample(0);
   if (play.disabled) throw new Error('play is disabled on a fresh puzzle');
+  if (play.textContent !== 'Play all steps') throw new Error('fresh puzzle: button says ' + play.textContent);
+  if (!(play.compareDocumentPosition($('next')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !(play.compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !($('speed').compareDocumentPosition($('next')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING)) throw new Error('play and speed are not above the manual buttons');
   click(play);
   if (play.textContent !== 'Pause' || play.getAttribute('aria-pressed') !== 'true') throw new Error('play did not start');
   await until(() => play.textContent !== 'Pause', 20000, 'play to finish the tour puzzle');
   if ($('tname').textContent !== 'Solved' || $('grid').querySelector('rect[data-id]')) throw new Error('play stopped before the puzzle was solved: ' + $('status').textContent);
   if (!play.disabled) throw new Error('play should be disabled once the puzzle is solved');
+  if (play.textContent !== 'Play all steps') throw new Error('after finishing, button says ' + play.textContent);
   log.push('play: tour puzzle solved automatically | ' + $('status').textContent);
   // 6b. play can be paused from the board, and nothing changes after the pause
   loadSample(4);
   click(play); await sleep(0);
   click($('grid'));
-  if (play.textContent !== 'Play all steps') throw new Error('tapping the board did not pause');
+  if (play.textContent !== 'Resume') throw new Error('after pausing, button says ' + play.textContent + ' instead of Resume');
   const frozen = $('grid').innerHTML; await sleep(60);
   if ($('grid').innerHTML !== frozen) throw new Error('the board kept changing after pause');
   if ($('tname').textContent === 'Solved') throw new Error('puzzle was solved despite the pause');
-  log.push('pause: ' + $('status').textContent);
+  log.push('pause: ' + $('status').textContent + ' | button: ' + play.textContent);
+  click(play);
+  if (play.textContent !== 'Pause') throw new Error('Resume did not start play again');
+  click(play);
+  if (play.textContent !== 'Resume') throw new Error('Pause button did not pause');
+  loadSample(4);
+  if (play.textContent !== 'Play all steps') throw new Error('a new puzzle should reset the button, but it says ' + play.textContent);
+  click(play); click($('grid')); click($('reset'));
+  if (play.textContent !== 'Play all steps') throw new Error('Start over should reset the button, but it says ' + play.textContent);
   // 6c. any manual button also stops play
   click(play); click($('undo'));
-  if (play.textContent !== 'Play all steps') throw new Error('a manual button did not stop play');
+  if (play.textContent !== 'Resume') throw new Error('a manual button did not stop play');
   // 6d. with waits switched on, Apply first shows the candidates leaving, then changes the board
   document.documentElement.removeAttribute('data-instant');
   $('speed').value = '800';
@@ -130,6 +144,8 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   click($('grid'));
   if ($('grid').querySelector('g.going')) throw new Error('pausing did not cancel the removal in progress');
   log.push('moves only: loop shown, then removal, no steps');
+  if (scrolls) throw new Error('the page scrolled by itself ' + scrolls + ' times');
+  log.push('scrolling: none');
   console.log(log.join('\n')); console.log('errors:', errors.length ? errors : 'none');
   if (errors.length) process.exit(1);
   dom.window.close();

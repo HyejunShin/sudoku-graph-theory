@@ -1,6 +1,13 @@
 # Why Advanced Sudoku Strategies Work
 
-Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they all come down to one question from the theory of **bipartite graphs**: can this loop be coloured with two colours? When it can, true and false alternate round it. When it cannot, something has to give, and that tells you which candidate to remove.
+Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they are one idea from the theory of **bipartite graphs**.
+
+The idea: take a loop of candidates (digits still possible in a cell) in which each one conflicts with the next, so the two cannot both be true. Now try to mark them true, false, true, false all the way round.
+
+- **On a loop with an even number of candidates, the marking fits.** When the puzzle forces it, every neighbouring pair on the loop holds exactly one true candidate. So any other candidate that conflicts with both members of a pair must be false.
+- **On a loop with an odd number, the marking cannot fit.** Somewhere on the loop two neighbours are both false. Working out where that has to happen shows which candidate is false.
+
+Marking things with two labels so that neighbours always differ is called *two-colouring*, and a graph where that is possible is called *bipartite*.
 
 **Try it:** [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
@@ -14,7 +21,7 @@ When a cell is still empty, solvers write in it, in small digits, every digit th
 
 In each empty cell exactly one candidate is the real answer. Call that one **true** and the rest **false**. Solving a sudoku means working out which candidates are false and removing them until one is left in every cell. Every strategy below is a way of proving that some candidate is false.
 
-## The idea
+## The idea, step by step
 
 **1. Candidates are dots, and every line between them is a rule.** Draw each candidate as a dot. The rules of sudoku allow one digit per cell, and each digit once per row, column and box. So some pairs of candidates can never both be true: two digits in the same cell, or the same digit twice in a row, column or box. Join every such pair with a line, called a *link*. A link says "not both".
 

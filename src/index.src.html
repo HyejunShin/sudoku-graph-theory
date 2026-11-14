@@ -40,7 +40,6 @@ p { margin: 0; }
   /* phone: the board stays in view while the steps scroll beneath it */
   .cols, .cols > .stack { display: contents; }
   .board { position: sticky; top: 0; z-index: 5; max-width: 460px; width: 100%; align-self: center; box-shadow: 0 6px 14px -10px var(--ink); }
-  #explain { scroll-margin-top: calc(min(100vw - 32px, 460px) + 12px); }
 }
 @media (min-width: 900px) { .cols > .stack:first-child { position: sticky; top: 16px; } }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -63,8 +62,8 @@ svg#grid { width: 100%; height: auto; display: block; touch-action: manipulation
 .tech .c { font-family: var(--font-mono); font-size: 12px; line-height: 18px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 0 7px; flex: none; }
 .tech[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 ol#steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
-ol#steps li { padding: 4px 6px; border-radius: 6px; cursor: pointer; }
-ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+ol#steps li { padding: 4px 8px 4px 12px; border-radius: 6px; cursor: pointer; }
+ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent); box-shadow: inset 4px 0 0 var(--accent); }
 .theorem { font-size: 13px; color: var(--muted); }
 .digits button { font-family: var(--font-mono); padding: 6px 0; width: 34px; text-align: center; }
 .digits button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
@@ -80,8 +79,6 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 #play[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-ol#steps li { scroll-margin-top: 12px; }
-@media (max-width: 899px) { ol#steps li { scroll-margin-top: calc(min(100vw - 32px, 460px) + 12px); } }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
 #grid .going, #grid .landing { transform-box: fill-box; transform-origin: center; }
 #grid .going { animation: going var(--dur, 1100ms) ease-in forwards; }
@@ -125,12 +122,6 @@ ol#steps li { scroll-margin-top: 12px; }
       </section>
       <section class="card" aria-label="Moves">
         <div class="row">
-          <button id="next" type="button" class="primary">Next step</button>
-          <button id="easy" type="button">Fill easy cells</button>
-          <button id="undo" type="button">Undo</button>
-          <button id="reset" type="button">Start over</button>
-        </div>
-        <div class="row">
           <button id="play" type="button" aria-pressed="false">Play all steps</button>
           <label for="speed">Speed</label>
           <select id="speed" aria-label="Playback speed">
@@ -139,6 +130,12 @@ ol#steps li { scroll-margin-top: 12px; }
             <option value="800">Fast</option>
             <option value="1000" data-skip="1">Moves only</option>
           </select>
+        </div>
+        <div class="row">
+          <button id="next" type="button" class="primary">Next step</button>
+          <button id="easy" type="button">Fill easy cells</button>
+          <button id="undo" type="button">Undo</button>
+          <button id="reset" type="button">Start over</button>
         </div>
         <p class="msg" id="status" role="status"></p>
         <div class="legend" aria-label="Key">
@@ -202,6 +199,7 @@ ol#steps li { scroll-margin-top: 12px; }
   var st = null, original = '', solution = null, history = [], avail = {}, pick = {};
   var view = { kind: 'none' };   // 'result' {res, step}, 'probe' {id}, 'digit' {d}
   var playing = false, playTimer = null;        // automatic play
+  var paused = false;                           // play was stopped part-way, so the button offers to resume
   var removing = false, removeTimer = null;     // a move is being animated off the board
   var fresh = {};                               // cells filled by the last move, flashed once
   /* Tests set data-instant="1" on <html> to skip every wait. */
@@ -341,19 +339,22 @@ ol#steps li { scroll-margin-top: 12px; }
   function render() {
     draw(); drawTechs(); drawExplain();
     $('undo').disabled = !history.length; $('next').disabled = E.solved(st); $('easy').disabled = !E.findSingle(st);
-    var pb = $('play'); pb.disabled = E.solved(st) && !playing; pb.textContent = playing ? 'Pause' : 'Play all steps'; pb.setAttribute('aria-pressed', String(playing));
+    /* While playing, the explanation card never shrinks between moves, so the page below it does not jump. */
+    var ex = $('explain');
+    if (playing) { var h = ex.offsetHeight || 0; if (h > (ex._minH || 0)) { ex._minH = h; ex.style.minHeight = h + 'px'; } }
+    else if (ex._minH) { ex._minH = 0; ex.style.minHeight = ''; }
+    var pb = $('play'); pb.disabled = E.solved(st) && !playing; pb.textContent = playing ? 'Pause' : (paused && !E.solved(st) ? 'Resume' : 'Play all steps'); pb.setAttribute('aria-pressed', String(playing));
   }
   function say(text, bad) { var el = $('status'); el.textContent = text; el.className = 'msg' + (bad ? ' bad' : ''); }
 
   /* ---------- actions ---------- */
-  function reveal() { var el = $('explain'); if (el.scrollIntoView && window.matchMedia && window.matchMedia('(max-width: 899px)').matches) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
-  function show(key, index, quiet) { var list = avail[key]; if (!list || !list.length) return; index = index % list.length; pick[key] = index; view = { kind: 'result', tech: key, index: index, res: list[index], step: null }; render(); if (!quiet) reveal(); }
+  function show(key, index, quiet) { var list = avail[key]; if (!list || !list.length) return; index = index % list.length; pick[key] = index; view = { kind: 'result', tech: key, index: index, res: list[index], step: null }; render(); }
   function snapshot() { history.push(E.clone(st)); if (history.length > 200) history.shift(); }
   function afterChange(text) { view = { kind: 'none' }; pick = {}; scan(); render(); say(text + (E.solved(st) ? ' The puzzle is solved.' : ' ' + left() + ' cells left.')); }
   function load(str, techKey) {
     var res = E.check(str), msg = $('loadmsg');
     if (!res.ok) { msg.textContent = 'Not loaded. ' + res.reason; msg.className = 'msg bad'; return false; }
-    st = res.state; original = E.toString(st); solution = res.solution; history = [];
+    st = res.state; original = E.toString(st); solution = res.solution; history = []; paused = false;
     msg.className = 'msg'; msg.textContent = 'Loaded. The puzzle has exactly one solution.';
     var n = E.fillSingles(st);
     afterChange(n ? 'Filled ' + n + ' easy cells first (cells or digits with only one place).' : 'No easy cells to fill.');
@@ -393,15 +394,11 @@ ol#steps li { scroll-margin-top: 12px; }
   }
 
   /* ---------- automatic play ---------- */
-  function stopPlay() { if (playTimer) { clearTimeout(playTimer); playTimer = null; } if (!playing) return; playing = false; render(); }
+  /* byUser: paused part-way (the button then says Resume). Otherwise play ran out of moves or finished. */
+  function stopPlay(byUser) { if (playTimer) { clearTimeout(playTimer); playTimer = null; } if (!playing) return; playing = false; paused = byUser === true; render(); }
   /* Every manual action goes through here first, so play never fights the user. */
-  function interrupt() { var was = playing || removing; cancelRemoval(); if (playing) stopPlay(); else if (was) render(); }
+  function interrupt() { var was = playing || removing; cancelRemoval(); if (playing) stopPlay(true); else if (was) render(); }
   function schedule(ms) { if (playing) playTimer = setTimeout(tick, ms); }
-  function focusStep() {
-    var li = document.querySelector('#steps li.on');
-    if (!li || !li.scrollIntoView || !window.matchMedia) return;
-    li.scrollIntoView({ block: window.matchMedia('(max-width: 899px)').matches ? 'start' : 'nearest', behavior: 'smooth' });
-  }
   function tick() {
     playTimer = null;
     if (!playing) return;
@@ -415,7 +412,7 @@ ol#steps li { scroll-margin-top: 12px; }
     }
     var last = view.res.steps.length - 1;
     if (!skipSteps() && (view.step === null || view.step < last)) {
-      view.step = view.step === null ? 0 : view.step + 1; render(); focusStep(); schedule(pace());
+      view.step = view.step === null ? 0 : view.step + 1; render(); schedule(pace());
       return;
     }
     if (!applyCurrent(function () { schedule(Math.round(pace() * 0.6)); })) stopPlay();
@@ -424,7 +421,7 @@ ol#steps li { scroll-margin-top: 12px; }
     if (playing || E.solved(st)) return;
     cancelRemoval();
     if (view.kind !== 'result') view = { kind: 'none' };
-    playing = true; render(); say('Playing. Tap Pause or the board to stop.');
+    playing = true; paused = false; render(); say('Playing. Tap Pause or the board to stop.');
     schedule(instant() ? 0 : 350);
   }
 
@@ -437,7 +434,7 @@ ol#steps li { scroll-margin-top: 12px; }
   $('easy').addEventListener('click', function () { interrupt(); fillEasy(); });
   $('undo').addEventListener('click', function () { interrupt(); if (!history.length) return; st = history.pop(); afterChange('Went back one move.'); });
   $('reset').addEventListener('click', function () { interrupt(); load(original, null); });
-  $('apply').addEventListener('click', function () { if (playing) stopPlay(); applyCurrent(); });
+  $('apply').addEventListener('click', function () { if (playing) stopPlay(true); applyCurrent(); });
   $('play').addEventListener('click', function () { if (playing) { interrupt(); say('Paused.'); } else startPlay(); });
   $('prev').addEventListener('click', function () { interrupt(); if (view.kind === 'result' && view.step) { view.step--; render(); } });
   $('fwd').addEventListener('click', function () { interrupt(); if (view.kind !== 'result') return; view.step = view.step === null ? 0 : Math.min(view.step + 1, view.res.steps.length - 1); render(); });
