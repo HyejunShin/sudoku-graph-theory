@@ -18,6 +18,11 @@ if (!$('grid').innerHTML.includes('<circle')) throw new Error('no overlay drawn 
 // 2. walk the argument steps
 for (let i = 0; i < 4; i++) click($('fwd'));
 if (!document.querySelector('#steps li.on')) throw new Error('no step highlighted');
+{ // buttons: within each section, most used first
+  const keys = [...document.querySelectorAll('#techs button[data-key]')].map(b => b.getAttribute('data-key')), byKey = Object.fromEntries(E.TECHNIQUES.map(t => [t.key, t]));
+  for (let i = 0; i + 1 < keys.length; i++) { const a = byKey[keys[i]], b = byKey[keys[i + 1]]; if ((a.section || '') === (b.section || '') && (a.used || 0) < (b.used || 0)) throw new Error('technique buttons are not ordered from most used to least: ' + keys.join(' ')); }
+  if (keys[0] !== 'locked' || keys[1] !== 'chain') throw new Error('unexpected first buttons: ' + keys.slice(0, 3).join(' '));
+}
 // 3. solve the tour puzzle by hand: tap the first technique that has a move, then Apply
 if ($('next') || $('easy')) throw new Error('the Next step and Fill easy cells buttons should be gone');
 let guard = 0, techs = new Set();

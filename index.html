@@ -796,36 +796,88 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
         sets.push({ cs, m });
       }
     }
-    const out = [], done = new Set();
-    for (let i = 0; i < sets.length && out.length < 4; i++) for (let j = i + 1; j < sets.length && out.length < 4; j++) {
-      const A = sets[i], B = sets[j], common = A.m & B.m;
-      if (bits(common) < 2 || A.cs.some(c => B.cs.includes(c))) continue;
-      const of = (S, d) => S.cs.filter(c => has(st, c, d));
-      for (const x of digits(common)) {
-        if (!of(A, x).every(a => of(B, x).every(b => sees(a, b)))) continue;
-        for (const z of digits(common)) if (z !== x) {
-          const za = of(A, z), zb = of(B, z), all = za.concat(zb);
-          const elim = []; for (let c = 0; c < 81; c++) if (has(st, c, z) && !A.cs.includes(c) && !B.cs.includes(c) && all.every(q => sees(c, q))) elim.push(cid(c, z));
-          if (!elim.length) continue;
-          const key = elim.join(',') + '|' + z; if (done.has(key)) continue; done.add(key);
-          const ZA = za.map(c => cid(c, z)), ZB = zb.map(c => cid(c, z)), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
-          const res = mkResult('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: a triangle whose link is counted');
-          for (const S of [A, B]) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
-          of(A, x).concat(of(B, x)).forEach(c => res.nodes.set(cid(c, x), 'k1'));
-          ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB];
-          elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
-          let near = null; for (const a of ZA) for (const b of ZB) { const dist = Math.abs(ROW(cCell(a)) - ROW(cCell(b))) + Math.abs(COL(cCell(a)) - COL(cCell(b))); if (!near || dist < near[2]) near = [a, b, dist]; }
-          res.links.push({ a: near[0], b: near[1], strong: true, group: true });
-          linkToGroups(res);
-          const nA = A.cs.length, nB = B.cs.length, cellsWord = n => n === 1 ? 'cell' : 'cells';
-          say(res, 'Set A: ' + cellList(A.cs) + ' hold' + (nA === 1 ? 's' : '') + ' ' + (nA + 1) + ' digits in ' + nA + ' ' + cellsWord(nA) + ', one too many. Set B: ' + cellList(B.cs) + ' hold' + (nB === 1 ? 's' : '') + ' ' + (nB + 1) + ' digits in ' + nB + ' ' + cellsWord(nB) + '.');
-          say(res, 'The blue ' + z + 's of A are one dot, and the blue ' + z + 's of B another. If A had no ' + z + ', its cells would hold exactly as many digits as cells, so every one of them is used, ' + x + ' included. The same goes for B.');
-          say(res, 'But the orange ' + x + 's of A and of B all see each other, so A and B cannot both use ' + x + '. So the two blue dots cannot both be false: a link found by counting (solid line).');
-          marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
-          ZA.concat(ZB).forEach(id => { marks[id] = 'f'; }); say(res, 'It sees every blue ' + z + ', so both blue dots are false. That breaks the counted link. Contradiction, so ' + candName(v) + ' is false.', snap());
+    const out = [], done = new Set(), LIMIT = 4;
+    const of = (S, d) => S.cs.filter(c => has(st, c, d)), dot = (S, d) => of(S, d).map(c => cid(c, d));
+    const disjoint = (A, B) => !A.cs.some(c => B.cs.includes(c));
+    const restricted = (A, B, x) => of(A, x).every(a => of(B, x).every(b => sees(a, b)));
+    const outsideSeeing = (cellsIn, d, sets3) => { const e = []; for (let c = 0; c < 81; c++) if (has(st, c, d) && !sets3.some(S => S.cs.includes(c)) && cellsIn.every(q => sees(c, q))) e.push(cid(c, d)); return e; };
+    const nearest = (X, Y) => { let best = null; for (const a of X) for (const b of Y) { const dist = Math.abs(ROW(cCell(a)) - ROW(cCell(b))) + Math.abs(COL(cCell(a)) - COL(cCell(b))) + Math.abs(cDig(a) - cDig(b)) * 0.1; if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
+    const describe = (S, name) => 'Set ' + name + ': ' + cellList(S.cs) + ' hold' + (S.cs.length === 1 ? 's' : '') + ' ' + (S.cs.length + 1) + ' digits in ' + S.cs.length + (S.cs.length === 1 ? ' cell' : ' cells');
+    const start = (name, theorem, used) => { const res = mkResult(name, theorem); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
+    const finish = (res, elim) => { elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim; linkToGroups(res); out.push(res); };
+    const solid = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: true, group: true }); };
+    const dashed = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: false, group: true }); };
+
+    // weak links between sets: a digit whose places in one all see its places in the other
+    const pairs = [];
+    for (let i = 0; i < sets.length; i++) for (let j = i + 1; j < sets.length; j++) {
+      const A = sets[i], B = sets[j]; if (!(A.m & B.m) || !disjoint(A, B)) continue;
+      const xs = digits(A.m & B.m).filter(x => restricted(A, B, x));
+      if (xs.length) pairs.push({ i, j, xs });
+    }
+
+    // two sets, one linking digit x: the z dots of A and B cannot both be false (ALS-XZ, WXYZ-Wing)
+    for (const pr of pairs) { if (out.length >= LIMIT) break;
+      const A = sets[pr.i], B = sets[pr.j];
+      for (const x of pr.xs) for (const z of digits(A.m & B.m)) if (z !== x) {
+        const elim = outsideSeeing(of(A, z).concat(of(B, z)), z, [A, B]);
+        const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
+        const ZA = dot(A, z), ZB = dot(B, z), XA = dot(A, x), XB = dot(B, x), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
+        const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through two almost-locked sets', [A, B]);
+        XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB];
+        solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, ZB);
+        say(res, describe(A, 'A') + ', one too many. ' + describe(B, 'B') + '.');
+        say(res, 'In such a set, two digits cannot both be missing: the cells would be short of digits. So inside A the blue ' + z + 's and the orange ' + x + 's cannot both be false (solid line), and the same inside B.');
+        say(res, 'The orange ' + x + 's of A and of B all see each other, so they cannot both be true (dashed line). With the red ' + z + ' this is an odd loop.');
+        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true. It sees every blue ' + z + ', so both blue dots are false.', snap());
+        ZA.concat(ZB).forEach(id => { marks[id] = 'f'; }); XA.concat(XB).forEach(id => { marks[id] = 't'; });
+        say(res, 'Then the orange ' + x + 's are true in A and in B. But they see each other. Contradiction, so ' + candName(v) + ' is false.', snap());
+        if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
+        finish(res, elim);
+      }
+    }
+
+    // two sets, two linking digits: every digit is pinned to its own set (this includes the basic Sue de Coq)
+    for (const pr of pairs) { if (out.length >= LIMIT) break; if (pr.xs.length < 2) continue;
+      const A = sets[pr.i], B = sets[pr.j], x1 = pr.xs[0], x2 = pr.xs[1], elim = [], groups = [];
+      for (const [S, T] of [[A, B], [B, A]]) for (const d of digits(S.m)) if (d !== x1 && d !== x2) { const e = outsideSeeing(of(S, d), d, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(S, d)); } }
+      for (const x of [x1, x2]) { const e = outsideSeeing(of(A, x).concat(of(B, x)), x, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(A, x).concat(dot(B, x))); } }
+      const uniq = [...new Set(elim)], key = uniq.join(','); if (!uniq.length || done.has(key)) continue; done.add(key);
+      const res = start('Almost-locked sets (two links)', 'Lemma 7.7 twice: every digit is pinned to its own set', [A, B]);
+      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0'))); res.groups = groups;
+      const nA = A.cs.length, nB = B.cs.length;
+      say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. The digits ' + x1 + ' and ' + x2 + ' each have all their places in A in sight of all their places in B.');
+      say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every blue dot is true.');
+      say(res, 'Any candidate outside the sets that sees a whole blue dot of its own digit is linked to a true dot. That removes: ' + list(uniq) + '.');
+      finish(res, uniq);
+    }
+
+    // three sets in a row, A - x - B - y - C: the z dots of A and C cannot both be false (ALS-XY-Wing, a chain of almost-locked sets)
+    const nbr = sets.map(() => []);
+    for (const pr of pairs) for (const x of pr.xs) { nbr[pr.i].push({ k: pr.j, x }); nbr[pr.j].push({ k: pr.i, x }); }
+    for (let b = 0; b < sets.length && out.length < LIMIT; b++) for (const ea of nbr[b]) { if (out.length >= LIMIT) break;
+      for (const ec of nbr[b]) {
+        if (ec.k <= ea.k || ec.x === ea.x) continue;
+        const A = sets[ea.k], B = sets[b], C = sets[ec.k], x = ea.x, y = ec.x; if (!disjoint(A, C)) continue;
+        for (const z of digits(A.m & C.m)) if (z !== x && z !== y) {
+          const elim = outsideSeeing(of(A, z).concat(of(C, z)), z, [A, B, C]);
+          const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
+          const ZA = dot(A, z), XA = dot(A, x), XB = dot(B, x), YB = dot(B, y), YC = dot(C, y), ZC = dot(C, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
+          const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through three almost-locked sets', [A, B, C]);
+          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC];
+          solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, YB); dashed(res, YB, YC); solid(res, YC, ZC);
+          say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. ' + describe(C, 'C') + '. Each has one digit too many.');
+          say(res, 'Inside each set two digits cannot both be missing (solid lines). The ' + x + 's of A and B all see each other, and so do the ' + y + 's of B and C (dashed lines). With the red ' + z + ' this is an odd loop.');
+          marks[v] = 't'; ZA.forEach(id => { marks[id] = 'f'; }); say(res, 'Suppose ' + candName(v) + ' were true. Then the blue ' + z + 's of A are false, so A uses ' + x + '.', snap());
+          XA.forEach(id => { marks[id] = 't'; }); XB.forEach(id => { marks[id] = 'f'; }); YB.forEach(id => { marks[id] = 't'; });
+          say(res, 'Then B cannot use ' + x + ', so B uses ' + y + '.', snap());
+          YC.forEach(id => { marks[id] = 'f'; }); ZC.forEach(id => { marks[id] = 't'; });
+          say(res, 'Then C cannot use ' + y + ', so one of the blue ' + z + 's of C is true. But ' + candName(v) + ' sees them all. Contradiction, so ' + candName(v) + ' is false.', snap());
           if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
-          out.push(res);
+          finish(res, elim);
+          if (out.length >= LIMIT) break;
         }
+        if (out.length >= LIMIT) break;
       }
     }
     return out;
@@ -933,29 +985,31 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     return [res];
   }
 
+  /* Listed in the order they are tried, simplest first. `used` is how many times each was the move played over about
+     1,100 random puzzles with that order; the page lists the buttons of each section from most used to least. */
   const TECHNIQUES = [
     { key: 'single', name: 'Easy cell', loop: 'only one choice', find: findSingles, blurb: 'A cell with one candidate left, or a digit with one place left.', easy: true },
-    { key: 'locked', name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
-    { key: 'naked', name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
-    { key: 'hidden', name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
-    { key: 'xwing', name: 'X-Wing', loop: 'loop of 4', find: findXWing, blurb: 'One digit, two lines, the same two crossing lines.' },
-    { key: 'sky', name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong links that share a line at one end.' },
-    { key: 'kite', name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row link and a column link joined inside a box.' },
-    { key: 'xywing', name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
-    { key: 'colour', name: 'Simple Colouring', loop: '2-colouring', find: findSimpleColouring, blurb: 'Colour one digit’s strong links with two colours.' },
-    { key: 'xchain', name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Colouring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
-    { key: 'medusa', name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
-    { key: 'chain', name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
-    { key: 'group', name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
-    { key: 'gchain', name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
-    { key: 'xyz', name: 'XYZ-Wing', loop: 'triangle with a counted link', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
+    { key: 'locked', used: 3945, name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
+    { key: 'naked', used: 755, name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
+    { key: 'hidden', used: 463, name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
+    { key: 'xwing', used: 180, name: 'X-Wing', loop: 'loop of 4', find: findXWing, blurb: 'One digit, two lines, the same two crossing lines.' },
+    { key: 'sky', used: 416, name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong links that share a line at one end.' },
+    { key: 'kite', used: 382, name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row link and a column link joined inside a box.' },
+    { key: 'xywing', used: 430, name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
+    { key: 'colour', used: 72, name: 'Simple Colouring', loop: '2-colouring', find: findSimpleColouring, blurb: 'Colour one digit’s strong links with two colours.' },
+    { key: 'xchain', used: 217, name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Colouring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
+    { key: 'medusa', used: 574, name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
+    { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
+    { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
+    { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
+    { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle with a counted link', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
     /* Beyond links. These are tried only after every loop and colouring above has failed. */
-    { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
-    { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
-    { key: 'finned', name: 'Finned fish', loop: 'a fish with a counted link', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
-    { key: 'als', name: 'Almost-locked sets', loop: 'ALS-XZ, WXYZ-Wing', find: findALS, blurb: 'Two sets of cells with one digit too many, joined by a shared digit.', beyond: true, section: 'count', late: true },
-    { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
-    { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
+    { key: 'subset', used: 11, name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
+    { key: 'fish', used: 0, name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
+    { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a counted link', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
+    { key: 'als', used: 81, name: 'Almost-locked sets', loop: 'ALS-XZ, WXYZ-Wing, ALS chain, Sue de Coq', find: findALS, blurb: 'Two sets of cells with one digit too many, joined by a shared digit.', beyond: true, section: 'count', late: true },
+    { key: 'ur', used: 1, name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
+    { key: 'guess', used: 0, name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
   ];
 
   /* ---------- random puzzles ---------- */
@@ -1180,7 +1234,10 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
   function drawTechs() {
     var h = '';
     var section = '', heads = { count: 'Counting across sets (the sets rule): used when no loop or colouring applies', unique: 'Needs one more fact: the puzzle has exactly one solution', last: 'Last resort: not a loop, a colouring or a count' };
-    E.TECHNIQUES.forEach(function (t) {
+    /* shown by section, and inside a section from most used to least; the order they are tried in stays simplest first */
+    var rankSec = { count: 1, unique: 2, last: 3 }, shown = E.TECHNIQUES.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
+      return (a.t.easy ? -1 : rankSec[a.t.section] || 0) - (b.t.easy ? -1 : rankSec[b.t.section] || 0) || (b.t.used || 0) - (a.t.used || 0) || a.i - b.i; }).map(function (x) { return x.t; });
+    shown.forEach(function (t) {
       if (t.easy && autoFill) return;
       if (t.section && t.section !== section) { section = t.section; h += '<p class="beyond">' + heads[section] + '</p>'; }
       var n = avail[t.key].length, on = view.kind === 'result' && view.tech === t.key;

@@ -5,7 +5,7 @@ B. Theorem 7.5, the sets rule: if k pairwise disjoint constraint sets are covere
    constraint sets, every candidate of the covering sets outside the covered ones is false.
 
 C. Lemma 7.6: in an XYZ-Wing one of the three z's is true.
-D. Lemma 7.7: two almost-locked sets joined by a digit x cannot both lack another shared digit z.
+D. Lemma 7.7 and its first consequence: two almost-locked sets joined by a digit x cannot both lack another shared digit z.
 
 All are checked on random states that contain a known solution. Run: python3 verify_sets.py
 """
@@ -164,6 +164,10 @@ def check_als(truth, P, live):
             for cs in itertools.combinations(u, size):
                 ds = set().union(*(cell[c] for c in cs))
                 if len(ds) == size + 1: als[frozenset(cs)] = ds
+    for A, ds in als.items():   # the lemma itself: two digit dots of one set are never both false
+        for d1, d2 in itertools.combinations(ds, 2):
+            assert any((c[0], c[1], d) in truth for c in A for d in (d1, d2)), 'two dots of one almost-locked set are both false'
+            n += 1
     items = list(als.items()); random.shuffle(items)
     for (A, da), (B, db) in itertools.islice(itertools.combinations(items[:60], 2), 1500):
         if A & B: continue
@@ -188,4 +192,4 @@ print('states:', states)
 print('group dots (Lemma 7.4): %d linked pairs of dots checked against the two link rules, 0 failures' % groups)
 print('sets rule (Theorem 7.5): %d random base/cover instances and %d subset and fish instances, k = 2, 3, 4, each removing at least one candidate, 0 failures' % (rule, fam))
 print('XYZ-Wing (Lemma 7.6): %d pivot-and-wings configurations checked, 0 failures' % xyz)
-print('almost-locked sets (Lemma 7.7): %d pairs of sets with a linking digit checked, 0 failures' % als_n)
+print('almost-locked sets (Lemma 7.7): %d instances checked (the link inside a set, and pairs of sets with a linking digit), 0 failures' % als_n)

@@ -356,7 +356,10 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
   function drawTechs() {
     var h = '';
     var section = '', heads = { count: 'Counting across sets (the sets rule): used when no loop or colouring applies', unique: 'Needs one more fact: the puzzle has exactly one solution', last: 'Last resort: not a loop, a colouring or a count' };
-    E.TECHNIQUES.forEach(function (t) {
+    /* shown by section, and inside a section from most used to least; the order they are tried in stays simplest first */
+    var rankSec = { count: 1, unique: 2, last: 3 }, shown = E.TECHNIQUES.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
+      return (a.t.easy ? -1 : rankSec[a.t.section] || 0) - (b.t.easy ? -1 : rankSec[b.t.section] || 0) || (b.t.used || 0) - (a.t.used || 0) || a.i - b.i; }).map(function (x) { return x.t; });
+    shown.forEach(function (t) {
       if (t.easy && autoFill) return;
       if (t.section && t.section !== section) { section = t.section; h += '<p class="beyond">' + heads[section] + '</p>'; }
       var n = avail[t.key].length, on = view.kind === 'result' && view.tech === t.key;

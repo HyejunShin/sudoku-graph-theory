@@ -501,11 +501,17 @@ With k = 2 these are the naked pair, hidden pair and X-Wing of Theorem 5.4. So t
 
 So take the z in p and the z in the first wing as one dot, and the z in the second wing as another. They cannot both be false. A candidate z that sees all three cells is linked to both dots. Suppose it is true: both dots are false, which the lemma forbids. That is the **XYZ-Wing**, and its shape is a triangle, like the Locked pair.
 
-**Lemma 7.7 (almost-locked sets).** Call n cells of one unit that hold n + 1 digits between them an *almost-locked set*: one digit too many. Let A and B be two of them with no cell in common. Let x be a digit in both whose places in A all see its places in B, and z another digit in both. Then some z of A or some z of B is true.
+**Lemma 7.7 (the link inside an almost-locked set).** Call n cells of one unit that hold n + 1 digits between them an *almost-locked set*: one digit too many. For each of its digits, the candidates of that digit in the set form a dot. Then the dots of two different digits cannot both be false.
 
-*Why.* Suppose no z of A is true. Then the n cells of A hold only n digits, so each of those digits is used in A, x among them. In the same way, if no z of B is true, x is used in B. Both cannot happen, because every x of A sees every x of B. ∎
+*Why.* If both were false, the n cells would have only n − 1 digits left between them. Cells of one unit need different digits, so that is impossible. ∎
 
-So the z's of A are one dot, the z's of B another, and they cannot both be false. A candidate z that sees all of them is linked to both and closes a triangle, exactly as in the XYZ-Wing. In fact the XYZ-Wing is the case where A is the pivot with one wing and B is the other wing. The same lemma covers the WXYZ-Wing and the pattern solvers call ALS-XZ.
+So an almost-locked set supplies counted links between its own dots. Dots of the same digit in two different sets are linked in the ordinary way when all their cells see each other. That is everything Theorem 5.2 needs, so loops may now run through almost-locked sets:
+
+- **Two sets (ALS-XZ, WXYZ-Wing, XYZ-Wing).** Sets A and B share a digit x whose places all see each other, and another digit z. The loop is: a candidate z that sees every z of both sets, the z dot of A, the x dot of A, the x dot of B, the z dot of B, and back. Suppose the candidate is true: both z dots are false, so both x dots are true, and they see each other.
+
+- **Three or more sets (ALS-XY-Wing, chains of almost-locked sets).** The loop simply passes through more sets, changing digit each time.
+
+- **Two sets with two linking digits (this includes the basic Sue de Coq).** Each linking digit is used by at most one set, which leaves no digit to spare, so every dot of both sets is true.
 
 **Finned fish** work the same way. Suppose a digit in k rows fits k columns except for a few extra places, the *fin*, all in one box. If every fin candidate is false, the sets rule applies and each column's dot is true. So the fin dot and a column's dot cannot both be false. A candidate in that column and in the fin's box is linked to both, and the triangle closes.
 
@@ -515,9 +521,9 @@ So the z's of A are one dot, the z's of B another, and they cannot both be false
 
 *The unique rectangle.* Four cells in two rows, two columns and two boxes, each holding only a and b, form an even loop, and an even loop has exactly two colourings (Corollary 2.2). Nothing outside the four cells can tell the two apart, so both would be solutions. A proper puzzle has one solution, so that pattern can never appear, and any candidate that would complete it is false. The loop and its two colourings are graph theory. The last step is not: it uses a fact about the puzzle that is not one of the 324 constraint sets.
 
-All four were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million linked pairs of group dots against Lemma 7.4, about 17,000 instances of the sets rule with k = 2, 3 and 4, about 1,700 XYZ configurations against Lemma 7.6, and about 81,000 pairs of almost-locked sets against Lemma 7.7. There were no failures. The script is `proofs/verify_sets.py`.
+All four were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million linked pairs of group dots against Lemma 7.4, about 17,000 instances of the sets rule with k = 2, 3 and 4, about 1,700 XYZ configurations against Lemma 7.6, and about 385,000 instances for almost-locked sets against Lemma 7.7. There were no failures. The script is `proofs/verify_sets.py`.
 
-**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a colouring or a count. So do the few patterns not examined here, such as chains of three or more almost-locked sets.
+**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a colouring or a count. So do the few very rare patterns not examined here, such as the Exocet.
 
 ## 8. Has this been done before?
 

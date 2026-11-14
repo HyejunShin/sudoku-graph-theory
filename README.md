@@ -84,7 +84,7 @@ A search for everything links can prove, on a smaller sample, solved nothing the
 
 **A counted link.** In an **XYZ-Wing** one of three candidates must be true, which a short count shows. With the candidate it removes, that closes a triangle, the same shape as the Locked pair. It sits with the loops.
 
-**More counted links.** **Almost-locked sets** (ALS-XZ, WXYZ-Wing) and **finned fish** are the same triangle: two blue dots that a count shows cannot both be false, and a candidate linked to both. These two searches are slower, so they run only when nothing earlier applies. In 2,500 random puzzles they cut the share needing a guess to 0.7%.
+**More counted links.** Inside an **almost-locked set** (a few cells with one digit too many), two digits cannot both be missing. That gives counted links, so loops can run through such sets: ALS-XZ, WXYZ-Wing, chains of almost-locked sets, and the two-link case that includes the basic Sue de Coq. **Finned fish** are a triangle of the same kind. These two searches are slower, so they run only when nothing earlier applies. In 2,500 random puzzles they cut the share needing a guess to 0.7%.
 
 **One more fact.** A **unique rectangle** is an even loop that could be coloured both ways with nothing to decide between them. It adds the assumption that a proper sudoku has one solution.
 
