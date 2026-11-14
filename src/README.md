@@ -9,7 +9,7 @@ This is the code behind the [Solving Sudoku Using Graph Coloring](https://hyejun
 | [`writeup/README.md`](../writeup/README.md) | The write-up, readable on GitHub: six steps, 24 figures, a short proof for every claim |
 | [`writeup/index.html`](../writeup/index.html) | The same write-up as a web page |
 | [`index.html`](../index.html) | **Solving Sudoku Using Graph Coloring**: one self-contained page, built from the two files below. Open it in a browser; it needs no server |
-| [`src/engine.js`](engine.js) | The link-graph engine: candidates, links, strong links, the strict puzzle check, and a finder for each technique |
+| [`src/engine.js`](engine.js) | The edge-graph engine: candidates, edges, strong edges, the strict puzzle check, and a finder for each technique |
 | [`src/index.src.html`](index.src.html) | The page's markup, styles and interface code |
 | [`build.js`](../build.js) | Inlines the engine into the page and writes `index.html` |
 | [`test/`](../test) | Checks every move the engine finds against the true solution of generated puzzles, and drives the page in a simulated browser |

@@ -159,8 +159,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
   <div class="cols">
       <div class="legend" id="key" aria-label="Key">
-        <span><i class="sw"></i>strong link: exactly one end true</span>
-        <span><i class="sw weak"></i>link: at most one end true</span>
+        <span><i class="sw"></i>strong edge: exactly one end true</span>
+        <span><i class="sw weak"></i>weak edge: at most one end true</span>
         <span><i class="dot o"></i>can be removed</span>
         <span><i class="dot t"></i>true in this step</span>
         <span><i class="dot f"></i>false in this step</span>
@@ -188,7 +188,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           <label class="check"><input type="checkbox" id="autofill" checked> Skip single candidate cells</label>
         </div>
         <div class="techs" id="techs"></div>
-        <div class="row digits-row"><span class="theorem">Strong links of a digit:</span><span class="row digits" id="digits"></span><span class="theorem">or click a candidate on the board.</span></div>
+        <div class="row digits-row"><span class="theorem">Strong edges of a digit:</span><span class="row digits" id="digits"></span><span class="theorem">or click a candidate on the board.</span></div>
       </section>
     </div>
 
@@ -524,7 +524,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
         + (out ? '<line class="strike" x1="' + (n.x - 13) + '" y1="' + (n.y + 13) + '" x2="' + (n.x + 13) + '" y2="' + (n.y - 13) + '" stroke="var(--out)" stroke-width="2.5" stroke-linecap="round"/>' : '');
       s += '<g' + (out ? ' class="going"' : '') + ' data-node="' + n.ids.join(' ') + '">' + body + '</g>'
-        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one dot' : '') + '</text>';
+        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one node' : '') + '</text>';
     });
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
     svg.setAttribute('viewBox', '0 0 520 ' + g.H);
@@ -540,12 +540,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       nav.hidden = false;
     } else if (view.kind === 'probe') {
       var v = view.id, sp = E.strongPartners(st, v), all = E.neighbors(st, v);
-      $('tname').textContent = 'Links of ' + E.candName(v);
-      $('theorem').textContent = 'It has ' + all.length + ' links, ' + sp.length + ' of them strong.';
+      $('tname').textContent = 'Edges of ' + E.candName(v);
+      $('theorem').textContent = 'It has ' + all.length + ' edges, ' + sp.length + ' of them strong.';
       ol.innerHTML = all.map(function (n) { var strong = sp.indexOf(n) >= 0; return '<li>' + E.candName(n) + ': ' + (strong ? 'strong, because ' + E.strongWhy(st, v, n) : 'weak, because ' + E.linkWhy(v, n)) + '.</li>'; }).join('');
       nav.hidden = true;
     } else if (view.kind === 'digit') {
-      $('tname').textContent = 'Strong links of digit ' + view.d;
+      $('tname').textContent = 'Strong edges of digit ' + view.d;
       $('theorem').textContent = 'Each chain is colored with two colors. In every chain one color is all true and the other all false (Theorem 5.1).';
       ol.innerHTML = ''; nav.hidden = true;
     } else {
@@ -554,7 +554,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       ol.innerHTML = ''; nav.hidden = true;
     }
     var dg = '';
-    for (var d = 1; d <= 9; d++) dg += '<button type="button" data-d="' + d + '" aria-pressed="' + (view.kind === 'digit' && view.d === d) + '" aria-label="Strong links of digit ' + d + '">' + d + '</button>';
+    for (var d = 1; d <= 9; d++) dg += '<button type="button" data-d="' + d + '" aria-pressed="' + (view.kind === 'digit' && view.d === d) + '" aria-label="Strong edges of digit ' + d + '">' + d + '</button>';
     $('digits').innerHTML = dg;
   }
   function render() {

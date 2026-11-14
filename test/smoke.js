@@ -219,7 +219,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=' + key + ']:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
     click(document.querySelector('#techs button[data-key=' + key + ']'));
     if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error(nm + ' is not drawn with group dots');
-    if (!/blue dot/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
+    if (!/blue node/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
     if (!$('grid').querySelector('[stroke-dasharray]')) throw new Error(nm + ' has no dashed links from the removed candidates to the group dots');
   }
   // every removed candidate has a dashed link, and links lying along one another are bowed apart
@@ -232,7 +232,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const o = [...sel.options].find(x => x.textContent === 'Almost-locked sets and finned fish'); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
     const seenNames = new Set(); let okPicture = true;
     const w3 = setInterval(() => { const t = $('tname').textContent.replace(/ \(.*/, ''); if ($('stepnav').hidden) return; seenNames.add(t);
-      if ((t === 'Almost-locked sets' || t.indexOf('Finned') === 0) && ($('grid').querySelectorAll('path.group').length < 1 || !/blue dot/.test($('steps').textContent))) okPicture = false; }, 0);
+      if ((t === 'Almost-locked sets' || t.indexOf('Finned') === 0) && ($('grid').querySelectorAll('path.group').length < 1 || !/blue node/.test($('steps').textContent))) okPicture = false; }, 0);
     click(play); await until(() => play.textContent !== 'Pause', 30000, 'play to finish the almost-locked-set example'); clearInterval(w3);
     if ($('tname').textContent !== 'Solved' || !seenNames.has('Almost-locked sets') || ![...seenNames].some(n => n.indexOf('Finned') === 0) || seenNames.has('Trial and error')) throw new Error('almost-locked-set example: ' + $('tname').textContent + ' using ' + [...seenNames].join(', '));
     if (!okPicture) throw new Error('almost-locked sets or finned fish shown without group dots');

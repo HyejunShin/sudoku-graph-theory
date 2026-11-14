@@ -159,8 +159,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
   <div class="cols">
       <div class="legend" id="key" aria-label="Key">
-        <span><i class="sw"></i>strong link: exactly one end true</span>
-        <span><i class="sw weak"></i>link: at most one end true</span>
+        <span><i class="sw"></i>strong edge: exactly one end true</span>
+        <span><i class="sw weak"></i>weak edge: at most one end true</span>
         <span><i class="dot o"></i>can be removed</span>
         <span><i class="dot t"></i>true in this step</span>
         <span><i class="dot f"></i>false in this step</span>
@@ -188,7 +188,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           <label class="check"><input type="checkbox" id="autofill" checked> Skip single candidate cells</label>
         </div>
         <div class="techs" id="techs"></div>
-        <div class="row digits-row"><span class="theorem">Strong links of a digit:</span><span class="row digits" id="digits"></span><span class="theorem">or click a candidate on the board.</span></div>
+        <div class="row digits-row"><span class="theorem">Strong edges of a digit:</span><span class="row digits" id="digits"></span><span class="theorem">or click a candidate on the board.</span></div>
       </section>
     </div>
 
@@ -330,7 +330,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     const v = targets[0], marks = {};
     const snap = () => Object.assign({}, marks);
     if (intro) say(res, intro);
-    say(res, 'The loop has ' + (chain.length + 1) + ' candidates: the red one plus ' + chain.length + ' that the strong links pair up.');
+    say(res, 'The loop has ' + (chain.length + 1) + ' candidates: the red one plus ' + chain.length + ' that the strong edges pair up.');
     marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
     marks[chain[0]] = 'f'; say(res, 'Then ' + candName(chain[0]) + ' is false: ' + linkWhy(v, chain[0]) + '.', snap());
     for (let i = 1; i < chain.length; i++) {
@@ -347,7 +347,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     const n = loop.length;
     for (let i = 0; i < n; i += 2) if (!strongInfo(st, loop[i], loop[i + 1])) return null;
     for (let i = 1; i < n; i += 2) if (!linked(loop[i], loop[(i + 1) % n])) return null;
-    const res = mkResult(tech, 'Theorem 5.4: an even loop makes every link either-or');
+    const res = mkResult(tech, 'Theorem 5.4: an even loop makes every edge either-or');
     loop.forEach(c => res.nodes.set(c, 'loop'));
     const elim = new Set();
     for (let i = 0; i < n; i++) {
@@ -361,11 +361,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     for (const x of res.elim) for (let i = 0; i < n; i++) { const a = loop[i], b = loop[(i + 1) % n]; if (linked(x, a) && linked(x, b)) { const far = c => Math.abs(ROW(cCell(x)) - ROW(cCell(c))) + Math.abs(COL(cCell(x)) - COL(cCell(c))); res.links.push({ a: x, b: far(a) <= far(b) ? a : b, strong: false }); break; } }
     const pat = k => { const m = {}; loop.forEach((c, i) => { m[c] = i % 2 === k ? 't' : 'f'; }); res.elim.forEach(c => { m[c] = 'f'; }); return m; };
     if (intro) say(res, intro);
-    say(res, 'The ' + n + ' circled candidates form a loop. Its ' + (n / 2) + ' strong links pair them all up, so exactly ' + (n / 2) + ' of them are true.');
-    say(res, 'True candidates are never linked, so true and false alternate round the loop. Only two patterns do that.');
+    say(res, 'The ' + n + ' circled candidates form a loop. Its ' + (n / 2) + ' strong edges pair them all up, so exactly ' + (n / 2) + ' of them are true.');
+    say(res, 'True candidates are never adjacent, so true and false alternate round the loop. Only two patterns do that.');
     say(res, 'Pattern A: ' + list(loop.filter((_, i) => i % 2 === 0)) + ' are true.', pat(0));
     say(res, 'Pattern B: ' + list(loop.filter((_, i) => i % 2 === 1)) + ' are true.', pat(1));
-    say(res, 'In both patterns every dashed link has exactly one true end. A candidate linked to both ends of a dashed link is therefore false.');
+    say(res, 'In both patterns every dashed edge has exactly one true end. A candidate adjacent to both ends of a dashed edge is therefore false.');
     say(res, 'That removes: ' + list(res.elim) + '.');
     return res;
   }
@@ -518,7 +518,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     for (let id = 0; id < 729 && out.length < (limit || 1); id++) if (alive(st, id)) {
       const chain = chainFor(st, id, sameDigit, maxPairs || 5);
       if (!chain) continue;
-      const r = oddLoop(st, nameChain(st, id, chain), chain, [id], 'A chain of alternating links starts and ends next to the red candidate.');
+      const r = oddLoop(st, nameChain(st, id, chain), chain, [id], 'A chain of alternating edges starts and ends next to the red candidate.');
       if (r) out.push(r);
     }
     return out;
@@ -539,8 +539,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       if (digit === 0 && !edges.some(([x, y]) => cCell(x) === cCell(y))) continue;
       const cls = [nodes.filter(n => color.get(n) === 0), nodes.filter(n => color.get(n) === 1)];
       const base = (tech) => { const r = mkResult(tech, 'Theorem 5.1 and Corollary 5.5: coloring'); nodes.forEach(n => r.nodes.set(n, color.get(n) === 0 ? 'k0' : 'k1')); edges.forEach(([x, y]) => r.links.push({ a: x, b: y, strong: true }));
-        say(r, (digit ? 'For digit ' + digit + ', ' : 'Across all digits, ') + nodes.length + ' candidates are chained together by strong links.');
-        say(r, 'Along a strong link exactly one end is true. So coloring the chain alternately gives two colors, and one whole color is true while the other is false.'); return r; };
+        say(r, (digit ? 'For digit ' + digit + ', ' : 'Across all digits, ') + nodes.length + ' candidates are chained together by strong edges.');
+        say(r, 'Along a strong edge exactly one end is true. So coloring the chain alternately gives two colors, and one whole color is true while the other is false.'); return r; };
       const name = digit ? 'Simple Coloring' : '3D Medusa';
       let wrap = null;
       for (let k = 0; k < 2 && !wrap; k++) for (let i = 0; i < cls[k].length && !wrap; i++) for (let j = i + 1; j < cls[k].length; j++) if (linked(cls[k][i], cls[k][j])) { wrap = [k, cls[k][i], cls[k][j]]; break; }
@@ -548,7 +548,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const [k, a, b] = wrap, r = base(name + ' (wrap)'), word = k === 0 ? 'blue' : 'orange', otherWord = k === 0 ? 'orange' : 'blue';
         r.links.push({ a, b, strong: false, clash: true });
         r.elim = cls[k].slice(); r.place = cls[1 - k].slice();
-        say(r, 'Two ' + word + ' candidates, ' + candName(a) + ' and ' + candName(b) + ', are linked: ' + linkWhy(a, b) + '. They cannot both be true.', null, [a, b]);
+        say(r, 'Two ' + word + ' candidates, ' + candName(a) + ' and ' + candName(b) + ', are adjacent: ' + linkWhy(a, b) + '. They cannot both be true.', null, [a, b]);
         say(r, 'So ' + word + ' is not the true color. Every ' + word + ' candidate goes, and every ' + otherWord + ' candidate is placed.');
         r.wrapClass = k; out.push(r); continue;
       }
@@ -561,8 +561,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const r = base(name + ' (trap)');
         for (const [id, s0, s1] of trap) { r.elim.push(id); r.nodes.set(id, 'elim'); r.links.push({ a: id, b: s0, strong: false }); r.links.push({ a: id, b: s1, strong: false }); }
         const [id, s0, s1] = trap[0];
-        say(r, candName(id) + ' is linked to a blue candidate (' + candName(s0) + ') and to an orange one (' + candName(s1) + ').');
-        say(r, 'One of the two colors is true, so ' + candName(id) + ' is linked to a true candidate. It is false.');
+        say(r, candName(id) + ' is adjacent to a blue candidate (' + candName(s0) + ') and to an orange one (' + candName(s1) + ').');
+        say(r, 'One of the two colors is true, so ' + candName(id) + ' is adjacent to a true candidate. It is false.');
         if (trap.length > 1) say(r, 'The same argument removes: ' + list(trap.slice(1).map(t => t[0])) + '.');
         out.push(r);
       }
@@ -614,12 +614,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const targets = cellsFor(st, u2, d).filter(c => !cs.includes(c)).map(c => cid(c, d));
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
-        const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one dot');
+        const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one node');
         group.forEach(g => res.nodes.set(g, 'k0')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
         res.elim = targets; linkToGroups(res);
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
-        say(res, 'One of the three blue ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so treat the three as one group: a single dot that is true when one of them is.');
+        say(res, 'One of the three blue ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. An edge joins only two candidates, so treat the three as one group: a single node that is true when one of them is.');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
         group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three ' + d + 's of the group are false: each shares ' + unitName(u2) + ' with it.', snap());
         say(res, 'Now ' + unitName(u) + ' has no place for ' + d + '. Contradiction, so ' + candName(v) + ' is false.', snap());
@@ -661,8 +661,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
-        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue dot. The count proves every blue dot true.');
-        say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
+        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue node. The count proves every blue node true.');
+        say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
       const ds = []; for (let d = 1; d <= 9; d++) if (cells.some(c => has(st, c, d))) ds.push(d);
@@ -675,8 +675,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
-        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue dot. The count proves every blue dot true.');
-        say(res, 'Any other candidate in these cells shares its cell with a true dot, so it is false. That removes: ' + list(elim) + '.');
+        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue node. The count proves every blue node true.');
+        say(res, 'Any other candidate in these cells shares its cell with a true node, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
     }
@@ -701,8 +701,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
-        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue dot. The count proves every blue dot true.');
-        say(res, 'Any other ' + d + ' in those ' + cn + ' is linked to a true dot, so it is false. That removes: ' + list(elim) + '.');
+        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue node. The count proves every blue node true.');
+        say(res, 'Any other ' + d + ' in those ' + cn + ' is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
         linkToGroups(res);
         out.push(res);
       }
@@ -721,7 +721,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const z = digits(st.cand[w1] & st.cand[w2])[0], x = digits(st.cand[w1] & ~(1 << z))[0], y = digits(st.cand[w2] & ~(1 << z))[0];
         const elim = []; for (let c = 0; c < 81; c++) if (c !== p && c !== w1 && c !== w2 && has(st, c, z) && sees(c, p) && sees(c, w1) && sees(c, w2)) elim.push(cid(c, z));
         if (!elim.length) continue;
-        const res = mkResult('XYZ-Wing', 'Lemma 7.6 and Theorem 5.2: a triangle whose link is counted');
+        const res = mkResult('XYZ-Wing', 'Lemma 7.6 and Theorem 5.2: a triangle whose edge is counted');
         // the group dot is the z of the pivot together with the z of one wing; the wing in line with the pivot draws best
         const inLine = w => ROW(w) === ROW(p) || COL(w) === COL(p);
         // ...but not if a removed candidate would sit inside the outline drawn round the two
@@ -735,11 +735,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.links.push({ a: v, b: zp, strong: false }); res.links.push({ a: zg, b: zo, strong: true, group: true }); res.links.push({ a: zo, b: v, strong: false });
         for (const e of elim.slice(1)) { res.links.push({ a: e, b: zp, strong: false }); res.links.push({ a: e, b: zo, strong: false }); }
         say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(ga) + ', which holds ' + digitList([xa, z].sort()) + ', and ' + cellName(gb) + ', which holds ' + digitList([xb, z].sort()) + '.');
-        say(res, 'Take the two blue ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one dot: true when one of them is ' + z + '.');
-        say(res, 'If the blue dot is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So the blue dot and ' + candName(zo) + ' cannot both be false: a link found by counting (solid line).');
+        say(res, 'Take the two blue ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one node: true when one of them is ' + z + '.');
+        say(res, 'If the blue node is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So the blue node and ' + candName(zo) + ' cannot both be false: an edge found by counting (solid line).');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
-        marks[zp] = 'f'; marks[zg] = 'f'; say(res, 'Then the blue dot is false: ' + cellName(cCell(v)) + ' sees both of its cells.', snap());
-        marks[zo] = 't'; say(res, 'Then ' + candName(zo) + ' is true, by the counted link.', snap());
+        marks[zp] = 'f'; marks[zg] = 'f'; say(res, 'Then the blue node is false: ' + cellName(cCell(v)) + ' sees both of its cells.', snap());
+        marks[zo] = 't'; say(res, 'Then ' + candName(zo) + ' is true, by the counted edge.', snap());
         say(res, 'But ' + candName(zo) + ' and ' + candName(v) + ' cannot both be true: ' + linkWhy(zo, v) + '. Contradiction, so ' + candName(v) + ' is false.', snap(), [zo, v]);
         if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
         out.push(res);
@@ -785,7 +785,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (!hit) continue;
         const path = []; for (let x = hit; x && x.f !== null; x = x.prev) path.unshift(x);
         if (!path.some(x => nodes[x.f].length > 1 || nodes[x.t].length > 1)) continue;      // no group in it: an ordinary loop, left to the link techniques
-        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Lemma 7.4 and Theorem 5.2: an odd loop with a group as one dot'), marks = {}, snap = () => Object.assign({}, marks);
+        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Lemma 7.4 and Theorem 5.2: an odd loop with a group as one node'), marks = {}, snap = () => Object.assign({}, marks);
         const ids = A => A.map(c => cid(c, d)), near = (A, B) => { let best = null; for (const a of A) for (const b of B) { const dist = Math.abs(ROW(a) - ROW(b)) + Math.abs(COL(a) - COL(b)); if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
         const link = (A, B, strongLink) => { const pr = near(A, B); res.links.push({ a: cid(pr[0], d), b: cid(pr[1], d), strong: strongLink, group: true }); };
         res.groups = [];
@@ -794,7 +794,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         let prev = nodes[v];
         for (const x of path) { link(prev, nodes[x.f], false); link(nodes[x.f], nodes[x.t], true); prev = nodes[x.t]; }
         link(prev, nodes[v], false);
-        say(res, 'This is an odd loop for the digit ' + d + ', but some of its dots are groups (blue): cells of one box that share a row or column. A group counts as true when one of its cells holds the ' + d + '.');
+        say(res, 'This is an odd loop for the digit ' + d + ', but some of its nodes are groups (blue): cells of one box that share a row or column. A group counts as true when one of its cells holds the ' + d + '.');
         marks[vid] = 't'; say(res, 'Suppose ' + candName(vid) + ' were true.', snap());
         for (const x of path) {
           ids(nodes[x.f]).forEach(id => { marks[id] = 'f'; }); say(res, 'Then ' + nm(nodes[x.f]) + ' is false: it shares ' + unitName(x.uw) + ' with the one before.', snap());
@@ -856,13 +856,13 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const elim = outsideSeeing(of(A, z).concat(of(B, z)), z, [A, B]);
         const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
         const ZA = dot(A, z), ZB = dot(B, z), XA = dot(A, x), XB = dot(B, x), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
-        const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through two almost-locked sets', [A, B]);
+        const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of nodes through two almost-locked sets', [A, B]);
         XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB]; res.dots = [XA, XB];
         solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, ZB);
         say(res, describe(A, 'A') + ', one too many. ' + describe(B, 'B') + '.');
         say(res, 'In such a set, two digits cannot both be missing: the cells would be short of digits. So inside A the blue ' + z + 's and the orange ' + x + 's cannot both be false (solid line), and the same inside B.');
         say(res, 'The orange ' + x + 's of A and of B all see each other, so they cannot both be true (dashed line). With the red ' + z + ' this is an odd loop.');
-        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true. It sees every blue ' + z + ', so both blue dots are false.', snap());
+        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true. It sees every blue ' + z + ', so both blue nodes are false.', snap());
         ZA.concat(ZB).forEach(id => { marks[id] = 'f'; }); XA.concat(XB).forEach(id => { marks[id] = 't'; });
         say(res, 'Then the orange ' + x + 's are true in A and in B. But they see each other. Contradiction, so ' + candName(v) + ' is false.', snap());
         if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
@@ -876,12 +876,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       for (const [S, T] of [[A, B], [B, A]]) for (const d of digits(S.m)) if (d !== x1 && d !== x2) { const e = outsideSeeing(of(S, d), d, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(S, d)); } }
       for (const x of [x1, x2]) { const e = outsideSeeing(of(A, x).concat(of(B, x)), x, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(A, x).concat(dot(B, x))); } }
       const uniq = [...new Set(elim)], key = uniq.join(','); if (!uniq.length || done.has(key)) continue; done.add(key);
-      const res = start('Almost-locked sets (two links)', 'Lemma 7.7 twice: every digit is pinned to its own set', [A, B]);
+      const res = start('Almost-locked sets (two connecting digits)', 'Lemma 7.7 twice: every digit is pinned to its own set', [A, B]);
       groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0'))); res.groups = groups;
       const nA = A.cs.length, nB = B.cs.length;
       say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. The digits ' + x1 + ' and ' + x2 + ' each have all their places in A in sight of all their places in B.');
-      say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every blue dot is true.');
-      say(res, 'Any candidate outside the sets that sees a whole blue dot of its own digit is linked to a true dot. That removes: ' + list(uniq) + '.');
+      say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every blue node is true.');
+      say(res, 'Any candidate outside the sets that sees a whole blue node of its own digit is adjacent to a true node. That removes: ' + list(uniq) + '.');
       finish(res, uniq);
     }
 
@@ -896,7 +896,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           const elim = outsideSeeing(of(A, z).concat(of(C, z)), z, [A, B, C]);
           const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
           const ZA = dot(A, z), XA = dot(A, x), XB = dot(B, x), YB = dot(B, y), YC = dot(C, y), ZC = dot(C, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
-          const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of dots through three almost-locked sets', [A, B, C]);
+          const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of nodes through three almost-locked sets', [A, B, C]);
           [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC]; res.dots = [XA, XB, YB, YC];
           solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, YB); dashed(res, YB, YC); solid(res, YC, ZC);
           say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. ' + describe(C, 'C') + '. Each has one digit too many.');
@@ -937,7 +937,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           const key = elim.join(','); if (seen.has(key)) continue; seen.add(key);
           const v = elim[0], line = coverOf(cCell(v)), dot = all.filter(c => coverOf(c) === line).map(c => cid(c, d)), F = fins.map(c => cid(c, d));
           if (!dot.length) continue;
-          const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a fish with a counted link'), marks = {}, snap = () => Object.assign({}, marks);
+          const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a fish with a counted edge'), marks = {}, snap = () => Object.assign({}, marks);
           all.forEach(c => res.nodes.set(cid(c, d), 'loop')); F.concat(dot).forEach(id => res.nodes.set(id, 'k0')); res.groups = [F, dot];
           elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
           res.links.push({ a: F[0], b: dot[0], strong: true, group: true });
@@ -945,10 +945,10 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           for (const e of elim.slice(1)) res.links.push({ a: e, b: F[0], strong: false, group: true });
           const one = cn.slice(0, -1);
           say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).sort().join(', ') + ', except for the fin: ' + list(F) + ', in box ' + (box + 1) + '.');
-          say(res, 'The fin is one blue dot. The ' + d + 's of these ' + bn + ' in ' + one + ' ' + (line + 1) + ' are another. If the fin is false, this is a plain fish and the count proves the second dot true. So the two cannot both be false: a link found by counting (solid line).');
+          say(res, 'The fin is one blue node. The ' + d + 's of these ' + bn + ' in ' + one + ' ' + (line + 1) + ' are another. If the fin is false, this is a plain fish and the count proves the second node true. So the two cannot both be false: an edge found by counting (solid line).');
           marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
-          F.concat(dot).forEach(id => { marks[id] = 'f'; }); say(res, 'It shares box ' + (box + 1) + ' with the fin and ' + one + ' ' + (line + 1) + ' with the other dot, so both are false. That breaks the counted link. Contradiction, so ' + candName(v) + ' is false.', snap());
-          if (elim.length > 1) say(res, 'The same argument, with the dot of its own ' + one + ', removes: ' + list(elim.slice(1)) + '.');
+          F.concat(dot).forEach(id => { marks[id] = 'f'; }); say(res, 'It shares box ' + (box + 1) + ' with the fin and ' + one + ' ' + (line + 1) + ' with the other node, so both are false. That breaks the counted edge. Contradiction, so ' + candName(v) + ' is false.', snap());
+          if (elim.length > 1) say(res, 'The same argument, with the node of its own ' + one + ', removes: ' + list(elim.slice(1)) + '.');
           out.push(res);
         }
       }
@@ -996,7 +996,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       if (dead && (!best || forced.length < best.forced.length)) best = { id, forced, dead };
       if (best && best.forced.length === 0) break;
     }
-    const res = mkResult('Trial and error', 'A last resort: this is a guess, not a link argument');
+    const res = mkResult('Trial and error', 'A last resort: this is a guess, not an edge argument');
     if (!best) {
       const sol = solve(st.val).solution; if (!sol) return [];
       let v = -1; for (let id = 0; id < 729 && v < 0; id++) if (alive(st, id) && sol[cCell(id)] !== cDig(id)) v = id;
@@ -1023,24 +1023,24 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
      1,100 random puzzles with that order; the page lists the buttons of each section from most used to least. */
   const TECHNIQUES = [
     { key: 'single', name: 'Single candidate', loop: 'only one choice', find: findSingles, blurb: 'A cell with one candidate left, or a digit with one place left.', easy: true },
-    { key: 'locked', used: 3945, name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
+    { key: 'locked', used: 3945, name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong edge.' },
     { key: 'naked', used: 755, name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
     { key: 'hidden', used: 463, name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
     { key: 'xwing', used: 180, name: 'X-Wing', loop: 'loop of 4', find: findXWing, blurb: 'One digit, two lines, the same two crossing lines.' },
-    { key: 'sky', used: 416, name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong links that share a line at one end.' },
-    { key: 'kite', used: 382, name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row link and a column link joined inside a box.' },
+    { key: 'sky', used: 416, name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong edges that share a line at one end.' },
+    { key: 'kite', used: 382, name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row edge and a column edge joined inside a box.' },
     { key: 'xywing', used: 430, name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
-    { key: 'color', used: 72, name: 'Simple Coloring', loop: '2-coloring', find: findSimpleColoring, blurb: 'Color one digit’s strong links with two colors.' },
+    { key: 'color', used: 72, name: 'Simple Coloring', loop: '2-coloring', find: findSimpleColoring, blurb: 'Color one digit’s strong edges with two colors.' },
     { key: 'xchain', used: 217, name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Coloring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
     { key: 'medusa', used: 574, name: '3D Medusa', loop: '2-coloring', find: st => findColoring(st, 0), blurb: 'Coloring that hops between digits.' },
-    { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
-    { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
-    { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
-    { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle with a counted link', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
+    { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong edges.' },
+    { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one node', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
+    { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one node: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a node may be a group of cells.'},
+    { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle with a counted edge', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
     /* Beyond links. These are tried only after every loop and coloring above has failed. */
     { key: 'subset', used: 11, name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
     { key: 'fish', used: 0, name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
-    { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a counted link', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
+    { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a counted edge', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
     { key: 'als', used: 81, name: 'Almost-locked sets', loop: 'ALS-XZ, WXYZ-Wing, ALS chain, Sue de Coq', find: findALS, blurb: 'Two sets of cells with one digit too many, joined by a shared digit.', beyond: true, section: 'count', late: true },
     { key: 'ur', used: 1, name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
     { key: 'guess', used: 0, name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the single candidate cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
@@ -1409,7 +1409,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
         + (out ? '<line class="strike" x1="' + (n.x - 13) + '" y1="' + (n.y + 13) + '" x2="' + (n.x + 13) + '" y2="' + (n.y - 13) + '" stroke="var(--out)" stroke-width="2.5" stroke-linecap="round"/>' : '');
       s += '<g' + (out ? ' class="going"' : '') + ' data-node="' + n.ids.join(' ') + '">' + body + '</g>'
-        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one dot' : '') + '</text>';
+        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one node' : '') + '</text>';
     });
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
     svg.setAttribute('viewBox', '0 0 520 ' + g.H);
@@ -1425,12 +1425,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       nav.hidden = false;
     } else if (view.kind === 'probe') {
       var v = view.id, sp = E.strongPartners(st, v), all = E.neighbors(st, v);
-      $('tname').textContent = 'Links of ' + E.candName(v);
-      $('theorem').textContent = 'It has ' + all.length + ' links, ' + sp.length + ' of them strong.';
+      $('tname').textContent = 'Edges of ' + E.candName(v);
+      $('theorem').textContent = 'It has ' + all.length + ' edges, ' + sp.length + ' of them strong.';
       ol.innerHTML = all.map(function (n) { var strong = sp.indexOf(n) >= 0; return '<li>' + E.candName(n) + ': ' + (strong ? 'strong, because ' + E.strongWhy(st, v, n) : 'weak, because ' + E.linkWhy(v, n)) + '.</li>'; }).join('');
       nav.hidden = true;
     } else if (view.kind === 'digit') {
-      $('tname').textContent = 'Strong links of digit ' + view.d;
+      $('tname').textContent = 'Strong edges of digit ' + view.d;
       $('theorem').textContent = 'Each chain is colored with two colors. In every chain one color is all true and the other all false (Theorem 5.1).';
       ol.innerHTML = ''; nav.hidden = true;
     } else {
@@ -1439,7 +1439,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       ol.innerHTML = ''; nav.hidden = true;
     }
     var dg = '';
-    for (var d = 1; d <= 9; d++) dg += '<button type="button" data-d="' + d + '" aria-pressed="' + (view.kind === 'digit' && view.d === d) + '" aria-label="Strong links of digit ' + d + '">' + d + '</button>';
+    for (var d = 1; d <= 9; d++) dg += '<button type="button" data-d="' + d + '" aria-pressed="' + (view.kind === 'digit' && view.d === d) + '" aria-label="Strong edges of digit ' + d + '">' + d + '</button>';
     $('digits').innerHTML = dg;
   }
   function render() {
