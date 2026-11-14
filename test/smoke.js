@@ -219,7 +219,10 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     click(document.querySelector('#techs button[data-key=' + key + ']'));
     if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error(nm + ' is not drawn with group dots');
     if (!/blue node/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
-    if (!$('grid').querySelector('[stroke-dasharray]')) throw new Error(nm + ' has no dashed links from the removed candidates to the group dots');
+    if (!$('grid').querySelector('[stroke-dasharray]')) throw new Error(nm + ' has no dashed edges from the removed candidates to the group nodes');
+    { const red = $('graph').querySelectorAll('line[stroke="var(--out)"]').length, gr = $('graph').querySelectorAll('line[stroke="var(--true)"]').length;
+      const elimCount = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length;
+      if (red - 1 !== elimCount || gr < 3) throw new Error(nm + ': the graph should show the paired-up edges and one red edge per removed candidate (' + red + ' red, ' + gr + ' green, ' + elimCount + ' removed)'); }
   }
   // every removed candidate has a dashed link, and links lying along one another are bowed apart
   for (const i of [1, 2, 3, 4]) {

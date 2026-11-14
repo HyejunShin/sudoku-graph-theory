@@ -430,6 +430,15 @@
   /* Triples and quads. Naked: k cells of a unit hold only k digits between them, so those digits are used up there.
      Hidden: k digits fit only in k cells of a unit, so those cells hold nothing else.
      Both are counting arguments (Hall's theorem on the cells and digits of the unit), not link arguments. */
+  /* The second bipartite graph behind a counting move (write-up, Theorem 7.5): constraint sets on two sides, one edge per
+     candidate. `block` is the k-by-k part the count pairs up; its edges are all used, so any other edge into it is removed. */
+  function matchingFor(res, title, leftName, rightName, edges, blockL, blockR) {
+    const ls = [...new Set(edges.map(e => e.l))], rs = [...new Set(edges.map(e => e.r))];
+    const order = (xs, block) => xs.filter(x => block.includes(x)).sort((a, b) => a - b).concat(xs.filter(x => !block.includes(x)).sort((a, b) => a - b));
+    res.matching = { title, left: order(ls, blockL).map(x => ({ key: x, label: leftName(x), block: blockL.includes(x) })),
+      right: order(rs, blockR).map(x => ({ key: x, label: rightName(x), block: blockR.includes(x) })), edges, k: blockL.length };
+  }
+
   function findSubsets(st) {
     const out = [], seen = new Set();
     const push = (res, elim) => { const key = elim.slice().sort((a, b) => a - b).join(','); if (seen.has(key)) return; seen.add(key); res.elim = elim; elim.forEach(e => res.nodes.set(e, 'elim')); linkToGroups(res); out.push(res); };
@@ -444,6 +453,8 @@
         if (!elim.length) continue;
         const res = mkResult('Naked ' + word, 'Theorem 7.5, the sets rule: ' + k + ' cells need ' + k + ' digits');
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
+        { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: cs.includes(c) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
+          matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each cell takes one digit', cellName, d => String(d), ed, cs, digits(m)); }
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
         say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue node. The count proves every blue node true.');
@@ -458,6 +469,8 @@
         if (!elim.length) continue;
         const res = mkResult('Hidden ' + word, 'Theorem 7.5, the sets rule: ' + k + ' digits need ' + k + ' cells');
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
+        { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: where.includes(c) && dd.includes(d) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
+          matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each digit takes one cell', cellName, d => String(d), ed, where, dd); }
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
         say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue node. The count proves every blue node true.');
@@ -485,6 +498,9 @@
         res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+        { const ed = []; for (let c = 0; c < 81; c++) if (has(st, c, d)) { const id = cid(c, d), l = baseOf(c), r = coverOf(c); ed.push({ l, r, id, kind: bi.includes(l) && cv.includes(r) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
+          const b1 = bn.slice(0, -1), c1 = cn.slice(0, -1);
+          matchingFor(res, 'The ' + d + 's as edges between ' + bn + ' and ' + cn + ': each ' + b1 + ' takes one ' + c1, i => b1 + ' ' + (i + 1), i => c1 + ' ' + (i + 1), ed, bi, cv); }
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
         say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue node. The count proves every blue node true.');
         say(res, 'Any other ' + d + ' in those ' + cn + ' is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');

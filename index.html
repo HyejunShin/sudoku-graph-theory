@@ -128,6 +128,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 #grid .fresh-bg { fill-opacity: 0; animation: freshbg 1000ms ease-out; }
 @keyframes going { 0% { transform: scale(1); opacity: 1; } 12% { transform: scale(1.55); } 24% { transform: scale(1); } 36% { transform: scale(1.55); } 48% { transform: scale(1); } 78% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.2); opacity: 0; } }
 @keyframes strike { to { stroke-dashoffset: 0; } }
+#graph .going-edges { animation: fadeedges var(--dur, 1100ms) ease-in forwards; }
+@keyframes fadeedges { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes landing { 0%, 100% { transform: scale(1); } 25%, 75% { transform: scale(1.55); } 50% { transform: scale(1.1); } }
 @keyframes freshbg { from { fill-opacity: 0.5; } to { fill-opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
@@ -648,6 +650,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   /* Triples and quads. Naked: k cells of a unit hold only k digits between them, so those digits are used up there.
      Hidden: k digits fit only in k cells of a unit, so those cells hold nothing else.
      Both are counting arguments (Hall's theorem on the cells and digits of the unit), not link arguments. */
+  /* The second bipartite graph behind a counting move (write-up, Theorem 7.5): constraint sets on two sides, one edge per
+     candidate. `block` is the k-by-k part the count pairs up; its edges are all used, so any other edge into it is removed. */
+  function matchingFor(res, title, leftName, rightName, edges, blockL, blockR) {
+    const ls = [...new Set(edges.map(e => e.l))], rs = [...new Set(edges.map(e => e.r))];
+    const order = (xs, block) => xs.filter(x => block.includes(x)).sort((a, b) => a - b).concat(xs.filter(x => !block.includes(x)).sort((a, b) => a - b));
+    res.matching = { title, left: order(ls, blockL).map(x => ({ key: x, label: leftName(x), block: blockL.includes(x) })),
+      right: order(rs, blockR).map(x => ({ key: x, label: rightName(x), block: blockR.includes(x) })), edges, k: blockL.length };
+  }
+
   function findSubsets(st) {
     const out = [], seen = new Set();
     const push = (res, elim) => { const key = elim.slice().sort((a, b) => a - b).join(','); if (seen.has(key)) return; seen.add(key); res.elim = elim; elim.forEach(e => res.nodes.set(e, 'elim')); linkToGroups(res); out.push(res); };
@@ -662,6 +673,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (!elim.length) continue;
         const res = mkResult('Naked ' + word, 'Theorem 7.5, the sets rule: ' + k + ' cells need ' + k + ' digits');
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
+        { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: cs.includes(c) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
+          matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each cell takes one digit', cellName, d => String(d), ed, cs, digits(m)); }
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
         say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue node. The count proves every blue node true.');
@@ -676,6 +689,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (!elim.length) continue;
         const res = mkResult('Hidden ' + word, 'Theorem 7.5, the sets rule: ' + k + ' digits need ' + k + ' cells');
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
+        { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: where.includes(c) && dd.includes(d) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
+          matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each digit takes one cell', cellName, d => String(d), ed, where, dd); }
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
         say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue node. The count proves every blue node true.');
@@ -703,6 +718,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+        { const ed = []; for (let c = 0; c < 81; c++) if (has(st, c, d)) { const id = cid(c, d), l = baseOf(c), r = coverOf(c); ed.push({ l, r, id, kind: bi.includes(l) && cv.includes(r) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
+          const b1 = bn.slice(0, -1), c1 = cn.slice(0, -1);
+          matchingFor(res, 'The ' + d + 's as edges between ' + bn + ' and ' + cn + ': each ' + b1 + ' takes one ' + c1, i => b1 + ' ' + (i + 1), i => c1 + ' ' + (i + 1), ed, bi, cv); }
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
         say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue node. The count proves every blue node true.');
         say(res, 'Any other ' + d + ' in those ' + cn + ' is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
@@ -1375,9 +1393,38 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     }
     return { nodes: nodes, edges: edges, owner: owner, H: H };
   }
+  /* Counting moves are drawn as the graph the count is about: sets on two sides, one edge per candidate. */
+  function drawMatching(res) {
+    var M = res.matching, svg = $('graph'), GAP = 48, top = 62, n = Math.max(M.left.length, M.right.length), H = top + (n - 1) * GAP + 58;
+    var xl = 170, xr = 350, yOf = function (i) { return top + i * GAP; }, s = '', going = removing;
+    var posL = {}, posR = {}; M.left.forEach(function (x, i) { posL[x.key] = yOf(i); }); M.right.forEach(function (x, i) { posR[x.key] = yOf(i); });
+    s += '<text x="260" y="24" text-anchor="middle" font-family="var(--font-body)" font-size="13" fill="var(--muted)">' + M.title + '</text>';
+    s += '<rect x="' + (xl - 92) + '" y="' + (top - 22) + '" width="' + (xr - xl + 184) + '" height="' + ((M.k - 1) * GAP + 44) + '" rx="14" fill="var(--k0)" fill-opacity="0.07" stroke="var(--k0)" stroke-width="1.5" stroke-dasharray="6 5"/>';
+    var edge = function (e) {
+      var y1 = posL[e.l], y2 = posR[e.r], st = e.kind === 'block' ? 'stroke="var(--true)" stroke-width="2.4"' : e.kind === 'elim' ? 'stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"' : 'stroke="var(--muted)" stroke-opacity="0.55" stroke-width="1.3"';
+      return '<line x1="' + (xl + 14) + '" y1="' + y1 + '" x2="' + (xr - 14) + '" y2="' + y2 + '" ' + st + ' stroke-linecap="round"/>';
+    };
+    M.edges.filter(function (e) { return e.kind === 'other'; }).forEach(function (e) { s += edge(e); });
+    M.edges.filter(function (e) { return e.kind === 'block'; }).forEach(function (e) { s += edge(e); });
+    var red = M.edges.filter(function (e) { return e.kind === 'elim'; }).map(edge).join('');
+    s += going ? '<g class="going-edges">' + red + '</g>' : red;
+    var node = function (x, y, label, left) {
+      return '<g data-node="' + (left ? 'L' : 'R') + x.key + '"><circle cx="' + (left ? xl : xr) + '" cy="' + y + '" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/></g>'
+        + '<text x="' + (left ? xl - 22 : xr + 22) + '" y="' + (y + 4.5) + '" text-anchor="' + (left ? 'end' : 'start') + '" font-family="var(--font-mono)" font-size="12.5"' + (x.block ? ' font-weight="600" fill="var(--ink)"' : ' fill="var(--muted)"') + '>' + label + '</text>';
+    };
+    M.left.forEach(function (x) { s += node(x, posL[x.key], x.label, true); });
+    M.right.forEach(function (x) { s += node(x, posR[x.key], x.label, false); });
+    var ly = H - 12;
+    s += '<line x1="70" y1="' + (ly - 4) + '" x2="94" y2="' + (ly - 4) + '" stroke="var(--true)" stroke-width="2.4"/><text x="100" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">paired up by the count</text>'
+       + '<line x1="270" y1="' + (ly - 4) + '" x2="294" y2="' + (ly - 4) + '" stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"/><text x="300" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">can never be used: removed</text>';
+    svg.setAttribute('viewBox', '0 0 520 ' + H);
+    svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
+    svg.innerHTML = s;
+  }
   function drawGraph() {
     var svg = $('graph'), card = $('graphcard');
     if (view.kind !== 'result') { svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Click a technique to see its graph.</text>'; return; }
+    if (view.res.matching) { drawMatching(view.res); return; }
     var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
     var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
     if (removing) res.elim.forEach(function (id) { going[id] = 1; });
