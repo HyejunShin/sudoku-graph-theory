@@ -489,13 +489,14 @@
         const z = digits(st.cand[w1] & st.cand[w2])[0], x = digits(st.cand[w1] & ~(1 << z))[0], y = digits(st.cand[w2] & ~(1 << z))[0];
         const elim = []; for (let c = 0; c < 81; c++) if (c !== p && c !== w1 && c !== w2 && has(st, c, z) && sees(c, p) && sees(c, w1) && sees(c, w2)) elim.push(cid(c, z));
         if (!elim.length) continue;
-        const res = mkResult('XYZ-Wing', 'Beyond links: the pivot has three candidates');
+        const res = mkResult('XYZ-Wing', 'Lemma 7.6 and Theorem 5.2: a triangle whose link is counted');
         for (const c of [p, w1, w2]) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+        for (const c of [p, w1, w2]) res.links.push({ a: elim[0], b: cid(c, z), strong: false });
         const zs = { [cid(p, z)]: 't', [cid(w1, z)]: 't', [cid(w2, z)]: 't' };
         say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(w1) + ', which holds ' + digitList([x, z].sort()) + ', and ' + cellName(w2) + ', which holds ' + digitList([y, z].sort()) + '.');
         say(res, 'If the pivot is ' + x + ', then ' + cellName(w1) + ' is ' + z + '. If it is ' + y + ', then ' + cellName(w2) + ' is ' + z + '. Otherwise the pivot itself is ' + z + '.', zs);
-        say(res, 'So one of the three green ' + z + 's is true. The pivot has three candidates, so this is one fact about three things, which no link can state.', zs);
+        say(res, 'So the three green ' + z + 's cannot all be false. That is a link counted across the three cells, and with the red ' + z + ' it closes a triangle, as in a Locked pair.', zs);
         say(res, 'A cell that sees all three cannot be ' + z + '. That removes: ' + list(elim) + '.', zs);
         out.push(res);
       }
@@ -574,12 +575,12 @@
       const m = st.cand[pair[0]], odd = cells.find(c => !pair.includes(c));
       if ((st.cand[odd] & m) !== m || bits(st.cand[odd]) < 3) continue;
       const ab = digits(m), elim = ab.map(d => cid(odd, d));
-      const res = mkResult('Unique rectangle', 'Beyond links: uses the fact that the puzzle has one solution');
+      const res = mkResult('Unique rectangle', 'An even loop with two colourings, plus the fact that the puzzle has one solution');
       for (const c of pair) for (const d of ab) res.nodes.set(cid(c, d), 'loop');
       elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
       say(res, 'The cells ' + cellList(pair) + ' hold only ' + digitList(ab) + '. With ' + cellName(odd) + ' they form a rectangle across two rows, two columns and two boxes.');
-      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would hold only ' + digitList(ab) + ', and swapping the two digits would give a second solution.');
-      say(res, 'A proper sudoku has exactly one solution, so ' + cellName(odd) + ' is neither. That removes: ' + list(elim) + '. This is not a link argument: it reasons about the puzzle as a whole.');
+      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would form an even loop holding only ' + digitList(ab) + '. An even loop can be coloured two ways, and nothing outside it could tell them apart, so there would be two solutions.');
+      say(res, 'A proper sudoku has exactly one solution, so ' + cellName(odd) + ' is neither. That removes: ' + list(elim) + '. The two colourings are graph theory; the one-solution fact is an extra assumption about the puzzle.');
       out.push(res);
     }
     return out;
@@ -640,12 +641,12 @@
     { key: 'chain', name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
     { key: 'group', name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
     { key: 'gchain', name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
+    { key: 'xyz', name: 'XYZ-Wing', loop: 'triangle with a counted link', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
     /* Beyond links. These are tried only after every loop and colouring above has failed. */
     { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
     { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
-    { key: 'xyz', name: 'XYZ-Wing', loop: 'three-candidate pivot', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.', beyond: true, section: 'other' },
-    { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'other' },
-    { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, section: 'other', lastResort: true }
+    { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
+    { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
   ];
 
   /* ---------- random puzzles ---------- */

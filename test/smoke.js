@@ -177,7 +177,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   log.push('random: 6 different proper puzzles, each finished by play; Start over keeps the puzzle');
   // 6i. the three "Beyond links" examples sit at the bottom of the list, and play finishes each using the named step
   document.documentElement.setAttribute('data-instant', '1');
-  const lastThree = ['Locked triple', 'Naked triple', 'Beyond links: trial and error'].map(nm => [...sel.options].find(o => o.textContent === nm));
+  const lastThree = ['Locked triple', 'Naked triple', 'Trial and error'].map(nm => [...sel.options].find(o => o.textContent === nm));
   if (lastThree.some(o => !o)) throw new Error('an expected example is missing from the list');
   const wanted = [['locked triple', 'Locked triple'], ['naked triple', 'Naked triple'], ['trial and error', 'Trial and error']];
   for (let n = 0; n < 3; n++) {
@@ -203,7 +203,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=group]:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
   click(document.querySelector('#techs button[data-key=group]'));
   if ($('grid').querySelectorAll('rect.group').length !== 1) throw new Error('the locked triple is not drawn as one outlined group');
-  if (document.querySelectorAll('#techs .beyond').length !== 2) throw new Error('expected two dividers: counting, and beyond both');
+  if (document.querySelectorAll('#techs .beyond').length !== 3) throw new Error('expected three dividers: counting, one-solution, last resort');
   // 6j. the easy-cell switch and "Random easy sudoku"
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
   loadSample(4);

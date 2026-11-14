@@ -82,11 +82,11 @@ A search for everything links can prove, on a smaller sample, solved nothing the
 - **Triples and quads**, naked or hidden: k cells of a unit against the k digits they hold.
 - **Bigger fish** (Swordfish, Jellyfish): one digit in k rows against k columns.
 
-**Beyond both rules.** Three steps remain outside, tried last:
+**A counted link.** In an **XYZ-Wing** one of three candidates must be true, which a short count shows. With the candidate it removes, that closes a triangle, the same shape as the Locked pair. It sits with the loops.
 
-- **XYZ-Wing**: a pivot with three candidates and two wings.
-- **Unique rectangle**: four corners that would allow two solutions. It uses the fact that a proper sudoku has one.
-- **Trial and error**, the last resort: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is offered only when nothing else applies.
+**One more fact.** A **unique rectangle** is an even loop that could be coloured both ways with nothing to decide between them. It adds the assumption that a proper sudoku has one solution.
+
+**Last resort.** **Trial and error**: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is not a loop, a colouring or a count, and it is offered only when nothing else applies.
 
 In a test on 6,000 random puzzles with all of these, 106 used a group step (locked triple or grouped chain), 34 a naked triple, 1 a unique rectangle, and 75 (1.2%) still needed a guess. Bigger fish and XYZ-Wing were never needed: they exist, but random puzzles almost never require them. With the guess every puzzle can be finished. The last entries of the example list show these steps.
 

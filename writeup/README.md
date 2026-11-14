@@ -491,9 +491,23 @@ What the sets rule covers:
 
 With k = 2 these are the naked pair, hidden pair and X-Wing of Theorem 5.4. So the 4-cycle with two strong links is the smallest case of the sets rule, and the sets rule is where the even loop leads when a set has more than two candidates left. The naked triple of Proposition 7.3 is the case k = 3.
 
-Both extensions were checked by brute force on about 1,200 random states that contain a known solution: 1.2 million linked pairs of group dots against Lemma 7.4, and about 18,800 instances of the sets rule with k = 2, 3 and 4. There were no failures. The script is `proofs/verify_sets.py`.
+**3. A link that has to be counted.** Theorem 5.2 never needed a strong link to mean "exactly one". Its proof only used one direction: if this end is false, the other is true. So a link that says "at least one of these is true" serves just as well, wherever it comes from.
 
-**What is still outside.** XYZ-Wing needs a dot larger than a group: a set of cells with one candidate too many. It probably fits the same loop rule, but that is not proved here. A *unique rectangle* is not about candidates at all: it uses the fact that the puzzle has one solution. And *trial and error* reaches its contradiction through a branching web of consequences, not a loop or a count.
+**Lemma 7.6 (the XYZ link).** Let a cell p hold x, y and z. Let it see a cell holding x and z, and a cell holding y and z. Then at least one of the three z's in those cells is true.
+
+*Why.* The cell p is x, y or z. If it is x, the cell holding x and z sees it and must be z. If it is y, the cell holding y and z must be z. Otherwise p itself is z. ∎
+
+So take the z in p and the z in the first wing as one dot, and the z in the second wing as another. They cannot both be false. A candidate z that sees all three cells is linked to both dots. Suppose it is true: both dots are false, which the lemma forbids. That is the **XYZ-Wing**, and its shape is a triangle, like the Locked pair.
+
+**4. Two remarks.**
+
+*Triples as a colouring.* A solved grid colours the 81 cells with nine colours so that cells which see each other differ \[2\]. A naked triple is three cells that all see each other and share a list of three colours, so they use up all three. The sets rule says the same thing by counting.
+
+*The unique rectangle.* Four cells in two rows, two columns and two boxes, each holding only a and b, form an even loop, and an even loop has exactly two colourings (Corollary 2.2). Nothing outside the four cells can tell the two apart, so both would be solutions. A proper puzzle has one solution, so that pattern can never appear, and any candidate that would complete it is false. The loop and its two colourings are graph theory. The last step is not: it uses a fact about the puzzle that is not one of the 324 constraint sets.
+
+All three were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million linked pairs of group dots against Lemma 7.4, about 17,500 instances of the sets rule with k = 2, 3 and 4, and about 1,600 XYZ configurations against Lemma 7.6. There were no failures. The script is `proofs/verify_sets.py`.
+
+**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a colouring or a count. Larger families such as almost-locked sets and finned fish are not examined here.
 
 ## 8. Has this been done before?
 

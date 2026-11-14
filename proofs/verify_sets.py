@@ -4,7 +4,9 @@ A. Lemma 7.4: group dots obey the two link rules (so the Cycle Lemma and Theorem
 B. Theorem 7.5, the sets rule: if k pairwise disjoint constraint sets are covered by k other
    constraint sets, every candidate of the covering sets outside the covered ones is false.
 
-Both are checked on random states that contain a known solution. Run: python3 verify_sets.py
+C. Lemma 7.6: in an XYZ-Wing one of the three z's is true.
+
+All are checked on random states that contain a known solution. Run: python3 verify_sets.py
 """
 import itertools, random, time
 
@@ -125,13 +127,36 @@ def check_families(truth, P, live):
         family(rows, cols); family(cols, rows)
     return n
 
-t0, groups, rule, fam, states = time.time(), 0, 0, 0, 0
+def check_xyz(truth, P, live):
+    """Lemma 7.6: a pivot cell holding x, y, z that sees a cell holding x, z and a cell holding y, z.
+    One of the three z's is true, so a z that sees all three cells is false."""
+    n = 0
+    cell = {}
+    for (r, c, d) in P: cell.setdefault((r, c), set()).add(d)
+    sees = lambda a, b: a != b and (a[0] == b[0] or a[1] == b[1] or (a[0] // 3 == b[0] // 3 and a[1] // 3 == b[1] // 3))
+    for p, ds in cell.items():
+        if len(ds) != 3: continue
+        wings = [w for w, ws in cell.items() if len(ws) == 2 and ws < ds and sees(p, w)]
+        for w1, w2 in itertools.combinations(wings, 2):
+            if cell[w1] == cell[w2]: continue
+            z = next(iter(cell[w1] & cell[w2]))
+            three = [(p[0], p[1], z), (w1[0], w1[1], z), (w2[0], w2[1], z)]
+            assert any(t in truth for t in three), 'no z is true among pivot and wings'
+            for v, vs in cell.items():
+                if v not in (p, w1, w2) and z in vs and sees(v, p) and sees(v, w1) and sees(v, w2):
+                    assert (v[0], v[1], z) not in truth, 'XYZ-Wing removed a true candidate'
+            n += 1
+    return n
+
+t0, groups, rule, fam, xyz, states = time.time(), 0, 0, 0, 0, 0
 while time.time() - t0 < 40:
     truth, P, live = random_state()
     groups += check_groups(truth, P, live)
     rule += check_sets_rule(truth, P, live)
     fam += check_families(truth, P, live)
+    xyz += check_xyz(truth, P, live)
     states += 1
 print('states:', states)
 print('group dots (Lemma 7.4): %d linked pairs of dots checked against the two link rules, 0 failures' % groups)
 print('sets rule (Theorem 7.5): %d random base/cover instances and %d subset and fish instances, k = 2, 3, 4, each removing at least one candidate, 0 failures' % (rule, fam))
+print('XYZ-Wing (Lemma 7.6): %d pivot-and-wings configurations checked, 0 failures' % xyz)
