@@ -1294,7 +1294,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     res.elim.concat(res.place).forEach(node);
     if (!edges.length) res.nodes.forEach(function (role, id) { node(id); });
     // layout: a single loop goes on an ellipse; anything else is spread by a small spring simulation
-    var W = 520, H = 300, cx = W / 2, cy = H / 2 - 4, n = nodes.length, adj = nodes.map(function () { return []; });
+    var W = 520, H = nodes.length > 22 ? 440 : nodes.length > 13 ? 370 : 300, cx = W / 2, cy = H / 2 - 4, n = nodes.length, adj = nodes.map(function () { return []; });
     edges.forEach(function (e) { adj[nodes.indexOf(e.a)].push(nodes.indexOf(e.b)); adj[nodes.indexOf(e.b)].push(nodes.indexOf(e.a)); });
     var order = [], seen = {}, startAt = 0;
     nodes.forEach(function (x, i) { if (x.deg > nodes[startAt].deg) startAt = i; });
@@ -1317,7 +1317,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (cyc) {
       var m = cyc.length, crx = Math.min(190, 70 + m * 20), cry = Math.min(92, 46 + m * 8);
       cyc.forEach(function (i, k) { var t = -Math.PI / 2 + 2 * Math.PI * k / m; nodes[i].x = cx + crx * Math.cos(t); nodes[i].y = cy + cry * Math.sin(t); fixed[i] = 1; });
-      nodes.forEach(function (x, i) { if (fixed[i]) return; var nb = adj[i].filter(function (j) { return fixed[j]; })[0]; if (nb !== undefined) { x.x = cx + (nodes[nb].x - cx) * 1.5 + (i % 2 ? 9 : -9); x.y = cy + (nodes[nb].y - cy) * 1.5; } });
+      nodes.forEach(function (x, i) { if (fixed[i]) return; var nb = adj[i].filter(function (j) { return fixed[j]; })[0]; if (nb !== undefined) { var fn = adj[i].filter(function (j) { return fixed[j]; }), mx = 0, my = 0; fn.forEach(function (j) { mx += nodes[j].x; my += nodes[j].y; }); mx /= fn.length; my /= fn.length;
+        var ang = Math.atan2(my - cy, mx - cx) + ((i * 37) % 9 - 4) * 0.16; x.x = cx + Math.cos(ang) * (crx + 70); x.y = cy + Math.sin(ang) * (cry + 55); } });
     }
     if (n > 2 && !(cyc && cyc.length === n)) {
       var k0 = Math.sqrt(W * H / n) * 0.62;
@@ -1338,11 +1339,27 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         });
       }
     }
-    return { nodes: nodes, edges: edges, owner: owner };
+    // Last pass: no two dots closer than a dot and its label need. Dots on the loop stay put; the others give way.
+    var MIN = 54;
+    for (var pass = 0; pass < 400; pass++) {
+      var moved = false;
+      for (var a = 0; a < n; a++) for (var b = a + 1; b < n; b++) {
+        var ddx = nodes[b].x - nodes[a].x, ddy = nodes[b].y - nodes[a].y, dd = Math.sqrt(ddx * ddx + ddy * ddy);
+        if (dd >= MIN) continue;
+        if (dd < 0.01) { ddx = (a % 2 ? 1 : -1); ddy = 0.5; dd = 1.1; }
+        var push = (MIN - dd) / 2 + 0.5, ux = ddx / dd, uy = ddy / dd, fa = fixed[a] ? 0 : 1, fb = fixed[b] ? 0 : 1;
+        if (!fa && !fb) { fa = 1; fb = 1; }
+        var share = fa + fb;
+        nodes[a].x -= ux * push * 2 * fa / share; nodes[a].y -= uy * push * 2 * fa / share; nodes[b].x += ux * push * 2 * fb / share; nodes[b].y += uy * push * 2 * fb / share; moved = true;
+      }
+      nodes.forEach(function (x) { x.x = Math.max(34, Math.min(W - 34, x.x)); x.y = Math.max(30, Math.min(H - 44, x.y)); });
+      if (!moved) break;
+    }
+    return { nodes: nodes, edges: edges, owner: owner, H: H };
   }
   function drawGraph() {
     var svg = $('graph'), card = $('graphcard');
-    if (view.kind !== 'result') { svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Tap a technique to see its graph.</text>'; return; }
+    if (view.kind !== 'result') { svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Tap a technique to see its graph.</text>'; return; }
     var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
     var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
     if (removing) res.elim.forEach(function (id) { going[id] = 1; });
@@ -1367,6 +1384,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one dot' : '') + '</text>';
     });
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
+    svg.setAttribute('viewBox', '0 0 520 ' + g.H);
     svg.innerHTML = s;
   }
   function drawExplain() {

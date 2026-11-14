@@ -15,6 +15,12 @@ Marking things with two labels so that neighbours always differ is called *two-c
 
 *The Loop Finder explaining an X-Wing on a real puzzle. Click the picture to open it.*
 
+## Every move is a small graph
+
+![Seven moves, each shown on the board and as a plain graph: Locked pair, Skyscraper, X-Wing, XY-Wing, 3D Medusa, naked triple, almost-locked sets](writeup/figures/board-and-graph.png)
+
+*Left: the move on the board. Right: the same dots and links drawn as a graph, with a group of candidates as one dot. From the top: Locked pair, Skyscraper, X-Wing, XY-Wing, 3D Medusa, naked triple, almost-locked sets.*
+
 ## First: what a candidate is
 
 When a cell is still empty, solvers write in it, in small digits, every digit that could still go there. Each of these is a **candidate**: one digit in one cell. In the picture above, the top-left cell has three candidates, 2, 7 and 8, because its row, column and box already contain every other digit.

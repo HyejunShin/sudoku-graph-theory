@@ -263,13 +263,27 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   log.push('easy cells: switch, one-line steps, Random easy sudoku finished by play using only Easy cell');
   // 6k. the graph view: one dot per candidate or group, the same marks as the board, and no two dots on top of each other
   document.documentElement.setAttribute('data-instant', '1');
+  // no two dots may overlap, in any technique of any example, at every state on the way to the solution
+  let closest = 1e9, graphsSeen = 0;
+  const checkGraph = where => {
+    const gn = [...$('graph').querySelectorAll('g[data-node]')]; if (!gn.length) return;
+    const H = +$('graph').getAttribute('viewBox').split(' ')[3];
+    const pts = gn.map(g => { const c = g.querySelector('circle:last-of-type'); return [+c.getAttribute('cx'), +c.getAttribute('cy')]; });
+    for (let a = 0; a < pts.length; a++) for (let b = a + 1; b < pts.length; b++) closest = Math.min(closest, Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]));
+    if (closest < 46) throw new Error(where + ': two dots of the graph view overlap (' + closest.toFixed(0) + ' apart)');
+    if (pts.some(q => q[0] < 15 || q[0] > 505 || q[1] < 15 || q[1] > H - 15)) throw new Error(where + ': a dot of the graph view is off the picture');
+    graphsSeen++;
+  };
+  for (const o of [...sel.options].filter(x => /^\d+$/.test(x.value))) {
+    sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    for (let g = 0; g < 60 && $('tname').textContent !== 'Solved'; g++) {
+      for (const b of [...document.querySelectorAll('#techs button[data-key]:not([disabled])')]) { click(document.querySelector('#techs button[data-key="' + b.getAttribute('data-key') + '"]')); checkGraph(o.textContent + ' / ' + $('tname').textContent); }
+      click($('apply'));
+    }
+  }
+  log.push('graph view: ' + graphsSeen + ' graphs drawn, closest pair of dots ' + closest.toFixed(0) + ' apart');
   for (const nm of ['Skyscraper', 'X-Wing', 'XY-Wing', '3D Medusa', 'Locked pair']) {
     const o = [...sel.options].find(x => x.textContent === nm); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-    const gnodes = [...$('graph').querySelectorAll('g[data-node]')];
-    if (gnodes.length < 3) throw new Error(nm + ': the graph view has only ' + gnodes.length + ' dots');
-    const pts = gnodes.map(g => { const c = g.querySelector('circle'); return [+c.getAttribute('cx'), +c.getAttribute('cy')]; });
-    for (let a = 0; a < pts.length; a++) for (let b = a + 1; b < pts.length; b++) if (Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]) < 30) throw new Error(nm + ': two dots of the graph view overlap');
-    if (pts.some(q => q[0] < 15 || q[0] > 505 || q[1] < 15 || q[1] > 285)) throw new Error(nm + ': a dot of the graph view is off the picture');
     const boardRed = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length, graphRed = $('graph').querySelectorAll('circle[stroke="var(--out)"]').length;
     if (boardRed !== graphRed) throw new Error(nm + ': board shows ' + boardRed + ' red dots, graph ' + graphRed);
     click($('fwd')); click($('fwd')); click($('fwd'));
