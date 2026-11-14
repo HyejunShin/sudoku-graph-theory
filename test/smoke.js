@@ -18,10 +18,13 @@ if (!$('grid').innerHTML.includes('<circle')) throw new Error('no overlay drawn 
 // 2. walk the argument steps
 for (let i = 0; i < 4; i++) click($('fwd'));
 if (!document.querySelector('#steps li.on')) throw new Error('no step highlighted');
-// 3. solve the tour puzzle with Next step + Apply
+// 3. solve the tour puzzle by hand: tap the first technique that has a move, then Apply
+if ($('next') || $('easy')) throw new Error('the Next step and Fill easy cells buttons should be gone');
 let guard = 0, techs = new Set();
 while ($('tname').textContent !== 'Solved' && guard++ < 300) {
-  click($('next'));
+  const firstTech = document.querySelector('#techs button[data-key]:not([disabled])');
+  if (!firstTech) { log.push('stopped: no technique available'); break; }
+  click(firstTech);
   if (!$('stepnav').hidden) { techs.add($('tname').textContent.replace(/ \(.*/, '')); click($('apply')); }
   if ($('status').className.includes('bad')) { log.push('stopped: ' + $('status').textContent); break; }
 }
@@ -77,7 +80,9 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   loadSample(0);
   if (play.disabled) throw new Error('play is disabled on a fresh puzzle');
   if (play.textContent !== 'Play all steps') throw new Error('fresh puzzle: button says ' + play.textContent);
-  if (!(play.compareDocumentPosition($('next')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !(play.compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !($('speed').compareDocumentPosition($('next')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING)) throw new Error('play and speed are not above the manual buttons');
+  if (!(play.compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !($('speed').compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING)) throw new Error('play and speed are not above the manual buttons');
+  const speeds = [...$('speed').options].map(o => o.textContent + '=' + o.value + (o.selected ? '*' : '')).join(' ');
+  if (speeds !== 'Slow=1700 Normal=800* Fast=400 Moves only=1000') throw new Error('unexpected speeds: ' + speeds);
   click(play);
   if (play.textContent !== 'Pause' || play.getAttribute('aria-pressed') !== 'true') throw new Error('play did not start');
   await until(() => play.textContent !== 'Pause', 20000, 'play to finish the tour puzzle');
@@ -107,7 +112,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   if (play.textContent !== 'Resume') throw new Error('a manual button did not stop play');
   // 6d. with waits switched on, Apply first shows the candidates leaving, then changes the board
   document.documentElement.removeAttribute('data-instant');
-  $('speed').value = '800';
+  $('speed').value = '400';
   loadSample(4);
   const cellsBefore = $('status').textContent;
   click($('apply'));

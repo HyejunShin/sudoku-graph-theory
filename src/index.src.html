@@ -102,7 +102,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Sudoku Loop Finder</h1>
-    <p class="lede">Load a real puzzle, pick a technique, and see the loop of candidates that makes it work. A candidate is a small digit in an empty cell: a digit that could still go there. Each move comes with the chain of forced steps behind it. Press <b>Play all steps</b> to watch the whole puzzle being solved.</p>
+    <p class="lede">Load a real puzzle, tap a technique, and see the loop of candidates that makes it work. A candidate is a small digit in an empty cell: a digit that could still go there. Each move comes with the chain of forced steps behind it. Press <b>Play all steps</b> to watch the whole puzzle being solved.</p>
   </header>
 
   <section class="card" aria-label="Load a puzzle">
@@ -129,15 +129,13 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
           <button id="play" type="button" class="primary" aria-pressed="false">Play all steps</button>
           <label for="speed">Speed</label>
           <select id="speed" aria-label="Playback speed">
-            <option value="2800">Slow</option>
-            <option value="1700" selected>Normal</option>
-            <option value="800">Fast</option>
+            <option value="1700">Slow</option>
+            <option value="800" selected>Normal</option>
+            <option value="400">Fast</option>
             <option value="1000" data-skip="1">Moves only</option>
           </select>
         </div>
         <div class="row">
-          <button id="next" type="button" class="primary">Next step</button>
-          <button id="easy" type="button">Fill easy cells</button>
           <button id="undo" type="button">Undo</button>
           <button id="reset" type="button">Start over</button>
         </div>
@@ -211,7 +209,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
   function pace() { return instant() ? 0 : +$('speed').value; }
   /* "Moves only" shows each loop and its removal, without walking through the argument. */
   function skipSteps() { var sp = $('speed'), o = sp.options[sp.selectedIndex]; return !!o && o.getAttribute('data-skip') === '1'; }
-  function removalMs() { return instant() ? 0 : Math.max(600, Math.min(1600, Math.round(pace() * 0.7))); }
+  function removalMs() { return instant() ? 0 : Math.max(500, Math.min(1600, Math.round(pace() * 0.7))); }
 
   /* ---------- geometry ---------- */
   var S = 60, M = 2;
@@ -342,7 +340,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
   }
   function render() {
     draw(); drawTechs(); drawExplain();
-    $('undo').disabled = !history.length; $('next').disabled = E.solved(st); $('easy').disabled = !E.findSingle(st);
+    $('undo').disabled = !history.length;
     /* While playing, the explanation card never shrinks between moves, so the page below it does not jump. */
     var ex = $('explain');
     if (playing) { var h = ex.offsetHeight || 0; if (h > (ex._minH || 0)) { ex._minH = h; ex.style.minHeight = h + 'px'; } }
@@ -446,8 +444,6 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
   $('again').addEventListener('click', function () { interrupt(); loadRandom(); });
   $('load').addEventListener('click', function () { interrupt(); load($('puzzle').value, null); });
   $('puzzle').addEventListener('keydown', function (e) { if (e.key === 'Enter') { interrupt(); load(this.value, null); } });
-  $('next').addEventListener('click', function () { interrupt(); nextStep(false); });
-  $('easy').addEventListener('click', function () { interrupt(); fillEasy(); });
   $('undo').addEventListener('click', function () { interrupt(); if (!history.length) return; st = history.pop(); afterChange('Went back one move.'); });
   $('reset').addEventListener('click', function () { interrupt(); load(original, null); });
   $('apply').addEventListener('click', function () { if (playing) stopPlay(true); applyCurrent(); });
