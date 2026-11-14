@@ -138,7 +138,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
-    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. Pick one candidate, assume it's true, and color the graph: true or false. If two adjacent nodes are both true, the assumption is false.</p>
+    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. The edge is <b>strong</b> when exactly one of them must be true, and <b>weak</b> when at most one can be.</p>
+    <p class="lede">Assume one candidate is true and color the graph in two colors, true and false. A true node makes all its neighbors false. A false node makes its strong neighbors true. If two connected nodes end up both true, the initial assumption was false.</p>
     <p class="lede">Press <b>Play</b> to solve the puzzle.</p>
   </header>
 
