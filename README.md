@@ -32,7 +32,7 @@ Assume one candidate is true and color the graph in two colors, true and false. 
 
 **3. Strong edges form a bipartite graph.** Across a strong edge the colors always differ, so each connected piece has only two colorings: one color all true, the other all false. A node adjacent to both colors is false. That is Simple Coloring and 3D Medusa.
 
-![A component of strong edges can be colored in only two ways](writeup/figures/fig09.png)
+![A component of strong edges can be solved in only two ways](writeup/figures/fig09.png)
 
 **4. Odd loops break the coloring.** On an odd loop some edge has both ends false, and it cannot be a strong one. When strong edges pair up every node but one, that node is false. Skyscraper, Two-String Kite, Turbot Fish and XY-Wing are all this picture.
 
