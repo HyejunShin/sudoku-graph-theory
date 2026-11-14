@@ -80,10 +80,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
-/* The play button is yellow in both themes so it is easy to find; the text stays dark for contrast. */
-#play { background: #fdeb9b; border-color: #e0bd3c; color: #18212b; font-weight: 600; }
-#play:hover:not(:disabled) { background: #fbdc62; border-color: #d9ae1a; }
-#play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #18212b; }
+/* The play button is the one solid dark-purple button, in both themes, so it is easy to find. */
+#play { background: #6b3fa0; border-color: #6b3fa0; color: #ffffff; font-weight: 600; }
+#play:hover:not(:disabled) { background: #57308a; border-color: #57308a; }
+#play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #ffffff; }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
 #grid .going, #grid .landing { transform-box: fill-box; transform-origin: center; }
 #grid .going { animation: going var(--dur, 1100ms) ease-in forwards; }
