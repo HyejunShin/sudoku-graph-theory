@@ -2,7 +2,7 @@
 
 2026-11-14 · Hyejun Shin
 
-**What this is.** Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Coloring. They are usually memorised as separate tricks. This write-up shows they are one idea, and proves it step by step.
+**What this is.** Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Coloring. They are usually memorized as separate tricks. This write-up shows they are one idea, and proves it step by step.
 
 **The idea.** Treat each candidate (a digit that could still go in a cell) as a dot. Join two dots when the rules forbid both from being true. One counting rule about loops of dots then explains every strategy on the list.
 
@@ -34,7 +34,7 @@ None of the strategies is new, and Section 8 says who found them. What is here i
 
 ## 2. Step 1: Graphs and two colors
 
-A *graph* is a set of dots (*vertices*) with lines (*edges*) joining some pairs. Two vertices joined by an edge are *adjacent*, or *neighbours*. All our graphs are finite, and no edge joins a vertex to itself.
+A *graph* is a set of dots (*vertices*) with lines (*edges*) joining some pairs. Two vertices joined by an edge are *adjacent*, or *neighbors*. All our graphs are finite, and no edge joins a vertex to itself.
 
 - A *path* of length n is a row of n + 1 different vertices, each adjacent to the next.
 
@@ -50,11 +50,11 @@ A *graph* is a set of dots (*vertices*) with lines (*edges*) joining some pairs.
 
 *Figure 1. paths, bipartite graphs, even and odd cycles*
 
-Round a cycle the colors must alternate. That works only when the number of vertices is even. In the odd cycle above, the grey vertex has a neighbour of each color, so no color is left for it.
+Round a cycle the colors must alternate. That works only when the number of vertices is even. In the odd cycle above, the gray vertex has a neighbor of each color, so no color is left for it.
 
 **Theorem 2.1 (König).** A graph is bipartite exactly when it has no odd cycle.
 
-*Why, first half.* Suppose a 2-coloring exists and v1, ..., vk is a cycle. Neighbours differ, so vi has the color of v1 exactly when i is odd. But vk is adjacent to v1, so their colors differ, and k is even.
+*Why, first half.* Suppose a 2-coloring exists and v1, ..., vk is a cycle. Neighbors differ, so vi has the color of v1 exactly when i is odd. But vk is adjacent to v1, so their colors differ, and k is even.
 
 *Why, second half.* Suppose there is no odd cycle. No edge joins two components, so we can color one component at a time. Assume the graph is connected and fix a vertex r. We need two facts about distances from r.
 
@@ -96,11 +96,11 @@ A side note: a graph with no edges needs only one color. So bipartite means "at 
 
 ## 3. Step 2: Sudoku as dots and links
 
-**The grid is already a graph.** Every cell has 20 *neighbours*: the other cells of its row, its column and its box. Join each cell to its neighbours and the grid becomes one graph with 81 vertices and 810 edges. Solving a sudoku means coloring that graph with nine digits so that neighbours differ \[2\].
+**The grid is already a graph.** Every cell has 20 *neighbors*: the other cells of its row, its column and its box. Join each cell to its neighbors and the grid becomes one graph with 81 vertices and 810 edges. Solving a sudoku means coloring that graph with nine digits so that neighbors differ \[2\].
 
-![the grid as a graph · one cell's neighbours, and a whole mini sudoku](figures/fig03.png)
+![the grid as a graph · one cell's neighbors, and a whole mini sudoku](figures/fig03.png)
 
-*Figure 3. the grid as a graph · one cell's neighbours, and a whole mini sudoku*
+*Figure 3. the grid as a graph · one cell's neighbors, and a whole mini sudoku*
 
 On the left, the blue cell must differ from each of the 20 shaded cells. On the right, the same idea drawn for every cell of a small 4 by 4 sudoku at once: each line means "these two must differ", and the four colors are the four digits.
 
@@ -135,7 +135,7 @@ A candidate *can be eliminated* if it is false in every solution in Sol(P). Eras
 
 Two graphs come out of this. The *link graph* W(P) has the candidates of P as vertices and all links as edges. The *strong graph* S(P) keeps only the strong links.
 
-In the empty grid every candidate has 28 neighbours in the link graph: the 8 other digits of its cell, and the same digit in the 20 neighbouring cells. As candidates are removed the graph thins out, and strong links appear.
+In the empty grid every candidate has 28 neighbors in the link graph: the 8 other digits of its cell, and the same digit in the 20 neighboring cells. As candidates are removed the graph thins out, and strong links appear.
 
 ![one candidate and all its links in the empty grid](figures/fig05.png)
 
@@ -203,7 +203,7 @@ Three more examples follow. Green candidates are true, thick links are empty, an
 
 *Figure 8. the Cycle Lemma on three cycles*
 
-For readers who know optimisation: rule 3 on an odd cycle, t ≤ (k − 1)/2, is the classical odd-cycle inequality for stable sets \[4\].
+For readers who know optimization: rule 3 on an odd cycle, t ≤ (k − 1)/2, is the classical odd-cycle inequality for stable sets \[4\].
 
 ## 5. Step 4: What a loop forces
 
@@ -233,7 +233,7 @@ The same proof as a chain of forced moves: assuming v is true ends with two link
 
 In this situation exactly one link of the loop is empty. The pairing forces t ≥ (k − 1)/2, the Cycle Lemma forces t ≤ (k − 1)/2, so f = k − 2t = 1.
 
-**Theorem 5.3 (an odd loop forces a true).** Let v be a candidate on a cycle C, with neighbours a and b on C. If the links va and vb are strong, and strong links of C pair up all candidates other than v, a and b, then C is odd and v is true in every solution. Every candidate linked to v is then false.
+**Theorem 5.3 (an odd loop forces a true).** Let v be a candidate on a cycle C, with neighbors a and b on C. If the links va and vb are strong, and strong links of C pair up all candidates other than v, a and b, then C is odd and v is true in every solution. Every candidate linked to v is then false.
 
 *Why.* The pairing uses (k − 3)/2 strong links, so k is odd. If v were false, a and b would both be true, and each pairing link would add another true end. That makes (k + 1)/2 true candidates, more than the Cycle Lemma allows. ∎
 
@@ -251,7 +251,7 @@ This is the mirror image of the last picture: assuming v is false leaves a stron
 
 *Figure 12. Theorem 5.4 in four steps · a 6-cycle*
 
-Three strong links need three true ends among six candidates, and true candidates are never neighbours. Only the two alternating patterns manage that.
+Three strong links need three true ends among six candidates, and true candidates are never neighbors. Only the two alternating patterns manage that.
 
 Here are the three loop theorems side by side.
 
@@ -417,7 +417,7 @@ A closed alternating walk with no repeated vertex is exactly the cycle of Theore
 
 1.  No two members of E are linked. If e and e′ were, walk from u to e, cross to e′, and return to u along the route to e′ reversed. The crossing is an even step, and the return has its strong links at odd steps. That is a closed alternating walk, of length at least 3 because e and e′ differ. We assumed there is none. So E and O do not overlap.
 
-2.  A strong link from a member o of O leads into E. Extend the walk that reaches o's neighbour in E by o, and then by the strong partner of o.
+2.  A strong link from a member o of O leads into E. Extend the walk that reaches o's neighbor in E by o, and then by the strong partner of o.
 
 3.  Take any solution T. Mark E true, O false, and everything else as in T.
 

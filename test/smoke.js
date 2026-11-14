@@ -136,7 +136,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   click($('apply')); click($('apply'));
   click($('reset'));
   await sleep(900);
-  if (/removed/.test($('status').textContent)) throw new Error('a cancelled removal was still applied: ' + $('status').textContent);
+  if (/removed/.test($('status').textContent)) throw new Error('a canceled removal was still applied: ' + $('status').textContent);
   // 6f. play at real speed shows the steps one by one
   loadSample(4);
   click(play);

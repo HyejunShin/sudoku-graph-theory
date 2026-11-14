@@ -166,7 +166,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       </section>
       <section class="card" id="graphcard" aria-label="The move as a graph">
         <h2>The same move as a graph</h2>
-        <p class="sub" id="graphnote">One dot per candidate, or per group of candidates that acts as one. Solid: at least one end is true. Dashed: not both. The colors follow the steps.</p>
+        <p class="sub" id="graphnote">One dot per candidate, or per group of candidates that acts as one.</p>
         <svg id="graph" viewBox="0 0 520 300" role="img" aria-label="The current move drawn as a graph"></svg>
       </section>
     </div>
@@ -279,7 +279,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     for (const u of commonUnits(ca, cb)) if (cellsFor(st, u, cDig(a)).length === 2) return { kind: 'unit', unit: u };
     return null;
   }
-  function neighbours(st, id) {
+  function neighbors(st, id) {
     const cell = cCell(id), d = cDig(id), out = [];
     for (const e of digits(st.cand[cell])) if (e !== d) out.push(cid(cell, e));
     for (const p of PEERS[cell]) if (has(st, p, d)) out.push(cid(p, d));
@@ -338,7 +338,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     for (let i = 0; i < n; i++) {
       const a = loop[i], b = loop[(i + 1) % n];
       addLink(res, st, a, b, i % 2 === 0);
-      for (const x of neighbours(st, a)) if (!loop.includes(x) && linked(x, b)) elim.add(x);
+      for (const x of neighbors(st, a)) if (!loop.includes(x) && linked(x, b)) elim.add(x);
     }
     if (!elim.size) return null;
     res.elim = [...elim]; res.elim.forEach(t => res.nodes.set(t, 'elim'));
@@ -474,7 +474,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     let frontier = [v];
     for (let depth = 1; depth <= maxPairs && frontier.length; depth++) {
       const next = [];
-      for (const x of frontier) for (const y of neighbours(st, x)) {
+      for (const x of frontier) for (const y of neighbors(st, x)) {
         if (y === v || !ok(y)) continue;
         for (const z of strongPartners(st, y)) {
           if (!ok(z) || parent.has(z)) continue;
@@ -1081,7 +1081,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   }
 
   root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, randomPuzzle, playThrough, chainFor, deadEnd, toString, clone, has, alive, place, eliminate, cellsFor,
-    solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColoring };
+    solve, linked, linkInfo, strongInfo, neighbors, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColoring };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -1192,7 +1192,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       });
     } else if (view.kind === 'probe') {
       var v = view.id, strong = E.strongPartners(st, v);
-      E.neighbours(st, v).forEach(function (n) { links += seg(v, n, strong.indexOf(n) >= 0 ? 'strong' : 'weak'); rings += ring(n, 'loop'); marked[n] = 1; });
+      E.neighbors(st, v).forEach(function (n) { links += seg(v, n, strong.indexOf(n) >= 0 ? 'strong' : 'weak'); rings += ring(n, 'loop'); marked[n] = 1; });
       rings += ring(v, 'probe'); marked[v] = 1;
     } else if (view.kind === 'digit') {
       var d = view.d, color = {}, ids = [];
@@ -1411,7 +1411,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       $('prev').disabled = view.step === null || view.step === 0;
       $('fwd').disabled = view.step === res.steps.length - 1;
     } else if (view.kind === 'probe') {
-      var v = view.id, sp = E.strongPartners(st, v), all = E.neighbours(st, v);
+      var v = view.id, sp = E.strongPartners(st, v), all = E.neighbors(st, v);
       $('tname').textContent = 'Links of ' + E.candName(v);
       $('theorem').textContent = 'It has ' + all.length + ' links, ' + sp.length + ' of them strong.';
       ol.innerHTML = all.map(function (n) { var strong = sp.indexOf(n) >= 0; return '<li>' + E.candName(n) + ': ' + (strong ? 'strong, because ' + E.strongWhy(st, v, n) : 'weak, because ' + E.linkWhy(v, n)) + '.</li>'; }).join('');

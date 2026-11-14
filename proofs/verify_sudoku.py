@@ -1,4 +1,4 @@
-"""Randomised check of the elimination theorems on real sudoku candidate states.
+"""Randomized check of the elimination theorems on real sudoku candidate states.
 A state = the solution's 81 true candidates plus random extra (false) candidates.
 Every elimination produced by the theorems must be a false candidate, and every forced-true must be true.
 """
@@ -109,7 +109,7 @@ def run_state(p_extra):
     for (k, c) in false_classes:
         assert all(v not in truth for v in classes[(k, c)])
         assert all(v in truth for v in classes[(k, 1 - c)])
-    # alternating cycles of length 4 and 6: s w s w (s w): every weak edge has exactly one true end; common W-neighbours false
+    # alternating cycles of length 4 and 6: s w s w (s w): every weak edge has exactly one true end; common W-neighbors false
     def alt_cycles(maxlen):
         for a in cand:
             for b in S[a]:

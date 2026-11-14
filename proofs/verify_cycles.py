@@ -1,5 +1,5 @@
 """Brute-force check of the cycle lemma and its corollaries on abstract cycles.
-A cycle has k vertices 0..k-1, edge i joins i and i+1 (mod k), each labelled S (strong) or W (weak).
+A cycle has k vertices 0..k-1, edge i joins i and i+1 (mod k), each labeled S (strong) or W (weak).
 An assignment x in {0,1}^k is admissible if no edge has two true ends and every strong edge has exactly one true end.
 """
 from itertools import product

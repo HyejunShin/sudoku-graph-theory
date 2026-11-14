@@ -79,7 +79,7 @@
     for (const u of commonUnits(ca, cb)) if (cellsFor(st, u, cDig(a)).length === 2) return { kind: 'unit', unit: u };
     return null;
   }
-  function neighbours(st, id) {
+  function neighbors(st, id) {
     const cell = cCell(id), d = cDig(id), out = [];
     for (const e of digits(st.cand[cell])) if (e !== d) out.push(cid(cell, e));
     for (const p of PEERS[cell]) if (has(st, p, d)) out.push(cid(p, d));
@@ -138,7 +138,7 @@
     for (let i = 0; i < n; i++) {
       const a = loop[i], b = loop[(i + 1) % n];
       addLink(res, st, a, b, i % 2 === 0);
-      for (const x of neighbours(st, a)) if (!loop.includes(x) && linked(x, b)) elim.add(x);
+      for (const x of neighbors(st, a)) if (!loop.includes(x) && linked(x, b)) elim.add(x);
     }
     if (!elim.size) return null;
     res.elim = [...elim]; res.elim.forEach(t => res.nodes.set(t, 'elim'));
@@ -274,7 +274,7 @@
     let frontier = [v];
     for (let depth = 1; depth <= maxPairs && frontier.length; depth++) {
       const next = [];
-      for (const x of frontier) for (const y of neighbours(st, x)) {
+      for (const x of frontier) for (const y of neighbors(st, x)) {
         if (y === v || !ok(y)) continue;
         for (const z of strongPartners(st, y)) {
           if (!ok(z) || parent.has(z)) continue;
@@ -881,5 +881,5 @@
   }
 
   root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, randomPuzzle, playThrough, chainFor, deadEnd, toString, clone, has, alive, place, eliminate, cellsFor,
-    solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColoring };
+    solve, linked, linkInfo, strongInfo, neighbors, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColoring };
 })(typeof window !== 'undefined' ? window : globalThis);

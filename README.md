@@ -1,13 +1,13 @@
 # Why Advanced Sudoku Strategies Work
 
-Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Coloring and others) are usually memorised as separate tricks. This project shows they are one idea from the theory of **bipartite graphs**.
+Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Coloring and others) are usually memorized as separate tricks. This project shows they are one idea from the theory of **bipartite graphs**.
 
 The idea: take a loop of candidates (digits still possible in a cell) in which each one conflicts with the next, so the two cannot both be true. Now try to mark them true, false, true, false all the way round.
 
-- **On a loop with an even number of candidates, the marking fits.** When the puzzle forces it, every neighbouring pair on the loop holds exactly one true candidate. So any other candidate that conflicts with both members of a pair must be false.
-- **On a loop with an odd number, the marking cannot fit.** Somewhere on the loop two neighbours are both false. Working out where that has to happen shows which candidate is false.
+- **On a loop with an even number of candidates, the marking fits.** When the puzzle forces it, every neighboring pair on the loop holds exactly one true candidate. So any other candidate that conflicts with both members of a pair must be false.
+- **On a loop with an odd number, the marking cannot fit.** Somewhere on the loop two neighbors are both false. Working out where that has to happen shows which candidate is false.
 
-Marking things with two labels so that neighbours always differ is called *two-coloring*, and a graph where that is possible is called *bipartite*.
+Marking things with two labels so that neighbors always differ is called *two-coloring*, and a graph where that is possible is called *bipartite*.
 
 **Try it:** [Solving Sudoku Using Graph Coloring](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
