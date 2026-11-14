@@ -75,11 +75,11 @@ Links join two candidates at a time, so some puzzles cannot be finished by loops
 
 A search for everything links can prove, on a smaller sample, solved nothing the Loop Finder had missed. So the stuck puzzles are a limit of reasoning about two candidates at a time, not of the tool.
 
-**Groups extend the loop rule.** Let a dot stand for a group: two or three cells of one box that share a row or column, true when one of them holds the digit. The same odd-loop argument then covers **Locked triple** and **Grouped chain** (Empty Rectangle, grouped X-Cycle). These sit with the other loop techniques.
+**Groups extend the loop rule.** Let a dot stand for a group: two or three cells of one box that share a row or column, true when one of them holds the digit. The same odd-loop argument then covers **Locked triple** and **Grouped chain** (Empty Rectangle, grouped X-Cycle). These sit with the other loop techniques. The write-up proves this in its last step.
 
 **Beyond links.** The rest need a different kind of argument. They are kept apart and tried only when no loop or colouring applies:
 
-- **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. A counting argument on the cells and digits of one row, column or box.
+- **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. A counting argument on the cells and digits of one row, column or box. The write-up proves it as the *sets rule*: count the true candidates of k sets twice. It is the counting behind Hall's theorem on a second bipartite graph, where sets are dots and candidates are edges, and X-Wing and the pairs are its smallest case.
 - **Bigger fish** (Swordfish, Jellyfish): the same counting, on the rows and columns of one digit.
 - **XYZ-Wing**: a pivot with three candidates and two wings.
 - **Unique rectangle**: four corners that would allow two solutions. It uses the fact that a proper sudoku has one.

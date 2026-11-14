@@ -439,7 +439,49 @@ Yet no constraint set has exactly two candidates left. The counts are 3 for the 
 
 This is a *naked triple*. It counts three cells against three digits and never uses a strong link.
 
-So the method has a clear edge. Inside it: pairs, wings, kites, chains, loops and colouring. Outside it: naked and hidden triples, fish with three or more candidates in a line, XYZ-Wing, and chains that treat a group of cells as one node, such as the Empty Rectangle. Those need rules about three or more candidates at once.
+So the method has a clear edge. Inside it: pairs, wings, kites, chains, loops and colouring. Outside it: naked and hidden triples, fish with three or more candidates in a line, XYZ-Wing, and chains that treat a group of cells as one node, such as the Empty Rectangle. Those need rules about three or more candidates at once. The next part supplies two of them.
+
+### Going past the edge
+
+The edge is not the end. The same two colours, true and false, reach further in two ways: make the dots bigger, or count across whole constraint sets.
+
+**1. Bigger dots: a group as one candidate.** Take one digit, and two or three of its candidates in cells of one box that share a row or column. Call that a *group*. Colour a group true when one of its members is true, and false when all of them are false. A single candidate is a group of one.
+
+Two groups are *linked* when they share no candidate and some constraint set contains both. The link is *strong* when together they are every candidate left in that set.
+
+**Lemma 7.4 (groups obey the link rules).** Let A and B be linked groups and T a solution. At most one of A, B is true. If the link is strong, exactly one is.
+
+*Why.* Both lie in one constraint set, which holds exactly one true candidate. That candidate cannot be in A and in B, because they share nothing. If A and B together are the whole set, it is in one of them. ∎
+
+The Cycle Lemma and Theorem 5.2 used nothing about a dot except these two rules. So both hold word for word when some dots are groups. This covers:
+
+- **Locked triple** (pointing or claiming with three cells). A digit has three places in one unit, all inside a second unit. The three form a group that is true in every solution, so every other candidate of that digit in the second unit is linked to a true dot and is false.
+
+- **Empty Rectangle** and **grouped X-Cycles**. These are odd loops of one digit in which one or more dots are groups.
+
+**2. Counting across sets.** Links look at two candidates at a time. The next rule looks at whole constraint sets.
+
+**Theorem 7.5 (the sets rule).** Let B1, ..., Bk be constraint sets that share no candidate with each other, and C1, ..., Ck be k constraint sets. Suppose every candidate still in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.
+
+*Why.* Each B holds exactly one true candidate, and the B's share nothing, so they hold k true candidates between them. Each of these lies in some C. A C holds only one true candidate, so the k true candidates lie in k different C's, one each. That uses up all k of the C's: each C has its one true candidate inside the B's. So a candidate of a C outside the B's is false. ∎
+
+In colours: the k true candidates of the B's are exactly the k true candidates of the C's. Counting them twice is the whole proof, as counting round the loop was for the Cycle Lemma.
+
+There is a second graph behind this. Make every constraint set a dot, and draw a candidate as an edge joining two sets it belongs to, for example its cell and its row-and-digit set. That graph is bipartite: cells on one side, row-and-digit sets on the other. A solution picks edges so that every dot is used once, which graph theory calls a perfect matching. The sets rule is the counting behind Hall's theorem for that graph: k dots on one side whose edges reach only k dots on the other must be matched with exactly those.
+
+What the sets rule covers:
+
+| Strategy | The B's | The C's |
+| --- | --- | --- |
+| Naked pair, triple, quad | k cells of one unit | the k digits they hold, in that unit |
+| Hidden pair, triple, quad | k digits in one unit | the k cells they fit in |
+| X-Wing, Swordfish, Jellyfish | one digit in k rows | the same digit in k columns |
+
+With k = 2 these are the naked pair, hidden pair and X-Wing of Theorem 5.4. So the 4-cycle with two strong links is the smallest case of the sets rule, and the sets rule is where the even loop leads when a set has more than two candidates left. The naked triple of Proposition 7.3 is the case k = 3.
+
+Both extensions were checked by brute force on about 1,200 random states that contain a known solution: 1.2 million linked pairs of group dots against Lemma 7.4, and about 18,800 instances of the sets rule with k = 2, 3 and 4. There were no failures. The script is `proofs/verify_sets.py`.
+
+**What is still outside.** XYZ-Wing needs a dot larger than a group: a set of cells with one candidate too many. It probably fits the same loop rule, but that is not proved here. A *unique rectangle* is not about candidates at all: it uses the fact that the puzzle has one solution. And *trial and error* reaches its contradiction through a branching web of consequences, not a loop or a count.
 
 ## 8. Has this been done before?
 
