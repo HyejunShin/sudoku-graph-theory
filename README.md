@@ -8,6 +8,12 @@ Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and ot
 
 *The Loop Finder explaining an X-Wing on a real puzzle. Click the picture to open it.*
 
+## First: what a pencil mark is
+
+When a cell is still empty, solvers write in it, in small digits, every digit that could still go there. Each small digit is a **pencil mark** (also called a *candidate*). In the picture above, the top-left cell holds the pencil marks 2, 7 and 8, because its row, column and box already contain every other digit.
+
+In each empty cell exactly one pencil mark is the real answer. Call that one **true** and the rest **false**. Solving a sudoku means working out which pencil marks are false and rubbing them out until one is left in every cell. Every strategy below is a way of proving that some pencil mark is false.
+
 ## The idea
 
 **1. Pencil marks are dots, and the rules are links.** Two pencil marks are linked when the rules forbid both from being true: two digits in one cell, or one digit twice in a row, column or box. A link is *strong* when exactly one of the two must be true.
