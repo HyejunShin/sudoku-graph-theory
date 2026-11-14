@@ -4,7 +4,7 @@
 
 **What this is.** Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Colouring. They are usually memorised as separate tricks. This write-up shows they are one idea, and proves it step by step.
 
-**The idea.** Treat each pencil mark as a dot. Join two dots when the rules forbid both from being true. One counting rule about loops of dots then explains every strategy on the list.
+**The idea.** Treat each candidate (a digit that could still go in a cell) as a dot. Join two dots when the rules forbid both from being true. One counting rule about loops of dots then explains every strategy on the list.
 
 **How to read it.** Steps 1 to 4 build the idea with pictures. Step 5 walks through more than a dozen named strategies. Step 6 shows where the idea stops working. No maths background is assumed, and each claim comes with a short "why".
 
@@ -12,7 +12,7 @@
 
 ## 1. The idea in one minute
 
-1.  Every pencil mark is a *candidate*: one digit in one cell.
+1.  A *candidate* is one digit in one cell: a digit that could still go there.
 
 2.  Two candidates are *linked* if the rules say they cannot both be true. Two 5s in one row are linked. So are two digits in one cell.
 
@@ -104,7 +104,7 @@ A side note: a graph with no edges needs only one colour. So bipartite means "at
 
 On the left, the blue cell must differ from each of the 20 shaded cells. On the right, the same idea drawn for every cell of a small 4 by 4 sudoku at once: each line means "these two must differ", and the four colours are the four digits.
 
-That graph is too coarse for solving strategies, which are about pencil marks. So we go one level down and make every pencil mark a vertex.
+That graph is too coarse for solving strategies, which are about candidates. So we go one level down and make every candidate a vertex.
 
 **Candidates.** A *candidate* is a triple (r, c, d): digit d in the cell at row r, column c. There are 9 × 9 × 9 = 729 of them.
 
@@ -125,15 +125,17 @@ Every candidate lies in exactly four constraint sets, one of each kind. A *solut
 
 *Figure 4. candidates and constraint sets · one example*
 
-**States.** A *state* P is the set of pencil marks still on the grid. Sol(P) is the set of solutions that use only candidates from P, and we always assume there is at least one. For a solution T, a candidate is *true* if it belongs to T and *false* otherwise. We write T(u) = 1 or 0.
+**States.** A *state* P is the set of candidates still on the grid. Sol(P) is the set of solutions that use only candidates from P, and we always assume there is at least one. For a solution T, a candidate is *true* if it belongs to T and *false* otherwise. We write T(u) = 1 or 0.
 
 A candidate *can be eliminated* if it is false in every solution in Sol(P). Erasing it loses no solution.
 
 **Links.** Two candidates in P are *linked* if some constraint set contains both. In practice that means two digits in one cell, or one digit in two cells of the same row, column or box. The link is *strong* if some constraint set contains those two and no other candidate of P. Otherwise it is *weak*.
 
+**Why draw the links.** A link is how a fact about one candidate becomes a fact about another. If a candidate is true, every candidate linked to it is false. If a candidate is false and one of its links is strong, the candidate at the other end is true. Every strategy in this write-up is a chain of such steps, so on the graph each one shows up as a path or a loop.
+
 Two graphs come out of this. The *link graph* W(P) has the candidates of P as vertices and all links as edges. The *strong graph* S(P) keeps only the strong links.
 
-In the empty grid every candidate has 28 neighbours in the link graph: the 8 other digits of its cell, and the same digit in the 20 neighbouring cells. As pencil marks are erased the graph thins out, and strong links appear.
+In the empty grid every candidate has 28 neighbours in the link graph: the 8 other digits of its cell, and the same digit in the 20 neighbouring cells. As candidates are removed the graph thins out, and strong links appear.
 
 ![one candidate and all its links in the empty grid](figures/fig05.png)
 
@@ -455,7 +457,7 @@ Yes, in pieces. The strategies are well known, and so is the loop view. What I h
 
 ## 9. Summary
 
-1.  Pencil marks are dots. "Not both" is a link. "Exactly one" is a strong link.
+1.  Candidates are dots. "Not both" is a link. "Exactly one" is a strong link.
 
 2.  Round any loop of k dots, the empty links number k − 2t.
 

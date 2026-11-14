@@ -84,7 +84,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Sudoku Loop Finder</h1>
-    <p class="lede">Load a real puzzle, pick a technique, and see the loop of pencil marks that makes it work. Each move comes with the chain of forced steps behind it.</p>
+    <p class="lede">Load a real puzzle, pick a technique, and see the loop of candidates that makes it work. A candidate is a small digit in an empty cell: a digit that could still go there. Each move comes with the chain of forced steps behind it.</p>
   </header>
 
   <section class="card" aria-label="Load a puzzle">
@@ -103,7 +103,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
   <div class="cols">
     <div class="stack">
       <section class="card board" aria-label="Board">
-        <svg id="grid" viewBox="0 0 544 544" role="img" aria-label="Sudoku board with pencil marks"></svg>
+        <svg id="grid" viewBox="0 0 544 544" role="img" aria-label="Sudoku board with candidates"></svg>
       </section>
       <section class="card" aria-label="Moves">
         <div class="row">
@@ -143,7 +143,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
 
       <section class="card" aria-label="Explore links">
         <h2>Look at the links yourself</h2>
-        <p class="theorem">Tap any pencil mark on the board to see everything it is linked to. Or pick a digit to see its strong links, coloured in two colours.</p>
+        <p class="theorem">Tap any candidate on the board to see everything it is linked to. Or pick a digit to see its strong links, coloured in two colours.</p>
         <div class="row digits" id="digits"></div>
       </section>
     </div>
@@ -312,7 +312,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
       if (wrong) { say('Internal check failed: this move disagrees with the solution, so it was not applied.', true); return; }
     }
     snapshot(); E.apply(st, res); var n = E.fillSingles(st);
-    afterChange(res.tech + ': removed ' + res.elim.length + ' pencil mark' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') + (n ? ', then filled ' + n + ' easy cells.' : '.'));
+    afterChange(res.tech + ': removed ' + res.elim.length + ' candidate' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') + (n ? ', then filled ' + n + ' easy cells.' : '.'));
   }
   function nextStep(quiet) {
     if (E.findSingle(st)) { snapshot(); var n = E.fillSingles(st); afterChange('Filled ' + n + ' easy cells.'); return; }

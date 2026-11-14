@@ -31,7 +31,7 @@ for (let i = 1; i < sel.options.length; i++) {
   click($('fwd')); click($('fwd')); click($('prev')); click($('apply'));
   if ($('status').className.includes('bad')) throw new Error('apply failed on ' + name + ': ' + $('status').textContent);
 }
-// 5. probe a pencil mark, digit view, undo, reset, bad input, user puzzle
+// 5. probe a candidate, digit view, undo, reset, bad input, user puzzle
 console.log(log.join('\n')); log.length = 0;
 sel.value = '4'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
 const rect = $('grid').querySelector('rect[data-id]'); click(rect);
