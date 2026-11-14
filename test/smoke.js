@@ -6,6 +6,9 @@ dom.window.addEventListener('error', e => errors.push(String(e.error || e.messag
 const { document } = dom.window; const $ = id => document.getElementById(id);
 const click = el => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const E = dom.window.SudokuEngine;
+// steps are followed by tapping the next one in the list
+const stepOn = () => { const li = [...$('steps').children], on = li.findIndex(x => x.classList.contains('on')); const nx = li[Math.min(on + 1, li.length - 1)]; if (nx) nx.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); };
+const stepBack = () => { const li = [...$('steps').children], on = li.findIndex(x => x.classList.contains('on')); if (on > 0) li[on - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); };
 // The page waits between steps and animates removals. data-instant="1" turns every wait off, so the checks below can stay synchronous.
 document.documentElement.setAttribute('data-instant', '1');
 // The page must never scroll by itself: count any attempt.
@@ -16,7 +19,7 @@ const log = [];
 log.push('title: ' + $('tname').textContent + ' | steps: ' + $('steps').children.length + ' | status: ' + $('status').textContent);
 if (!$('grid').innerHTML.includes('<circle')) throw new Error('no overlay drawn at start');
 // 2. walk the argument steps
-for (let i = 0; i < 4; i++) click($('fwd'));
+for (let i = 0; i < 4; i++) stepOn();
 if (!document.querySelector('#steps li.on')) throw new Error('no step highlighted');
 { // buttons: within each section, most used first
   const keys = [...document.querySelectorAll('#techs button[data-key]')].map(b => b.getAttribute('data-key')), byKey = Object.fromEntries(E.TECHNIQUES.map(t => [t.key, t]));
@@ -25,6 +28,8 @@ if (!document.querySelector('#steps li.on')) throw new Error('no step highlighte
 }
 // 3. solve the tour puzzle by hand: tap the first technique that has a move, then Apply
 if ($('next') || $('easy')) throw new Error('the Next step and Fill easy cells buttons should be gone');
+if ($('prev') || $('fwd') || $('apply').textContent !== 'Apply') throw new Error('expected only an Apply button under the steps');
+if ([...document.querySelectorAll('#status, #loadmsg')].some(x => /Simplest move/.test(x.textContent))) throw new Error('the "Simplest move" message should be gone');
 let guard = 0, techs = new Set();
 while ($('tname').textContent !== 'Solved' && guard++ < 300) {
   const firstTech = document.querySelector('#techs button[data-key]:not([disabled])');
@@ -36,13 +41,13 @@ while ($('tname').textContent !== 'Solved' && guard++ < 300) {
 log.push('tour: ' + $('tname').textContent + ' after ' + guard + ' clicks; techniques shown: ' + [...techs].join(', '));
 // 4. every sample loads and shows its technique
 const sel = $('sample');
-if (sel.options[0].value !== '0' || sel.options[1].value !== 'random' || sel.options[1].textContent !== 'Random sudoku') throw new Error('"Random sudoku" is not right after the tour puzzle');
+if (sel.options[0].value !== '0' || sel.options[1].value !== 'random' || sel.options[1].textContent !== 'Random') throw new Error('"Random" is not right after the tour puzzle');
 for (const opt of [...sel.options].filter(o => /^[1-9]\d*$/.test(o.value))) {
   sel.value = opt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   const name = opt.textContent, shown = $('tname').textContent;
   if ($('stepnav').hidden) throw new Error('sample ' + name + ' did not show a technique');
   log.push(name + ' -> ' + shown + ' | ' + $('steps').children.length + ' steps | ' + $('theorem').textContent.slice(0, 40));
-  click($('fwd')); click($('fwd')); click($('prev')); click($('apply'));
+  stepOn(); stepOn(); stepBack(); click($('apply'));
   if ($('status').className.includes('bad')) throw new Error('apply failed on ' + name + ': ' + $('status').textContent);
 }
 // 5. probe a candidate, digit view, undo, reset, bad input, user puzzle
@@ -159,16 +164,16 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   document.documentElement.setAttribute('data-instant', '1');
   const again = $('again');
   loadSample(4);
-  if (!again.hidden) throw new Error('"Another random sudoku" should be hidden for built-in examples');
+  if (!again.hidden) throw new Error('"Another random puzzle" should be hidden for built-in examples');
   const pickRandom = () => { sel.value = 'random'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true })); };
   pickRandom();
-  if (again.hidden) throw new Error('"Another random sudoku" is not shown');
+  if (again.hidden) throw new Error('"Another random puzzle" is not shown');
   const seen = new Set();
   for (let n = 0; n < 6; n++) {
     if (n) click(again);
     const p = $('puzzle').value, chk = E.check(p);
     if (!chk.ok) throw new Error('random puzzle is not a proper sudoku: ' + chk.reason + ' ' + p);
-    if ($('loadmsg').className.includes('bad') || !$('loadmsg').textContent.includes('random sudoku')) throw new Error('random puzzle did not load: ' + $('loadmsg').textContent);
+    if ($('loadmsg').className.includes('bad') || !$('loadmsg').textContent.includes('random puzzle')) throw new Error('random puzzle did not load: ' + $('loadmsg').textContent);
     if ($('tname').textContent === 'Solved') throw new Error('random puzzle was solved by easy cells alone: ' + p);
     if (play.textContent !== 'Play all steps') throw new Error('a new random puzzle should reset the play button');
     seen.add(p);
@@ -238,20 +243,20 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
   loadSample(4);
   if (!auto.checked || easyBtn()) throw new Error('automatic filling should be on by default, with no Easy cell button');
-  if (sel.options[2].value !== 'easy' || sel.options[2].textContent !== 'Random easy sudoku') throw new Error('"Random easy sudoku" is not after "Random sudoku"');
+  if (sel.options[2].value !== 'easy' || sel.options[2].textContent !== 'Random (single cells only)') throw new Error('"Random easy sudoku" is not after "Random sudoku"');
   sel.value = 'easy'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   if (auto.checked) throw new Error('an easy puzzle should switch automatic filling off');
-  if (again.hidden || again.textContent !== 'Another easy sudoku') throw new Error('no "Another easy sudoku" button');
+  if (again.hidden || again.textContent !== 'Another random puzzle') throw new Error('no "Another random puzzle" button');
   const ep = $('puzzle').value, givens = ep.replace(/\./g, '').length;
   if (!E.check(ep).ok) throw new Error('easy puzzle is not a proper sudoku');
   if ($('grid').querySelectorAll('text[font-size="34"]').length !== givens) throw new Error('cells were filled in although automatic filling is off');
-  if (!easyBtn() || easyBtn().disabled || $('tname').textContent.indexOf('Easy cell') !== 0) throw new Error('the first easy cell is not shown: ' + $('tname').textContent);
+  if (!easyBtn() || easyBtn().disabled || $('tname').textContent.indexOf('Single candidate') !== 0) throw new Error('the first easy cell is not shown: ' + $('tname').textContent);
   if ($('steps').children.length !== 1 || !/goes in r\dc\d\.$/.test($('steps').textContent)) throw new Error('an easy cell should have a one-line reason: ' + $('steps').textContent);
   click($('apply'));
   if ($('grid').querySelectorAll('text[font-size="34"]').length !== givens + 1) throw new Error('applying an easy cell should fill exactly one cell');
   const kinds = new Set(); const w2 = setInterval(() => { if (!$('stepnav').hidden) kinds.add($('tname').textContent.replace(/ \(.*/, '')); }, 0);
   click(play); await until(() => play.textContent !== 'Pause', 30000, 'play to finish an easy puzzle'); clearInterval(w2);
-  if ($('tname').textContent !== 'Solved' || [...kinds].join() !== 'Easy cell') throw new Error('easy puzzle: ' + $('tname').textContent + ' using ' + [...kinds].join(', '));
+  if ($('tname').textContent !== 'Solved' || [...kinds].join() !== 'Single candidate') throw new Error('easy puzzle: ' + $('tname').textContent + ' using ' + [...kinds].join(', '));
   click(again); if ($('puzzle').value === ep || auto.checked) throw new Error('"Another easy sudoku" did not give a new easy puzzle');
   loadSample(4);
   if (!auto.checked || easyBtn()) throw new Error('leaving the easy puzzle should switch automatic filling back on');
@@ -293,7 +298,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const o = [...sel.options].find(x => x.textContent === nm); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
     const boardRed = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length, graphRed = $('graph').querySelectorAll('circle[stroke="var(--out)"]').length;
     if (boardRed !== graphRed) throw new Error(nm + ': board shows ' + boardRed + ' red dots, graph ' + graphRed);
-    click($('fwd')); click($('fwd')); click($('fwd'));
+    stepOn(); stepOn(); stepOn();
     const bt = $('grid').querySelectorAll('circle[stroke="var(--true)"]').length, gt = $('graph').querySelectorAll('circle[stroke="var(--true)"]').length;
     if (bt !== gt) throw new Error(nm + ': at the same step the board has ' + bt + ' green dots and the graph ' + gt);
   }

@@ -362,12 +362,12 @@
     for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) { const cs = cellsFor(st, u, d); if (cs.length === 1) return { cell: cs[0], d, why: 'Only place for ' + d + ' in ' + unitName(u) }; }
     return null;
   }
-  /* Every easy cell as its own one-step move. The page uses these only when automatic filling is switched off. */
+  /* Every single candidate cell as its own one-step move. The page uses these only when automatic filling is switched off. */
   function findSingles(st) {
     const out = [], seen = new Set();
     const add = (cell, d, text) => {
       const id = cid(cell, d); if (seen.has(id)) return; seen.add(id);
-      const res = mkResult('Easy cell', 'Only one choice'); res.easy = true;
+      const res = mkResult('Single candidate', 'Only one choice'); res.easy = true;
       res.nodes.set(id, 'loop'); res.place = [id];
       say(res, text + ' So ' + d + ' goes in ' + cellName(cell) + '.', { [id]: 't' });
       out.push(res);
@@ -764,7 +764,7 @@
     return out;
   }
 
-  /* Trial and error, the last resort. Suppose a candidate is true, keep filling easy cells, and look for a dead end.
+  /* Trial and error, the last resort. Suppose a candidate is true, keep filling single candidate cells, and look for a dead end.
      Of all candidates that lead to one, the shortest route is shown. If none does, the rest is searched in full. */
   function deadEnd(st) {
     for (let c = 0; c < 81; c++) if (!st.val[c] && !st.cand[c]) return cellName(c) + ' has no candidate left';
@@ -789,14 +789,14 @@
       res.nodes.set(v, 'elim'); res.elim = [v];
       say(res, 'No loop, coloring or counting argument applies here, so the only move left is a guess.');
       say(res, 'Suppose ' + candName(v) + ' were true.', { [v]: 't' });
-      say(res, 'Filling easy cells does not settle it, so everything that follows was searched in full. No solution has ' + candName(v) + '.', { [v]: 't' });
+      say(res, 'Filling single candidate cells does not settle it, so everything that follows was searched in full. No solution has ' + candName(v) + '.', { [v]: 't' });
       say(res, 'So ' + candName(v) + ' is false.');
       return [res];
     }
     const v = best.id, marks = {}, snap = () => Object.assign({}, marks);
     res.nodes.set(v, 'elim'); best.forced.forEach(f => res.nodes.set(f.id, 'loop')); res.elim = [v];
     say(res, 'No loop, coloring or counting argument applies here, so the only move left is a guess.');
-    marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true, and fill the easy cells that follow.', snap());
+    marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true, and fill the single candidate cells that follow.', snap());
     const shown = best.forced.slice(0, 5), rest = best.forced.slice(5);
     for (const f of shown) { marks[f.id] = 't'; say(res, 'Then ' + candName(f.id) + ': ' + f.why.charAt(0).toLowerCase() + f.why.slice(1) + '.', snap()); }
     if (rest.length) { rest.forEach(f => { marks[f.id] = 't'; }); say(res, 'Then ' + rest.length + ' more cell' + (rest.length === 1 ? ' is' : 's are') + ' forced the same way.', snap()); }
@@ -807,7 +807,7 @@
   /* Listed in the order they are tried, simplest first. `used` is how many times each was the move played over about
      1,100 random puzzles with that order; the page lists the buttons of each section from most used to least. */
   const TECHNIQUES = [
-    { key: 'single', name: 'Easy cell', loop: 'only one choice', find: findSingles, blurb: 'A cell with one candidate left, or a digit with one place left.', easy: true },
+    { key: 'single', name: 'Single candidate', loop: 'only one choice', find: findSingles, blurb: 'A cell with one candidate left, or a digit with one place left.', easy: true },
     { key: 'locked', used: 3945, name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
     { key: 'naked', used: 755, name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
     { key: 'hidden', used: 463, name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
@@ -828,7 +828,7 @@
     { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a counted link', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
     { key: 'als', used: 81, name: 'Almost-locked sets', loop: 'ALS-XZ, WXYZ-Wing, ALS chain, Sue de Coq', find: findALS, blurb: 'Two sets of cells with one digit too many, joined by a shared digit.', beyond: true, section: 'count', late: true },
     { key: 'ur', used: 1, name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
-    { key: 'guess', used: 0, name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
+    { key: 'guess', used: 0, name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the single candidate cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
   ];
 
   /* ---------- random puzzles ---------- */
@@ -850,7 +850,7 @@
     go();
     return { grid: v, shuffle };
   }
-  /* Solve a puzzle the way the page does: easy cells, then the simplest technique that applies, repeated. */
+  /* Solve a puzzle the way the page does: single candidate cells, then the simplest technique that applies, repeated. */
   function playThrough(str) {
     const st = fromString(str); fillSingles(st);
     let moves = 0, guesses = 0, beyond = 0;
@@ -866,7 +866,7 @@
   /* A random puzzle with exactly one solution that needs at least one technique and that the techniques can finish without a guess.
      Clues are removed in random order for as long as the solution stays unique. About half of such puzzles qualify,
      so a few tries are enough; after 60 tries the last puzzle is returned whatever it needs.
-     With easy = true the puzzle is instead one that easy cells alone finish. */
+     With easy = true the puzzle is instead one that single candidate cells alone finish. */
   function randomPuzzle(rnd, easy) {
     rnd = rnd || Math.random;
     let out = null;

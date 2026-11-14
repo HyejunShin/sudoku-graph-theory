@@ -58,10 +58,10 @@ The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves
 Open `index.html` directly; it needs no server and no build step.
 
 - Paste a puzzle as 81 characters, row by row, with `.` or `0` for empty cells (spaces and line breaks are fine). Or pick one of the built-in examples.
-- Choose **Random sudoku** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
-- **Fill easy cells automatically** is on by default: cells with one candidate left, and digits with one place left, are filled without being shown. Switch it off to start from every candidate and have each easy cell appear as its own step. **Random easy sudoku** gives a puzzle that easy cells alone finish, with the switch off so there is something to watch.
+- Choose **Random** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
+- **Skip single candidate cells** is on by default: cells with one candidate left, and digits with one place left, are filled without being shown. Switch it off to start from every candidate and have each such cell appear as its own step. **Random (single cells only)** gives a puzzle those cells alone finish, with the switch off so there is something to watch.
 - Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
-- Tap a technique to see a move of that kind. Each move lists the chain of forced steps behind it, and the board marks candidates true or false as you walk through. **Apply to the board** carries it out.
+- Choose a technique to see a move of that kind. Each move lists the chain of forced steps behind it; tap a step (or use the arrow keys) and the board marks candidates true or false. **Apply** carries the move out.
 - **Play all steps** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Tap the board to pause.
 - **The same move as a graph**: beside the board (below the play controls on a phone) the current move is redrawn as a plain graph, with the dots spread out and a group shown as one dot. It carries the same colors as the board and steps along with it, so the move reads as what it is: a two-coloring problem.
 - Tap any candidate on the board to see everything it is linked to. Pick a digit to see its strong links colored in two colors.
@@ -76,7 +76,7 @@ Links join two candidates at a time, so some puzzles cannot be finished by loops
 
 | Outcome | Puzzles |
 | --- | --- |
-| Solved by easy cells alone | 971 |
+| Solved by single candidate cells alone | 971 |
 | Solved by the link techniques | 965 |
 | Stuck: no link argument exists | 64 (3.2%) |
 
@@ -95,7 +95,7 @@ A search for everything links can prove, on a smaller sample, solved nothing the
 
 **One more fact.** A **unique rectangle** is an even loop that could be colored both ways with nothing to decide between them. It adds the assumption that a proper sudoku has one solution.
 
-**Last resort.** **Trial and error**: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is not a loop, a coloring or a count, and it is offered only when nothing else applies.
+**Last resort.** **Trial and error**: suppose a candidate is true, fill the single candidate cells that follow, and reach a contradiction. It is not a loop, a coloring or a count, and it is offered only when nothing else applies.
 
 In a test on 6,000 random puzzles with all of these, 106 used a group step (locked triple or grouped chain), 34 a naked triple, 1 a unique rectangle, and 75 (1.2%) still needed a guess. Bigger fish and XYZ-Wing were never needed: they exist, but random puzzles almost never require them. With the guess every puzzle can be finished. The last entries of the example list show these steps.
 

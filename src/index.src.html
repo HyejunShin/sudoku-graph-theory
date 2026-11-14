@@ -114,7 +114,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
-    <p class="lede">The goal is to color a graph with two colors, so that no two adjacent nodes have the same color.</p>
+    <p class="lede">Draw the relationships between candidates as a graph, color it with two colors, and find the flaw: a place where two adjacent nodes would have to share a color.</p>
     <p class="lede">Press <b>Play all steps</b> to watch the whole puzzle being solved.</p>
   </header>
 
@@ -122,7 +122,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     <div class="row">
       <label for="sample">Example</label>
       <select id="sample"></select>
-      <button id="again" type="button" hidden>Another random sudoku</button>
+      <button id="again" type="button" hidden>Another random puzzle</button>
     </div>
     <div class="row">
       <label for="puzzle">Your own puzzle</label>
@@ -152,7 +152,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           <button id="undo" type="button">Undo</button>
           <button id="reset" type="button">Start over</button>
         </div>
-        <label class="check"><input type="checkbox" id="autofill" checked> Fill easy cells automatically</label>
+        <label class="check"><input type="checkbox" id="autofill" checked> Skip single candidate cells</label>
         <p class="msg" id="status" role="status"></p>
         <div class="legend" aria-label="Key">
           <span><i class="sw"></i>strong link: exactly one end true</span>
@@ -164,7 +164,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         </div>
       </section>
       <section class="card" aria-label="Techniques">
-        <h2>Techniques available now</h2>
+        <h2>Choose a technique</h2>
         <div class="techs" id="techs"></div>
       </section>
     </div>
@@ -183,9 +183,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Tap it to see the loop.</p>
         <ol id="steps"></ol>
         <div class="row" id="stepnav" hidden>
-          <button id="prev" type="button">Previous step</button>
-          <button id="fwd" type="button">Next step in the argument</button>
-          <button id="apply" type="button" class="primary">Apply to the board</button>
+          <button id="apply" type="button" class="primary">Apply</button>
         </div>
       </section>
 
@@ -205,7 +203,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   'use strict';
   var E = window.SudokuEngine;
   var SAMPLES = [
-    { name: 'Tour puzzle: uses eleven techniques', puzzle: '...65.37.37...9.....2........47.6.9.......5.4....2...6....65......2..1.51......48', tech: null },
+    { name: 'Example puzzle', puzzle: '...65.37.37...9.....2........47.6.9.......5.4....2...6....65......2..1.51......48', tech: null },
     { name: 'Locked pair', puzzle: '....1.93.5...9.2.7.6....1......6..9.1..9....5.47.....3.2..3......47.2..18........', tech: 'locked' },
     { name: 'Naked pair', puzzle: '...943............39.5718......3...7......29.6..8.93........6...3.1.8..28..29..7.', tech: 'naked' },
     { name: 'Hidden pair', puzzle: '...6.3...2.9...3.6.......14.563..1.....24.........8....8..2...1....56....1....42.', tech: 'hidden' },
@@ -233,7 +231,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   var st = null, original = '', solution = null, history = [], avail = {}, pick = {};
   var view = { kind: 'none' };   // 'result' {res, step}, 'probe' {id}, 'digit' {d}
   var playing = false, playTimer = null;        // automatic play
-  var autoFill = true;                          // easy cells are filled without being shown; off = each one is a visible step
+  var autoFill = true;                          // single candidate cells are filled without being shown; off = each one is a visible step
   var forcedOff = false;                        // the switch was turned off by choosing an easy puzzle, so it goes back on afterwards
   var paused = false;                           // play was stopped part-way, so the button offers to resume
   var removing = false, removeTimer = null;     // a move is being animated off the board
@@ -520,11 +518,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (view.kind === 'result') {
       var res = view.res, total = avail[view.tech] ? avail[view.tech].length : 1;
       $('tname').textContent = res.tech + (total > 1 ? ' (' + (view.index + 1) + ' of ' + total + ', tap again for the next)' : '');
-      $('theorem').textContent = res.theorem + (playing ? '. Playing: tap the board to pause.' : '. Tap a step, or walk through with the buttons.');
+      $('theorem').textContent = res.theorem + (playing ? '. Playing: tap the board to pause.' : '. Tap a step to follow the argument, or use the arrow keys.');
       ol.innerHTML = res.steps.map(function (sp, i) { return '<li data-i="' + i + '"' + (view.step === i ? ' class="on"' : '') + '>' + sp.text + '</li>'; }).join('');
       nav.hidden = false;
-      $('prev').disabled = view.step === null || view.step === 0;
-      $('fwd').disabled = view.step === res.steps.length - 1;
     } else if (view.kind === 'probe') {
       var v = view.id, sp = E.strongPartners(st, v), all = E.neighbors(st, v);
       $('tname').textContent = 'Links of ' + E.candName(v);
@@ -564,14 +560,14 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (!res.ok) { msg.textContent = 'Not loaded. ' + res.reason; msg.className = 'msg bad'; return false; }
     st = res.state; original = E.toString(st); solution = res.solution; history = []; paused = false;
     msg.className = 'msg'; msg.textContent = 'Loaded. The puzzle has exactly one solution.';
-    if (autoFill) { var n = E.fillSingles(st); afterChange(n ? 'Filled ' + n + ' easy cells first (cells or digits with only one place).' : 'No easy cells to fill.'); }
+    if (autoFill) { var n = E.fillSingles(st); afterChange(n ? 'Filled ' + n + ' single candidate cells first.' : 'No single candidate cells to fill.'); }
     else afterChange('Nothing filled in yet: every candidate is shown.');
     if (techKey && avail[techKey] && avail[techKey].length) show(techKey, 0, true);
     else nextStep(true);
     return true;
   }
   function markFresh(before) { fresh = {}; for (var c = 0; c < 81; c++) if (!before[c] && st.val[c]) fresh[c] = 1; }
-  function fillEasy() { var before = st.val.slice(); snapshot(); var n = E.fillSingles(st); markFresh(before); afterChange('Filled ' + n + ' easy cells.'); }
+  function fillEasy() { var before = st.val.slice(); snapshot(); var n = E.fillSingles(st); markFresh(before); afterChange('Filled ' + n + ' single candidate cells.'); }
   function cancelRemoval() { if (removeTimer) { clearTimeout(removeTimer); removeTimer = null; } removing = false; }
   /* Apply the move on screen. The candidates it removes are animated first; done() runs once the board has changed. */
   function applyCurrent(done) {
@@ -584,7 +580,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var finish = function () {
       removeTimer = null; removing = false;
       var before = st.val.slice(); snapshot(); E.apply(st, res); var n = autoFill ? E.fillSingles(st) : 0; markFresh(before);
-      afterChange(res.tech + ': ' + (res.elim.length ? 'removed ' + res.elim.length + ' candidate' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') : 'placed ' + res.place.map(E.candName).join(', ')) + (n ? ', then filled ' + n + ' easy cells.' : '.'));
+      afterChange(res.tech + ': ' + (res.elim.length ? 'removed ' + res.elim.length + ' candidate' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') : 'placed ' + res.place.map(E.candName).join(', ')) + (n ? ', then filled ' + n + ' single candidate cells.' : '.'));
       if (done) done();
     };
     var ms = removalMs();
@@ -598,7 +594,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   function nextStep(quiet) {
     if (E.solved(st)) return 'none';
     if (autoFill && E.findSingle(st)) { fillEasy(); return 'filled'; }
-    for (var i = 0; i < E.TECHNIQUES.length; i++) { var k = E.TECHNIQUES[i].key; if (avail[k].length) { show(k, 0, quiet === true); say('Simplest move available: ' + E.TECHNIQUES[i].name + '. Read the steps, then apply it.'); return 'shown'; } }
+    for (var i = 0; i < E.TECHNIQUES.length; i++) { var k = E.TECHNIQUES[i].key; if (avail[k].length) { show(k, 0, quiet === true); return 'shown'; } }
     say('No technique applies here.', true);
     return 'none';
   }
@@ -636,20 +632,20 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   }
 
   /* ---------- wiring ---------- */
-  /* The list: the tour puzzle, then "Random sudoku", then one example per technique. */
-  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>' + (i === 0 ? '<option value="random">Random sudoku</option><option value="easy">Random easy sudoku</option>' : ''); }).join('');
+  /* The list: the example puzzle, then the two random choices, then one example per technique. */
+  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>' + (i === 0 ? '<option value="random">Random</option><option value="easy">Random (single cells only)</option>' : ''); }).join('');
   function setAuto(on) { autoFill = on; $('autofill').checked = on; }
   function loadRandom(easy) {
     var made = E.randomPuzzle(null, easy);
     $('puzzle').value = made.puzzle;
     if (!load(made.puzzle, null)) return;
-    $('loadmsg').textContent = easy ? 'Loaded a new easy sudoku: easy cells alone finish it. Automatic filling is off, so each cell is a step you can watch.'
-      : 'Loaded a new random sudoku with exactly one solution.' + (made.finishes ? ' It needs ' + made.moves + ' move' + (made.moves === 1 ? '' : 's') + ' beyond the easy cells.' : '');
+    $('loadmsg').textContent = easy ? 'Loaded a new puzzle that single candidate cells alone finish. Skipping them is off, so each cell is a step you can watch.'
+      : 'Loaded a new random puzzle with exactly one solution.' + (made.finishes ? ' It needs ' + made.moves + ' move' + (made.moves === 1 ? '' : 's') + ' beyond the single candidate cells.' : '');
   }
   function pickSample() {
     var v = $('sample').value, easy = v === 'easy';
     $('again').hidden = !(v === 'random' || easy);
-    $('again').textContent = easy ? 'Another easy sudoku' : 'Another random sudoku';
+    $('again').textContent = 'Another random puzzle';
     if (easy && autoFill) { setAuto(false); forcedOff = true; }
     if (!easy && forcedOff) { setAuto(true); forcedOff = false; }
     if (v === 'random' || easy) { loadRandom(easy); return; }
@@ -668,8 +664,14 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   $('reset').addEventListener('click', function () { interrupt(); load(original, null); });
   $('apply').addEventListener('click', function () { if (playing) stopPlay(true); applyCurrent(); });
   $('play').addEventListener('click', function () { if (playing) { interrupt(); say('Paused.'); } else startPlay(); });
-  $('prev').addEventListener('click', function () { interrupt(); if (view.kind === 'result' && view.step) { view.step--; render(); } });
-  $('fwd').addEventListener('click', function () { interrupt(); if (view.kind !== 'result') return; view.step = view.step === null ? 0 : Math.min(view.step + 1, view.res.steps.length - 1); render(); });
+  /* Steps are followed by tapping them in the list, or with the left and right arrow keys. */
+  document.addEventListener('keydown', function (e) {
+    if (view.kind !== 'result' || e.altKey || e.ctrlKey || e.metaKey || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target || {}).tagName || '')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    interrupt(); var last = view.res.steps.length - 1;
+    view.step = e.key === 'ArrowRight' ? (view.step === null ? 0 : Math.min(view.step + 1, last)) : (view.step ? view.step - 1 : 0);
+    render(); e.preventDefault();
+  });
   $('steps').addEventListener('click', function (e) { interrupt(); var li = e.target.closest('li[data-i]'); if (li && view.kind === 'result') { var i = +li.getAttribute('data-i'); view.step = view.step === i ? null : i; render(); } });
   $('techs').addEventListener('click', function (e) { var b = e.target.closest('button[data-key]'); if (!b) return; interrupt(); var k = b.getAttribute('data-key'); show(k, view.kind === 'result' && view.tech === k ? view.index + 1 : (pick[k] || 0)); });
   $('digits').addEventListener('click', function (e) { var b = e.target.closest('button[data-d]'); if (!b) return; interrupt(); var d = +b.getAttribute('data-d'); view = view.kind === 'digit' && view.d === d ? { kind: 'none' } : { kind: 'digit', d: d }; render(); });
