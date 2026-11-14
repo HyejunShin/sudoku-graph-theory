@@ -501,15 +501,23 @@ With k = 2 these are the naked pair, hidden pair and X-Wing of Theorem 5.4. So t
 
 So take the z in p and the z in the first wing as one dot, and the z in the second wing as another. They cannot both be false. A candidate z that sees all three cells is linked to both dots. Suppose it is true: both dots are false, which the lemma forbids. That is the **XYZ-Wing**, and its shape is a triangle, like the Locked pair.
 
+**Lemma 7.7 (almost-locked sets).** Call n cells of one unit that hold n + 1 digits between them an *almost-locked set*: one digit too many. Let A and B be two of them with no cell in common. Let x be a digit in both whose places in A all see its places in B, and z another digit in both. Then some z of A or some z of B is true.
+
+*Why.* Suppose no z of A is true. Then the n cells of A hold only n digits, so each of those digits is used in A, x among them. In the same way, if no z of B is true, x is used in B. Both cannot happen, because every x of A sees every x of B. ∎
+
+So the z's of A are one dot, the z's of B another, and they cannot both be false. A candidate z that sees all of them is linked to both and closes a triangle, exactly as in the XYZ-Wing. In fact the XYZ-Wing is the case where A is the pivot with one wing and B is the other wing. The same lemma covers the WXYZ-Wing and the pattern solvers call ALS-XZ.
+
+**Finned fish** work the same way. Suppose a digit in k rows fits k columns except for a few extra places, the *fin*, all in one box. If every fin candidate is false, the sets rule applies and each column's dot is true. So the fin dot and a column's dot cannot both be false. A candidate in that column and in the fin's box is linked to both, and the triangle closes.
+
 **4. Two remarks.**
 
 *Triples as a colouring.* A solved grid colours the 81 cells with nine colours so that cells which see each other differ \[2\]. A naked triple is three cells that all see each other and share a list of three colours, so they use up all three. The sets rule says the same thing by counting.
 
 *The unique rectangle.* Four cells in two rows, two columns and two boxes, each holding only a and b, form an even loop, and an even loop has exactly two colourings (Corollary 2.2). Nothing outside the four cells can tell the two apart, so both would be solutions. A proper puzzle has one solution, so that pattern can never appear, and any candidate that would complete it is false. The loop and its two colourings are graph theory. The last step is not: it uses a fact about the puzzle that is not one of the 324 constraint sets.
 
-All three were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million linked pairs of group dots against Lemma 7.4, about 17,500 instances of the sets rule with k = 2, 3 and 4, and about 1,600 XYZ configurations against Lemma 7.6. There were no failures. The script is `proofs/verify_sets.py`.
+All four were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million linked pairs of group dots against Lemma 7.4, about 17,000 instances of the sets rule with k = 2, 3 and 4, about 1,700 XYZ configurations against Lemma 7.6, and about 81,000 pairs of almost-locked sets against Lemma 7.7. There were no failures. The script is `proofs/verify_sets.py`.
 
-**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a colouring or a count. Larger families such as almost-locked sets and finned fish are not examined here.
+**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a colouring or a count. So do the few patterns not examined here, such as chains of three or more almost-locked sets.
 
 ## 8. Has this been done before?
 

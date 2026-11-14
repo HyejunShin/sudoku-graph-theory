@@ -217,6 +217,15 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const reds = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length / 1, dashed = $('grid').querySelectorAll('[stroke-dasharray]').length;
     if (!reds || dashed < reds) throw new Error(sel.options[sel.selectedIndex].textContent + ': ' + reds + ' removed candidates but only ' + dashed + ' dashed links');
   }
+  { // the almost-locked-set and finned-fish example plays through using both, each drawn as two blue dots with a counted link
+    const o = [...sel.options].find(x => x.textContent === 'Almost-locked sets and finned fish'); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    const seenNames = new Set(); let okPicture = true;
+    const w3 = setInterval(() => { const t = $('tname').textContent.replace(/ \(.*/, ''); if ($('stepnav').hidden) return; seenNames.add(t);
+      if ((t === 'Almost-locked sets' || t.indexOf('Finned') === 0) && ($('grid').querySelectorAll('path.group').length < 1 || !/blue dot/.test($('steps').textContent))) okPicture = false; }, 0);
+    click(play); await until(() => play.textContent !== 'Pause', 30000, 'play to finish the almost-locked-set example'); clearInterval(w3);
+    if ($('tname').textContent !== 'Solved' || !seenNames.has('Almost-locked sets') || ![...seenNames].some(n => n.indexOf('Finned') === 0) || seenNames.has('Trial and error')) throw new Error('almost-locked-set example: ' + $('tname').textContent + ' using ' + [...seenNames].join(', '));
+    if (!okPicture) throw new Error('almost-locked sets or finned fish shown without group dots');
+  }
   const xz = [...sel.options].find(o => o.textContent === 'XYZ-Wing'); sel.value = xz.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error('the XYZ-Wing does not show its group dot');
   if (document.querySelectorAll('#techs .beyond').length !== 3) throw new Error('expected three dividers: counting, one-solution, last resort');

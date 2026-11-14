@@ -5,6 +5,7 @@ B. Theorem 7.5, the sets rule: if k pairwise disjoint constraint sets are covere
    constraint sets, every candidate of the covering sets outside the covered ones is false.
 
 C. Lemma 7.6: in an XYZ-Wing one of the three z's is true.
+D. Lemma 7.7: two almost-locked sets joined by a digit x cannot both lack another shared digit z.
 
 All are checked on random states that contain a known solution. Run: python3 verify_sets.py
 """
@@ -148,15 +149,43 @@ def check_xyz(truth, P, live):
             n += 1
     return n
 
-t0, groups, rule, fam, xyz, states = time.time(), 0, 0, 0, 0, 0
+def check_als(truth, P, live):
+    """Lemma 7.7: two almost-locked sets A and B (n cells of a unit with n + 1 digits), a digit x whose places in A
+    all see its places in B, and another shared digit z. Then some z of A or of B is true."""
+    n = 0
+    cell = {}
+    for (r, c, d) in P: cell.setdefault((r, c), set()).add(d)
+    open_cells = [k for k, v in cell.items() if len(v) > 1]
+    sees = lambda a, b: a != b and (a[0] == b[0] or a[1] == b[1] or (a[0] // 3 == b[0] // 3 and a[1] // 3 == b[1] // 3))
+    units = [[k for k in open_cells if k[0] == i] for i in range(9)] + [[k for k in open_cells if k[1] == i] for i in range(9)] + [[k for k in open_cells if 3 * (k[0] // 3) + k[1] // 3 == i] for i in range(9)]
+    als = {}
+    for u in units:
+        for size in (1, 2, 3):
+            for cs in itertools.combinations(u, size):
+                ds = set().union(*(cell[c] for c in cs))
+                if len(ds) == size + 1: als[frozenset(cs)] = ds
+    items = list(als.items()); random.shuffle(items)
+    for (A, da), (B, db) in itertools.islice(itertools.combinations(items[:60], 2), 1500):
+        if A & B: continue
+        for x in da & db:
+            if not all(sees(a, b) for a in A if x in cell[a] for b in B if x in cell[b]): continue
+            for z in (da & db) - {x}:
+                zs = [(c[0], c[1], z) for c in A | B if z in cell[c]]
+                assert any(t in truth for t in zs), 'both z dots are false'
+                n += 1
+    return n
+
+t0, groups, rule, fam, xyz, als_n, states = time.time(), 0, 0, 0, 0, 0, 0
 while time.time() - t0 < 40:
     truth, P, live = random_state()
     groups += check_groups(truth, P, live)
     rule += check_sets_rule(truth, P, live)
     fam += check_families(truth, P, live)
     xyz += check_xyz(truth, P, live)
+    als_n += check_als(truth, P, live)
     states += 1
 print('states:', states)
 print('group dots (Lemma 7.4): %d linked pairs of dots checked against the two link rules, 0 failures' % groups)
 print('sets rule (Theorem 7.5): %d random base/cover instances and %d subset and fish instances, k = 2, 3, 4, each removing at least one candidate, 0 failures' % (rule, fam))
 print('XYZ-Wing (Lemma 7.6): %d pivot-and-wings configurations checked, 0 failures' % xyz)
+print('almost-locked sets (Lemma 7.7): %d pairs of sets with a linking digit checked, 0 failures' % als_n)
