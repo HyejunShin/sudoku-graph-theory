@@ -1,13 +1,13 @@
 # Why Advanced Sudoku Strategies Work
 
-Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they are one idea from the theory of **bipartite graphs**.
+Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Coloring and others) are usually memorised as separate tricks. This project shows they are one idea from the theory of **bipartite graphs**.
 
 The idea: take a loop of candidates (digits still possible in a cell) in which each one conflicts with the next, so the two cannot both be true. Now try to mark them true, false, true, false all the way round.
 
 - **On a loop with an even number of candidates, the marking fits.** When the puzzle forces it, every neighbouring pair on the loop holds exactly one true candidate. So any other candidate that conflicts with both members of a pair must be false.
 - **On a loop with an odd number, the marking cannot fit.** Somewhere on the loop two neighbours are both false. Working out where that has to happen shows which candidate is false.
 
-Marking things with two labels so that neighbours always differ is called *two-colouring*, and a graph where that is possible is called *bipartite*.
+Marking things with two labels so that neighbours always differ is called *two-coloring*, and a graph where that is possible is called *bipartite*.
 
 **Try it:** [Solving Sudoku Using Graph Coloring](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
@@ -35,21 +35,21 @@ Why draw the lines? Because what you learn about one candidate travels along the
 
 ![A strong link forces one end true; a weak link only forbids both](writeup/figures/fig06.png)
 
-**2. True and false are two colours.** Colour every candidate by whether it is true or false in the solution. Linked candidates are never both true, so round a loop the colours try to alternate. An even loop can do that. An odd loop cannot.
+**2. True and false are two colors.** Color every candidate by whether it is true or false in the solution. Linked candidates are never both true, so round a loop the colors try to alternate. An even loop can do that. An odd loop cannot.
 
-![Colours can alternate round an even cycle but not round an odd one](writeup/figures/fig01.png)
+![Colors can alternate round an even cycle but not round an odd one](writeup/figures/fig01.png)
 
-**3. Strong links form a bipartite graph.** Across a strong link the two colours always differ, so the strong links alone can always be two-coloured. Each connected piece has only two colourings: one colour is all true and the other all false. A candidate linked to candidates of both colours can be removed, since one of those colours is true. That is Simple Colouring and 3D Medusa.
+**3. Strong links form a bipartite graph.** Across a strong link the two colors always differ, so the strong links alone can always be two-colored. Each connected piece has only two colorings: one color is all true and the other all false. A candidate linked to candidates of both colors can be removed, since one of those colors is true. That is Simple Coloring and 3D Medusa.
 
 ![A component of strong links can be solved in only two ways](writeup/figures/fig09.png)
 
-**4. Odd loops break the colouring, and that removes candidates.** On an odd loop the colours cannot alternate all the way round, so some link has both ends false, and it cannot be a strong one. When the strong links pair up every candidate but one, that candidate must be false. Skyscraper, Two-String Kite, Turbot Fish and XY-Wing are all this picture:
+**4. Odd loops break the coloring, and that removes candidates.** On an odd loop the colors cannot alternate all the way round, so some link has both ends false, and it cannot be a strong one. When the strong links pair up every candidate but one, that candidate must be false. Skyscraper, Two-String Kite, Turbot Fish and XY-Wing are all this picture:
 
 ![An odd loop forces a candidate out, in four steps](writeup/figures/fig10.png)
 
-**5. Even loops keep the colouring.** When the strong links pair up every candidate on an even loop, true and false alternate perfectly, so every link on it has exactly one true end. Anything linked to both ends of such a link can be removed. That is X-Wing, naked pair and hidden pair.
+**5. Even loops keep the coloring.** When the strong links pair up every candidate on an even loop, true and false alternate perfectly, so every link on it has exactly one true end. Anything linked to both ends of such a link can be removed. That is X-Wing, naked pair and hidden pair.
 
-To be exact about the claim: only step 3 uses a bipartite graph as such. Steps 4 and 5 apply the same two-colour fact to single loops in the graph of all links, and that graph is not bipartite. Its odd loops are exactly what step 4 exploits.
+To be exact about the claim: only step 3 uses a bipartite graph as such. Steps 4 and 5 apply the same two-color fact to single loops in the graph of all links, and that graph is not bipartite. Its odd loops are exactly what step 4 exploits.
 
 The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves each step, shows where the method stops, and has 24 pictures like these.
 
@@ -63,16 +63,16 @@ Open `index.html` directly; it needs no server and no build step.
 - Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
 - Tap a technique to see a move of that kind. Each move lists the chain of forced steps behind it, and the board marks candidates true or false as you walk through. **Apply to the board** carries it out.
 - **Play all steps** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Tap the board to pause.
-- **The same move as a graph**: below the play controls the current move is redrawn as a plain graph, with the dots spread out and a group shown as one dot. It carries the same colours as the board and steps along with it, so the move reads as what it is: a two-colouring problem.
-- Tap any candidate on the board to see everything it is linked to. Pick a digit to see its strong links coloured in two colours.
+- **The same move as a graph**: below the play controls the current move is redrawn as a plain graph, with the dots spread out and a group shown as one dot. It carries the same colors as the board and steps along with it, so the move reads as what it is: a two-coloring problem.
+- Tap any candidate on the board to see everything it is linked to. Pick a digit to see its strong links colored in two colors.
 
-Techniques it finds: locked pair, naked pair, hidden pair, X-Wing, Skyscraper, Two-String Kite, XY-Wing, Simple Colouring, one-digit odd loops (Turbot Fish, X-Cycle), 3D Medusa, and general alternating chains (which include W-Wing and XY-Chain).
+Techniques it finds: locked pair, naked pair, hidden pair, X-Wing, Skyscraper, Two-String Kite, XY-Wing, Simple Coloring, one-digit odd loops (Turbot Fish, X-Cycle), 3D Medusa, and general alternating chains (which include W-Wing and XY-Chain).
 
 It only knows techniques that follow from links. When a puzzle needs something else, such as a naked triple or a larger fish, it says so. The write-up proves that this limit is real.
 
 ## Beyond links
 
-Links join two candidates at a time, so some puzzles cannot be finished by loops and colourings alone. A test on 2,000 random puzzles gave:
+Links join two candidates at a time, so some puzzles cannot be finished by loops and colorings alone. A test on 2,000 random puzzles gave:
 
 | Outcome | Puzzles |
 | --- | --- |
@@ -93,9 +93,9 @@ A search for everything links can prove, on a smaller sample, solved nothing the
 
 **More counted links.** Inside an **almost-locked set** (a few cells with one digit too many), two digits cannot both be missing. That gives counted links, so loops can run through such sets: ALS-XZ, WXYZ-Wing, chains of almost-locked sets, and the two-link case that includes the basic Sue de Coq. **Finned fish** are a triangle of the same kind. These two searches are slower, so they run only when nothing earlier applies. In 2,500 random puzzles they cut the share needing a guess to 0.7%.
 
-**One more fact.** A **unique rectangle** is an even loop that could be coloured both ways with nothing to decide between them. It adds the assumption that a proper sudoku has one solution.
+**One more fact.** A **unique rectangle** is an even loop that could be colored both ways with nothing to decide between them. It adds the assumption that a proper sudoku has one solution.
 
-**Last resort.** **Trial and error**: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is not a loop, a colouring or a count, and it is offered only when nothing else applies.
+**Last resort.** **Trial and error**: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is not a loop, a coloring or a count, and it is offered only when nothing else applies.
 
 In a test on 6,000 random puzzles with all of these, 106 used a group step (locked triple or grouped chain), 34 a naked triple, 1 a unique rectangle, and 75 (1.2%) still needed a guess. Bigger fish and XYZ-Wing were never needed: they exist, but random puzzles almost never require them. With the guess every puzzle can be finished. The last entries of the example list show these steps.
 

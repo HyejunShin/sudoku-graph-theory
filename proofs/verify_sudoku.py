@@ -62,7 +62,7 @@ def run_state(p_extra):
         if len(live) == 2:
             a, b = live
             S[a].add(b); S[b].add(a)
-    # 2-colour the strong graph
+    # 2-color the strong graph
     comp = {}; col = {}
     ncomp = 0
     for v in cand:
@@ -83,7 +83,7 @@ def run_state(p_extra):
         vals = {v in truth for v in cls}
         assert len(vals) == 1
     false_classes = set()
-    # wrap: weak edge inside one colour class
+    # wrap: weak edge inside one color class
     for (k, c), cls in classes.items():
         if any(W[a] & cls for a in cls):
             false_classes.add((k, c)); stats['wrap'] += 1

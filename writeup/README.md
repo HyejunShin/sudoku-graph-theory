@@ -1,8 +1,8 @@
-# Why Advanced Sudoku Strategies Work: One Graph-Theory Rule Behind X-Wing, X-Cycle and Colouring
+# Why Advanced Sudoku Strategies Work: One Graph-Theory Rule Behind X-Wing, X-Cycle and Coloring
 
 2026-11-14 · Hyejun Shin
 
-**What this is.** Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Colouring. They are usually memorised as separate tricks. This write-up shows they are one idea, and proves it step by step.
+**What this is.** Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Coloring. They are usually memorised as separate tricks. This write-up shows they are one idea, and proves it step by step.
 
 **The idea.** Treat each candidate (a digit that could still go in a cell) as a dot. Join two dots when the rules forbid both from being true. One counting rule about loops of dots then explains every strategy on the list.
 
@@ -24,7 +24,7 @@
 
 Everything else follows from point 5.
 
-- Strong links alone can always be 2-coloured, true against false (Theorem 5.1).
+- Strong links alone can always be 2-colored, true against false (Theorem 5.1).
 
 - An odd loop with enough strong links forces one candidate to be false (Theorem 5.2) or true (Theorem 5.3).
 
@@ -32,7 +32,7 @@ Everything else follows from point 5.
 
 None of the strategies is new, and Section 8 says who found them. What is here is one short proof for all of them. This write-up grew out of an earlier essay of mine.
 
-## 2. Step 1: Graphs and two colours
+## 2. Step 1: Graphs and two colors
 
 A *graph* is a set of dots (*vertices*) with lines (*edges*) joining some pairs. Two vertices joined by an edge are *adjacent*, or *neighbours*. All our graphs are finite, and no edge joins a vertex to itself.
 
@@ -42,21 +42,21 @@ A *graph* is a set of dots (*vertices*) with lines (*edges*) joining some pairs.
 
 - A graph is *connected* if a path joins any two vertices. Its connected pieces are its *components*. The *distance* d(u, v) is the length of a shortest path from u to v.
 
-- A *2-colouring* gives each vertex colour 0 or 1 so that the two ends of every edge differ.
+- A *2-coloring* gives each vertex color 0 or 1 so that the two ends of every edge differ.
 
-- A graph is *bipartite* if its vertices split into two groups X and Y with every edge running between the groups. That is the same as having a 2-colouring: X is colour 0 and Y is colour 1.
+- A graph is *bipartite* if its vertices split into two groups X and Y with every edge running between the groups. That is the same as having a 2-coloring: X is color 0 and Y is color 1.
 
 ![paths, bipartite graphs, even and odd cycles](figures/fig01.png)
 
 *Figure 1. paths, bipartite graphs, even and odd cycles*
 
-Round a cycle the colours must alternate. That works only when the number of vertices is even. In the odd cycle above, the grey vertex has a neighbour of each colour, so no colour is left for it.
+Round a cycle the colors must alternate. That works only when the number of vertices is even. In the odd cycle above, the grey vertex has a neighbour of each color, so no color is left for it.
 
 **Theorem 2.1 (König).** A graph is bipartite exactly when it has no odd cycle.
 
-*Why, first half.* Suppose a 2-colouring exists and v1, ..., vk is a cycle. Neighbours differ, so vi has the colour of v1 exactly when i is odd. But vk is adjacent to v1, so their colours differ, and k is even.
+*Why, first half.* Suppose a 2-coloring exists and v1, ..., vk is a cycle. Neighbours differ, so vi has the color of v1 exactly when i is odd. But vk is adjacent to v1, so their colors differ, and k is even.
 
-*Why, second half.* Suppose there is no odd cycle. No edge joins two components, so we can colour one component at a time. Assume the graph is connected and fix a vertex r. We need two facts about distances from r.
+*Why, second half.* Suppose there is no odd cycle. No edge joins two components, so we can color one component at a time. Assume the graph is connected and fix a vertex r. We need two facts about distances from r.
 
 - (D1) Adjacent vertices have distances from r that differ by at most 1.
 
@@ -68,9 +68,9 @@ For (D1), a shortest path to u followed by v is a walk of length d(r, u) + 1, so
 
 Now the proof itself.
 
-1.  Colour each vertex by its distance from r: even distance colour 0, odd distance colour 1.
+1.  Color each vertex by its distance from r: even distance color 0, odd distance color 1.
 
-2.  Suppose some edge uv has both ends the same colour. By (D1) their distances differ by at most 1. They have the same parity, so they are equal. Call the distance n.
+2.  Suppose some edge uv has both ends the same color. By (D1) their distances differ by at most 1. They have the same parity, so they are equal. Call the distance n.
 
 3.  Take shortest paths A from r to u and B from r to v. Let w be the last vertex of A that is also on B, at distance j. By (D2), w is in position j on both paths.
 
@@ -78,7 +78,7 @@ Now the proof itself.
 
 5.  Below w the two paths each have n − j ≥ 1 edges and share no vertex. With the edge uv they form a cycle of 2(n − j) + 1 edges. That is odd, against our assumption.
 
-So no edge fails, and the colouring works. ∎
+So no edge fails, and the coloring works. ∎
 
 ![Theorem 2.1, second half · three steps](figures/fig02.png)
 
@@ -86,23 +86,23 @@ So no edge fails, and the colouring works. ∎
 
 Here w is where the two shortest paths part for the last time. The two branches below w have equal length, so with the edge uv they always close an odd cycle.
 
-**Corollary 2.2.** A connected bipartite graph has exactly two 2-colourings, and each is the other with the colours swapped.
+**Corollary 2.2.** A connected bipartite graph has exactly two 2-colorings, and each is the other with the colors swapped.
 
-*Why.* Fix a vertex r. Along a shortest path from r the colours alternate, so the colour of r decides the colour of every vertex. There are two choices for r, and both work: one 2-colouring exists by Theorem 2.1, and swapping its colours gives the other. ∎
+*Why.* Fix a vertex r. Along a shortest path from r the colors alternate, so the color of r decides the color of every vertex. There are two choices for r, and both work: one 2-coloring exists by Theorem 2.1, and swapping its colors gives the other. ∎
 
-The two colour groups of a connected bipartite graph are its *colour classes*. A path between two vertices of the same class has even length; between different classes, odd length.
+The two color groups of a connected bipartite graph are its *color classes*. A path between two vertices of the same class has even length; between different classes, odd length.
 
-A side note: a graph with no edges needs only one colour. So bipartite means "at most two colours", not "exactly two".
+A side note: a graph with no edges needs only one color. So bipartite means "at most two colors", not "exactly two".
 
 ## 3. Step 2: Sudoku as dots and links
 
-**The grid is already a graph.** Every cell has 20 *neighbours*: the other cells of its row, its column and its box. Join each cell to its neighbours and the grid becomes one graph with 81 vertices and 810 edges. Solving a sudoku means colouring that graph with nine digits so that neighbours differ \[2\].
+**The grid is already a graph.** Every cell has 20 *neighbours*: the other cells of its row, its column and its box. Join each cell to its neighbours and the grid becomes one graph with 81 vertices and 810 edges. Solving a sudoku means coloring that graph with nine digits so that neighbours differ \[2\].
 
 ![the grid as a graph · one cell's neighbours, and a whole mini sudoku](figures/fig03.png)
 
 *Figure 3. the grid as a graph · one cell's neighbours, and a whole mini sudoku*
 
-On the left, the blue cell must differ from each of the 20 shaded cells. On the right, the same idea drawn for every cell of a small 4 by 4 sudoku at once: each line means "these two must differ", and the four colours are the four digits.
+On the left, the blue cell must differ from each of the 20 shaded cells. On the right, the same idea drawn for every cell of a small 4 by 4 sudoku at once: each line means "these two must differ", and the four colors are the four digits.
 
 That graph is too coarse for solving strategies, which are about candidates. So we go one level down and make every candidate a vertex.
 
@@ -209,9 +209,9 @@ For readers who know optimisation: rule 3 on an odd cycle, t ≤ (k − 1)/2, is
 
 From here on, P is a state with at least one solution, and "true" and "false" refer to any one solution. One piece of vocabulary: some links *pair up* a set of candidates if no two of them share an end and their ends are exactly that set.
 
-**Theorem 5.1 (strong links 2-colour).** The strong graph S(P) has no odd cycle. In each component K of S(P), with colour classes K0 and K1, every solution makes one class all true and the other all false.
+**Theorem 5.1 (strong links 2-color).** The strong graph S(P) has no odd cycle. In each component K of S(P), with color classes K0 and K1, every solution makes one class all true and the other all false.
 
-*Why.* Across a strong link exactly one end is true (Lemma 3.1). So "true or false" is a 2-colouring of the strong graph, and Theorem 2.1 rules out odd cycles. A connected graph has only two 2-colourings (Corollary 2.2): K0 true and K1 false, or the reverse. ∎
+*Why.* Across a strong link exactly one end is true (Lemma 3.1). So "true or false" is a 2-coloring of the strong graph, and Theorem 2.1 rules out odd cycles. A connected graph has only two 2-colorings (Corollary 2.2): K0 true and K1 false, or the reverse. ∎
 
 ![Theorem 5.1 · one component, two possibilities](figures/fig09.png)
 
@@ -261,7 +261,7 @@ Here are the three loop theorems side by side.
 
 Solid lines are strong links. Dashed lines can be weak or strong.
 
-**Corollary 5.5 (the colouring rules).** Let K be a component of the strong graph with classes K0 and K1. Let K′ be another component with classes K′0 and K′1.
+**Corollary 5.5 (the coloring rules).** Let K be a component of the strong graph with classes K0 and K1. Let K′ be another component with classes K′0 and K′1.
 
 1.  *Wrap.* If a link joins two candidates of K0, then K0 is false and K1 is true.
 
@@ -311,9 +311,9 @@ Each named strategy is one of the results above, applied to a particular shape o
 | W-Wing                              | 7-cycle: two cells holding ab, joined by a strong link on a                           | Theorem 5.2                             | b goes from cells seeing both                                |
 | XY-Chain                            | Longer odd cycle through two-digit cells                                              | Theorem 5.2                             | The end digit goes from cells seeing both ends               |
 | Remote Pairs                        | An even number of cells in a chain, all holding ab                                    | Theorem 5.2, twice                      | a and b go from cells seeing both ends                       |
-| Simple Colouring                    | One component of strong links of one digit                                            | Corollary 5.5, Wrap and Trap            | A whole colour, or a candidate seeing both colours, goes     |
+| Simple Coloring                    | One component of strong links of one digit                                            | Corollary 5.5, Wrap and Trap            | A whole color, or a candidate seeing both colors, goes     |
 | 3D Medusa, rules 1 to 5             | One component of strong links across digits                                           | Corollary 5.5, Wrap and Trap            | The same                                                     |
-| Multi-Colouring                     | Two components of one digit                                                           | Corollary 5.5, Bridge and Double bridge | A candidate seeing both far colours, or a whole colour, goes |
+| Multi-Coloring                     | Two components of one digit                                                           | Corollary 5.5, Bridge and Double bridge | A candidate seeing both far colors, or a whole color, goes |
 | Broken Wing                         | Odd cycle of one digit with one link not strong                                       | Corollary 5.6                           | A guardian is true                                           |
 | Alternating Inference Chain         | Any cycle mixing digits, strong links alternating                                     | Theorems 5.2 to 5.4                     | As above                                                     |
 
@@ -327,7 +327,7 @@ The worked examples below write candidates as (row, column, digit).
 
 *Figure 15. X-Wing on digit 2 · four steps on the grid*
 
-Steps 2 and 3 are the only two ways to colour the loop, and the red candidates are false in both.
+Steps 2 and 3 are the only two ways to color the loop, and the red candidates are false in both.
 
 **X-Cycle.** For digit 8 there are strong links (3,2,8)–(7,2,8) in column 2, (8,3,8)–(8,9,8) in row 8 and (9,7,8)–(3,7,8) in column 7. Links through box 7, box 9 and row 3 join them into a 6-cycle, which the strong links pair up. Theorem 5.4 removes every other 8 from row 3, box 7 and box 9: (3,3,8), (3,9,8), (7,3,8) and (7,9,8).
 
@@ -335,21 +335,21 @@ Steps 2 and 3 are the only two ways to colour the loop, and the red candidates a
 
 *Figure 16. X-Cycle on digit 8 · two steps on the grid*
 
-**Simple Colouring.** For digit 6 the strong links form one chain: (2,2,6), (2,6,6), (1,5,6), (9,5,6), (9,3,6), (5,3,6). Colour it alternately. The candidates (5,2,6) and (6,2,6) are each linked to (2,2,6), of one colour, and to (5,3,6), of the other. The Trap rule makes both false.
+**Simple Coloring.** For digit 6 the strong links form one chain: (2,2,6), (2,6,6), (1,5,6), (9,5,6), (9,3,6), (5,3,6). Color it alternately. The candidates (5,2,6) and (6,2,6) are each linked to (2,2,6), of one color, and to (5,3,6), of the other. The Trap rule makes both false.
 
-![Simple Colouring on digit 6 · two steps on the grid](figures/fig17.png)
+![Simple Coloring on digit 6 · two steps on the grid](figures/fig17.png)
 
-*Figure 17. Simple Colouring on digit 6 · two steps on the grid*
+*Figure 17. Simple Coloring on digit 6 · two steps on the grid*
 
 Each red candidate closes a 7-cycle with the chain. That is the odd cycle behind the Trap rule.
 
-**3D Medusa.** The same colouring, except that the chain may hop between digits through cells with two candidates. If two candidates of one colour turn out to be linked, Wrap removes that colour. One caution: colours mean something only inside one component, so a clash in one component says nothing about another.
+**3D Medusa.** The same coloring, except that the chain may hop between digits through cells with two candidates. If two candidates of one color turn out to be linked, Wrap removes that color. One caution: colors mean something only inside one component, so a clash in one component says nothing about another.
 
-**Multi-Colouring.** For digit 2 there is a long chain with classes K0 = {(4,6,2), (9,4,2), (1,5,2), (8,3,2)} and K1 = {(6,4,2), (8,5,2)}. A short chain is the strong link (4,1,2)–(7,1,2). Row 4 links (4,6,2) to (4,1,2), and box 7 links (8,3,2) to (7,1,2). So K0 is linked to both ends of the short chain. Double bridge makes K0 false and K1 true, which places a 2 at row 6, column 4 and at row 8, column 5.
+**Multi-Coloring.** For digit 2 there is a long chain with classes K0 = {(4,6,2), (9,4,2), (1,5,2), (8,3,2)} and K1 = {(6,4,2), (8,5,2)}. A short chain is the strong link (4,1,2)–(7,1,2). Row 4 links (4,6,2) to (4,1,2), and box 7 links (8,3,2) to (7,1,2). So K0 is linked to both ends of the short chain. Double bridge makes K0 false and K1 true, which places a 2 at row 6, column 4 and at row 8, column 5.
 
-![Multi-Colouring on digit 2 · two steps on the grid](figures/fig18.png)
+![Multi-Coloring on digit 2 · two steps on the grid](figures/fig18.png)
 
-*Figure 18. Multi-Colouring on digit 2 · two steps on the grid*
+*Figure 18. Multi-Coloring on digit 2 · two steps on the grid*
 
 If K0 were true, both ends of the short chain would be false, and a strong link forbids that.
 
@@ -397,7 +397,7 @@ The Cycle Lemma is not broken here: the number of empty links is odd every time.
 
 **Some rules use a whole constraint set.** The last two 3D Medusa rules in \[8\] are of this kind.
 
-**Proposition 7.1.** Let K0 be a colour class of a component of the strong graph, and A a constraint set. If every candidate of A still in P is linked to some candidate of K0, then K0 is false and the other class is true.
+**Proposition 7.1.** Let K0 be a color class of a component of the strong graph, and A a constraint set. If every candidate of A still in P is linked to some candidate of K0, then K0 is false and the other class is true.
 
 *Why.* If K0 were true, every candidate of A would be false (Lemma 3.1). But a solution has a member in A. So K0 is not the true class, and by Theorem 5.1 the other one is. ∎
 
@@ -439,13 +439,13 @@ Yet no constraint set has exactly two candidates left. The counts are 3 for the 
 
 This is a *naked triple*. It counts three cells against three digits and never uses a strong link.
 
-So the method has a clear edge. Inside it: pairs, wings, kites, chains, loops and colouring. Outside it: naked and hidden triples, fish with three or more candidates in a line, XYZ-Wing, and chains that treat a group of cells as one node, such as the Empty Rectangle. Those need rules about three or more candidates at once. The next part supplies two of them.
+So the method has a clear edge. Inside it: pairs, wings, kites, chains, loops and coloring. Outside it: naked and hidden triples, fish with three or more candidates in a line, XYZ-Wing, and chains that treat a group of cells as one node, such as the Empty Rectangle. Those need rules about three or more candidates at once. The next part supplies two of them.
 
 ### Going past the edge
 
-The edge is not the end. The same two colours, true and false, reach further in two ways: make the dots bigger, or count across whole constraint sets.
+The edge is not the end. The same two colors, true and false, reach further in two ways: make the dots bigger, or count across whole constraint sets.
 
-**1. Bigger dots: a group as one candidate.** Take one digit, and two or three of its candidates in cells of one box that share a row or column. Call that a *group*. Colour a group true when one of its members is true, and false when all of them are false. A single candidate is a group of one.
+**1. Bigger dots: a group as one candidate.** Take one digit, and two or three of its candidates in cells of one box that share a row or column. Call that a *group*. Color a group true when one of its members is true, and false when all of them are false. A single candidate is a group of one.
 
 Two groups are *linked* when they share no candidate and some constraint set contains both. The link is *strong* when together they are every candidate left in that set.
 
@@ -469,7 +469,7 @@ The Cycle Lemma and Theorem 5.2 used nothing about a dot except these two rules.
 
 *Why.* Each B holds exactly one true candidate, and the B's share nothing, so they hold k true candidates between them. Each of these lies in some C. A C holds only one true candidate, so the k true candidates lie in k different C's, one each. That uses up all k of the C's: each C has its one true candidate inside the B's. So a candidate of a C outside the B's is false. ∎
 
-In colours: the k true candidates of the B's are exactly the k true candidates of the C's. Counting them twice is the whole proof, as counting round the loop was for the Cycle Lemma.
+In colors: the k true candidates of the B's are exactly the k true candidates of the C's. Counting them twice is the whole proof, as counting round the loop was for the Cycle Lemma.
 
 In dots: for each C, the candidates it shares with the B's form one dot, as a group did above, and the count proves that dot true. Every other candidate of that C is linked to it, so it is false. The sets rule is the Locked triple again, with a count standing in for a single constraint set.
 
@@ -517,23 +517,23 @@ So an almost-locked set supplies counted links between its own dots. Dots of the
 
 **4. Two remarks.**
 
-*Triples as a colouring.* A solved grid colours the 81 cells with nine colours so that cells which see each other differ \[2\]. A naked triple is three cells that all see each other and share a list of three colours, so they use up all three. The sets rule says the same thing by counting.
+*Triples as a coloring.* A solved grid colors the 81 cells with nine colors so that cells which see each other differ \[2\]. A naked triple is three cells that all see each other and share a list of three colors, so they use up all three. The sets rule says the same thing by counting.
 
-*The unique rectangle.* Four cells in two rows, two columns and two boxes, each holding only a and b, form an even loop, and an even loop has exactly two colourings (Corollary 2.2). Nothing outside the four cells can tell the two apart, so both would be solutions. A proper puzzle has one solution, so that pattern can never appear, and any candidate that would complete it is false. The loop and its two colourings are graph theory. The last step is not: it uses a fact about the puzzle that is not one of the 324 constraint sets.
+*The unique rectangle.* Four cells in two rows, two columns and two boxes, each holding only a and b, form an even loop, and an even loop has exactly two colorings (Corollary 2.2). Nothing outside the four cells can tell the two apart, so both would be solutions. A proper puzzle has one solution, so that pattern can never appear, and any candidate that would complete it is false. The loop and its two colorings are graph theory. The last step is not: it uses a fact about the puzzle that is not one of the 324 constraint sets.
 
 All four were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million linked pairs of group dots against Lemma 7.4, about 17,000 instances of the sets rule with k = 2, 3 and 4, about 1,700 XYZ configurations against Lemma 7.6, and about 385,000 instances for almost-locked sets against Lemma 7.7. There were no failures. The script is `proofs/verify_sets.py`.
 
-**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a colouring or a count. So do the few very rare patterns not examined here, such as the Exocet.
+**What is still outside.** *Trial and error* reaches its contradiction through a branching web of consequences, not a loop, a coloring or a count. So do the few very rare patterns not examined here, such as the Exocet.
 
 ## 8. Has this been done before?
 
 Yes, in pieces. The strategies are well known, and so is the loop view. What I have not found written down is one counting rule that proves all of them.
 
-- **Sudoku as graph colouring.** Herzberg and Murty \[2\] colour the 81 cells with nine digits. That graph describes what a solution is. It is not the link graph used here.
+- **Sudoku as graph coloring.** Herzberg and Murty \[2\] color the 81 cells with nine digits. That graph describes what a solution is. It is not the link graph used here.
 
-- **Bivalue and bilocation graphs.** Eppstein \[3\] builds graphs from the same strong links and reads solving rules off their cycles. His rules use edge labels, not two colours or parity. This is the closest academic precedent.
+- **Bivalue and bilocation graphs.** Eppstein \[3\] builds graphs from the same strong links and reads solving rules off their cycles. His rules use edge labels, not two colors or parity. This is the closest academic precedent.
 
-- **Colouring.** HoDoKu \[7\] describes Simple Colours, with the names Color Trap and Color Wrap, and Multi Colours, whose two rules are Bridge and Double bridge here. SudokuWiki \[8\] describes 3D Medusa.
+- **Coloring.** HoDoKu \[7\] describes Simple Colors, with the names Color Trap and Color Wrap, and Multi Colors, whose two rules are Bridge and Double bridge here. SudokuWiki \[8\] describes 3D Medusa.
 
 - **Loops.** SudokuWiki \[8\] notes that a loop with one discontinuity has an odd number of nodes, and states the rules proved here as Theorems 5.2 and 5.3. Sudopedia \[9\] has the rule that is Theorem 5.4. Barker \[10\] observes that an odd loop of strong links cannot occur, and describes the guardians of the Broken Wing.
 
@@ -545,7 +545,7 @@ Yes, in pieces. The strategies are well known, and so is the loop view. What I h
 
 2.  Round any loop of k dots, the empty links number k − 2t.
 
-3.  Strong links are never empty, so they 2-colour.
+3.  Strong links are never empty, so they 2-color.
 
 4.  Pair up a loop with strong links and nothing is left to choose. An odd loop decides its leftover candidate; an even loop makes every link either-or.
 
@@ -557,7 +557,7 @@ Yes, in pieces. The strategies are well known, and so is the loop view. What I h
 
 1.  D. König, *Theorie der endlichen und unendlichen Graphen*, Akademische Verlagsgesellschaft, Leipzig, 1936.
 
-2.  A. M. Herzberg and M. R. Murty, Sudoku squares and chromatic polynomials, *Notices of the American Mathematical Society* 54 (2007), no. 6, 708–717. Summary: [Plus Magazine](https://plus.maths.org/content/solving-sudokus-colouring-numbers).
+2.  A. M. Herzberg and M. R. Murty, Sudoku squares and chromatic polynomials, *Notices of the American Mathematical Society* 54 (2007), no. 6, 708–717. Summary: [Plus Magazine](https://plus.maths.org/content/solving-sudokus-coloring-numbers).
 
 3.  D. Eppstein, [Nonrepetitive paths and cycles in graphs with application to Sudoku](https://arxiv.org/abs/cs/0507053), arXiv:cs/0507053, 2005.
 

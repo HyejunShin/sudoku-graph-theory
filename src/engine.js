@@ -309,24 +309,24 @@
     return out;
   }
 
-  /* Colouring (Theorem 5.1 and Corollary 5.5). digit = 1..9 for Simple Colouring, 0 for 3D Medusa (all strong links). */
-  function findColouring(st, digit) {
+  /* Coloring (Theorem 5.1 and Corollary 5.5). digit = 1..9 for Simple Coloring, 0 for 3D Medusa (all strong links). */
+  function findColoring(st, digit) {
     const out = [], seen = new Set();
     const okNode = id => digit === 0 || cDig(id) === digit;
     const partners = id => strongPartners(st, id).filter(okNode);
     for (let start = 0; start < 729; start++) {
       if (!alive(st, start) || !okNode(start) || seen.has(start) || !partners(start).length) continue;
-      const colour = new Map([[start, 0]]), stack = [start], edges = [];
-      while (stack.length) { const x = stack.pop(); for (const y of partners(x)) { if (!colour.has(y)) { colour.set(y, 1 - colour.get(x)); stack.push(y); } if (x < y) edges.push([x, y]); } }
-      colour.forEach((_, k) => seen.add(k));
-      const nodes = [...colour.keys()];
+      const color = new Map([[start, 0]]), stack = [start], edges = [];
+      while (stack.length) { const x = stack.pop(); for (const y of partners(x)) { if (!color.has(y)) { color.set(y, 1 - color.get(x)); stack.push(y); } if (x < y) edges.push([x, y]); } }
+      color.forEach((_, k) => seen.add(k));
+      const nodes = [...color.keys()];
       if (nodes.length < 4) continue;
       if (digit === 0 && !edges.some(([x, y]) => cCell(x) === cCell(y))) continue;
-      const cls = [nodes.filter(n => colour.get(n) === 0), nodes.filter(n => colour.get(n) === 1)];
-      const base = (tech) => { const r = mkResult(tech, 'Theorem 5.1 and Corollary 5.5: colouring'); nodes.forEach(n => r.nodes.set(n, colour.get(n) === 0 ? 'k0' : 'k1')); edges.forEach(([x, y]) => r.links.push({ a: x, b: y, strong: true }));
+      const cls = [nodes.filter(n => color.get(n) === 0), nodes.filter(n => color.get(n) === 1)];
+      const base = (tech) => { const r = mkResult(tech, 'Theorem 5.1 and Corollary 5.5: coloring'); nodes.forEach(n => r.nodes.set(n, color.get(n) === 0 ? 'k0' : 'k1')); edges.forEach(([x, y]) => r.links.push({ a: x, b: y, strong: true }));
         say(r, (digit ? 'For digit ' + digit + ', ' : 'Across all digits, ') + nodes.length + ' candidates are chained together by strong links.');
-        say(r, 'Along a strong link exactly one end is true. So colouring the chain alternately gives two colours, and one whole colour is true while the other is false.'); return r; };
-      const name = digit ? 'Simple Colouring' : '3D Medusa';
+        say(r, 'Along a strong link exactly one end is true. So coloring the chain alternately gives two colors, and one whole color is true while the other is false.'); return r; };
+      const name = digit ? 'Simple Coloring' : '3D Medusa';
       let wrap = null;
       for (let k = 0; k < 2 && !wrap; k++) for (let i = 0; i < cls[k].length && !wrap; i++) for (let j = i + 1; j < cls[k].length; j++) if (linked(cls[k][i], cls[k][j])) { wrap = [k, cls[k][i], cls[k][j]]; break; }
       if (wrap) {
@@ -334,11 +334,11 @@
         r.links.push({ a, b, strong: false, clash: true });
         r.elim = cls[k].slice(); r.place = cls[1 - k].slice();
         say(r, 'Two ' + word + ' candidates, ' + candName(a) + ' and ' + candName(b) + ', are linked: ' + linkWhy(a, b) + '. They cannot both be true.', null, [a, b]);
-        say(r, 'So ' + word + ' is not the true colour. Every ' + word + ' candidate goes, and every ' + otherWord + ' candidate is placed.');
+        say(r, 'So ' + word + ' is not the true color. Every ' + word + ' candidate goes, and every ' + otherWord + ' candidate is placed.');
         r.wrapClass = k; out.push(r); continue;
       }
       const trap = [];
-      for (let id = 0; id < 729; id++) if (alive(st, id) && !colour.has(id)) {
+      for (let id = 0; id < 729; id++) if (alive(st, id) && !color.has(id)) {
         const s0 = cls[0].find(n => linked(id, n)), s1 = cls[1].find(n => linked(id, n));
         if (s0 !== undefined && s1 !== undefined) trap.push([id, s0, s1]);
       }
@@ -347,14 +347,14 @@
         for (const [id, s0, s1] of trap) { r.elim.push(id); r.nodes.set(id, 'elim'); r.links.push({ a: id, b: s0, strong: false }); r.links.push({ a: id, b: s1, strong: false }); }
         const [id, s0, s1] = trap[0];
         say(r, candName(id) + ' is linked to a blue candidate (' + candName(s0) + ') and to an orange one (' + candName(s1) + ').');
-        say(r, 'One of the two colours is true, so ' + candName(id) + ' is linked to a true candidate. It is false.');
+        say(r, 'One of the two colors is true, so ' + candName(id) + ' is linked to a true candidate. It is false.');
         if (trap.length > 1) say(r, 'The same argument removes: ' + list(trap.slice(1).map(t => t[0])) + '.');
         out.push(r);
       }
     }
     return out;
   }
-  function findSimpleColouring(st) { let out = []; for (let d = 1; d <= 9; d++) out = out.concat(findColouring(st, d)); return out; }
+  function findSimpleColoring(st) { let out = []; for (let d = 1; d <= 9; d++) out = out.concat(findColoring(st, d)); return out; }
 
   /* Singles (not loop techniques; used to advance a puzzle) */
   function findSingle(st) {
@@ -753,12 +753,12 @@
       const m = st.cand[pair[0]], odd = cells.find(c => !pair.includes(c));
       if ((st.cand[odd] & m) !== m || bits(st.cand[odd]) < 3) continue;
       const ab = digits(m), elim = ab.map(d => cid(odd, d));
-      const res = mkResult('Unique rectangle', 'An even loop with two colourings, plus the fact that the puzzle has one solution');
+      const res = mkResult('Unique rectangle', 'An even loop with two colorings, plus the fact that the puzzle has one solution');
       for (const c of pair) for (const d of ab) res.nodes.set(cid(c, d), 'loop');
       elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
       say(res, 'The cells ' + cellList(pair) + ' hold only ' + digitList(ab) + '. With ' + cellName(odd) + ' they form a rectangle across two rows, two columns and two boxes.');
-      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would form an even loop holding only ' + digitList(ab) + '. An even loop can be coloured two ways, and nothing outside it could tell them apart, so there would be two solutions.');
-      say(res, 'A proper sudoku has exactly one solution, so ' + cellName(odd) + ' is neither. That removes: ' + list(elim) + '. The two colourings are graph theory; the one-solution fact is an extra assumption about the puzzle.');
+      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would form an even loop holding only ' + digitList(ab) + '. An even loop can be colored two ways, and nothing outside it could tell them apart, so there would be two solutions.');
+      say(res, 'A proper sudoku has exactly one solution, so ' + cellName(odd) + ' is neither. That removes: ' + list(elim) + '. The two colorings are graph theory; the one-solution fact is an extra assumption about the puzzle.');
       out.push(res);
     }
     return out;
@@ -787,7 +787,7 @@
       let v = -1; for (let id = 0; id < 729 && v < 0; id++) if (alive(st, id) && sol[cCell(id)] !== cDig(id)) v = id;
       if (v < 0) return [];
       res.nodes.set(v, 'elim'); res.elim = [v];
-      say(res, 'No loop, colouring or counting argument applies here, so the only move left is a guess.');
+      say(res, 'No loop, coloring or counting argument applies here, so the only move left is a guess.');
       say(res, 'Suppose ' + candName(v) + ' were true.', { [v]: 't' });
       say(res, 'Filling easy cells does not settle it, so everything that follows was searched in full. No solution has ' + candName(v) + '.', { [v]: 't' });
       say(res, 'So ' + candName(v) + ' is false.');
@@ -795,7 +795,7 @@
     }
     const v = best.id, marks = {}, snap = () => Object.assign({}, marks);
     res.nodes.set(v, 'elim'); best.forced.forEach(f => res.nodes.set(f.id, 'loop')); res.elim = [v];
-    say(res, 'No loop, colouring or counting argument applies here, so the only move left is a guess.');
+    say(res, 'No loop, coloring or counting argument applies here, so the only move left is a guess.');
     marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true, and fill the easy cells that follow.', snap());
     const shown = best.forced.slice(0, 5), rest = best.forced.slice(5);
     for (const f of shown) { marks[f.id] = 't'; say(res, 'Then ' + candName(f.id) + ': ' + f.why.charAt(0).toLowerCase() + f.why.slice(1) + '.', snap()); }
@@ -815,14 +815,14 @@
     { key: 'sky', used: 416, name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong links that share a line at one end.' },
     { key: 'kite', used: 382, name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row link and a column link joined inside a box.' },
     { key: 'xywing', used: 430, name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
-    { key: 'colour', used: 72, name: 'Simple Colouring', loop: '2-colouring', find: findSimpleColouring, blurb: 'Colour one digit’s strong links with two colours.' },
-    { key: 'xchain', used: 217, name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Colouring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
-    { key: 'medusa', used: 574, name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
+    { key: 'color', used: 72, name: 'Simple Coloring', loop: '2-coloring', find: findSimpleColoring, blurb: 'Color one digit’s strong links with two colors.' },
+    { key: 'xchain', used: 217, name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Coloring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
+    { key: 'medusa', used: 574, name: '3D Medusa', loop: '2-coloring', find: st => findColoring(st, 0), blurb: 'Coloring that hops between digits.' },
     { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
     { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one dot', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
     { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one dot: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.'},
     { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle with a counted link', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
-    /* Beyond links. These are tried only after every loop and colouring above has failed. */
+    /* Beyond links. These are tried only after every loop and coloring above has failed. */
     { key: 'subset', used: 11, name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
     { key: 'fish', used: 0, name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
     { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a counted link', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
@@ -881,5 +881,5 @@
   }
 
   root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, randomPuzzle, playThrough, chainFor, deadEnd, toString, clone, has, alive, place, eliminate, cellsFor,
-    solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColouring };
+    solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColoring };
 })(typeof window !== 'undefined' ? window : globalThis);
