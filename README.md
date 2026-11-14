@@ -1,6 +1,6 @@
 # Why Advanced Sudoku Strategies Work
 
-Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they are one idea from graph theory, proves it step by step, and lets you watch it work on real puzzles.
+Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they all come from one fact about **bipartite graphs**: a graph can be coloured with two colours exactly when it has no odd loop.
 
 **Try it:** [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
@@ -8,19 +8,27 @@ Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and ot
 
 *The Loop Finder explaining an X-Wing on a real puzzle. Click the picture to open it.*
 
-The idea in three lines:
+## The idea
 
-1. Every pencil mark is a dot. Two dots are linked when the rules forbid both from being true.
-2. A link is strong when exactly one of the two must be true.
-3. Round any loop of k dots, the links with both ends false number k minus twice the true dots. Strong links are never among them.
+**1. Pencil marks are dots, and the rules are links.** Two pencil marks are linked when the rules forbid both from being true: two digits in one cell, or one digit twice in a row, column or box. A link is *strong* when exactly one of the two must be true.
 
 ![A strong link forces one end true; a weak link only forbids both](writeup/figures/fig06.png)
 
-That counting rule is all it takes. For example, on a loop of five where two links are strong, assuming the top pencil mark is true leads straight to a contradiction, so it can be removed. Skyscraper, Two-String Kite and Turbot Fish are all this picture:
+**2. True and false are two colours.** Colour every pencil mark by whether it is true or false in the solution. Linked marks are never both true, so round a loop the colours try to alternate. An even loop can do that. An odd loop cannot.
+
+![Colours can alternate round an even cycle but not round an odd one](writeup/figures/fig01.png)
+
+**3. Strong links form a bipartite graph.** Across a strong link the two colours always differ, so the strong links alone can always be two-coloured. Each connected piece has only two colourings: one colour is all true and the other all false. A pencil mark linked to marks of both colours can be removed, since one of those colours is true. That is Simple Colouring and 3D Medusa.
+
+![A component of strong links can be solved in only two ways](writeup/figures/fig09.png)
+
+**4. Odd loops break the colouring, and that removes pencil marks.** On an odd loop the colours cannot alternate all the way round, so some link has both ends false, and it cannot be a strong one. When the strong links pair up every mark but one, that mark must be false. Skyscraper, Two-String Kite, Turbot Fish and XY-Wing are all this picture:
 
 ![An odd loop forces a pencil mark out, in four steps](writeup/figures/fig10.png)
 
-The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) has 24 pictures like these.
+**5. Even loops keep the colouring.** When the strong links pair up every mark on an even loop, true and false alternate perfectly, so every link on it has exactly one true end. Anything linked to both ends of such a link can be removed. That is X-Wing, naked pair and hidden pair.
+
+The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves each step, shows where the method stops, and has 24 pictures like these.
 
 ## The Loop Finder
 
