@@ -8,19 +8,19 @@
 <style>
 :root {
   /* layout: board on the left, explanation on the right; one column on phones */
-  --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #6b3fa0; --soft: #e6dbf7; --soft-line: #b9a1e3; --on-soft: #3b1f66;
+  --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78; --soft: #d6ecee; --soft-line: #8fc4ca; --on-soft: #0a4a51;
   --true: #1b8f4b; --false: #86919d; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
   --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #c9aef2; --soft: #c9aef2; --soft-line: #c9aef2; --on-soft: #19212a;
+    --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
     --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #c9aef2; --soft: #c9aef2; --soft-line: #c9aef2; --on-soft: #19212a;
+  --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
   --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -50,7 +50,7 @@ select { flex: 1 1 220px; }
 button { font: inherit; font-weight: 500; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: 0.45; cursor: default; }
-/* main buttons are a light purple with dark text, not a solid block */
+/* main buttons are a light tint of the main colour with dark text, not a solid block */
 button.primary { background: var(--soft); border-color: var(--soft-line); color: var(--on-soft); font-weight: 600; }
 button.primary:hover:not(:disabled) { border-color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -80,10 +80,8 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
-/* The play button is the one solid dark-purple button, in both themes, so it is easy to find. */
-#play { background: #6b3fa0; border-color: #6b3fa0; color: #ffffff; font-weight: 600; }
-#play:hover:not(:disabled) { background: #57308a; border-color: #57308a; }
-#play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #ffffff; }
+/* While playing, the play button gets a ring so it reads as active. */
+#play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
 #grid .going, #grid .landing { transform-box: fill-box; transform-origin: center; }
 #grid .going { animation: going var(--dur, 1100ms) ease-in forwards; }
@@ -127,7 +125,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
       </section>
       <section class="card" aria-label="Moves">
         <div class="row">
-          <button id="play" type="button" aria-pressed="false">Play all steps</button>
+          <button id="play" type="button" class="primary" aria-pressed="false">Play all steps</button>
           <label for="speed">Speed</label>
           <select id="speed" aria-label="Playback speed">
             <option value="2800">Slow</option>
