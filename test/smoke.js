@@ -198,6 +198,33 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     log.push(opt.textContent + ' -> solved, using ' + [...names].join(', '));
   }
   if (!document.querySelector('#techs .beyond')) throw new Error('no "Beyond links" divider in the technique list');
+  // 6j. the easy-cell switch and "Random easy sudoku"
+  const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
+  loadSample(4);
+  if (!auto.checked || easyBtn()) throw new Error('automatic filling should be on by default, with no Easy cell button');
+  if (sel.options[2].value !== 'easy' || sel.options[2].textContent !== 'Random easy sudoku') throw new Error('"Random easy sudoku" is not after "Random sudoku"');
+  sel.value = 'easy'; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  if (auto.checked) throw new Error('an easy puzzle should switch automatic filling off');
+  if (again.hidden || again.textContent !== 'Another easy sudoku') throw new Error('no "Another easy sudoku" button');
+  const ep = $('puzzle').value, givens = ep.replace(/\./g, '').length;
+  if (!E.check(ep).ok) throw new Error('easy puzzle is not a proper sudoku');
+  if ($('grid').querySelectorAll('text[font-size="34"]').length !== givens) throw new Error('cells were filled in although automatic filling is off');
+  if (!easyBtn() || easyBtn().disabled || $('tname').textContent.indexOf('Easy cell') !== 0) throw new Error('the first easy cell is not shown: ' + $('tname').textContent);
+  if ($('steps').children.length !== 1 || !/goes in r\dc\d\.$/.test($('steps').textContent)) throw new Error('an easy cell should have a one-line reason: ' + $('steps').textContent);
+  click($('apply'));
+  if ($('grid').querySelectorAll('text[font-size="34"]').length !== givens + 1) throw new Error('applying an easy cell should fill exactly one cell');
+  const kinds = new Set(); const w2 = setInterval(() => { if (!$('stepnav').hidden) kinds.add($('tname').textContent.replace(/ \(.*/, '')); }, 0);
+  click(play); await until(() => play.textContent !== 'Pause', 30000, 'play to finish an easy puzzle'); clearInterval(w2);
+  if ($('tname').textContent !== 'Solved' || [...kinds].join() !== 'Easy cell') throw new Error('easy puzzle: ' + $('tname').textContent + ' using ' + [...kinds].join(', '));
+  click(again); if ($('puzzle').value === ep || auto.checked) throw new Error('"Another easy sudoku" did not give a new easy puzzle');
+  loadSample(4);
+  if (!auto.checked || easyBtn()) throw new Error('leaving the easy puzzle should switch automatic filling back on');
+  auto.checked = false; auto.dispatchEvent(new dom.window.Event('change', { bubbles: true })); click($('reset'));
+  if (!easyBtn() || easyBtn().disabled) throw new Error('with the switch off, Start over should leave easy cells to do');
+  const before81 = $('grid').querySelectorAll('text[font-size="34"]').length;
+  auto.checked = true; auto.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  if ($('grid').querySelectorAll('text[font-size="34"]').length <= before81 || easyBtn() || $('stepnav').hidden) throw new Error('switching it on should fill the easy cells and show the next move');
+  log.push('easy cells: switch, one-line steps, Random easy sudoku finished by play using only Easy cell');
   if (scrolls) throw new Error('the page scrolled by itself ' + scrolls + ' times');
   log.push('scrolling: none');
   console.log(log.join('\n')); console.log('errors:', errors.length ? errors : 'none');

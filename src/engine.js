@@ -360,6 +360,20 @@
     for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) { const cs = cellsFor(st, u, d); if (cs.length === 1) return { cell: cs[0], d, why: 'Only place for ' + d + ' in ' + unitName(u) }; }
     return null;
   }
+  /* Every easy cell as its own one-step move. The page uses these only when automatic filling is switched off. */
+  function findSingles(st) {
+    const out = [], seen = new Set();
+    const add = (cell, d, text) => {
+      const id = cid(cell, d); if (seen.has(id)) return; seen.add(id);
+      const res = mkResult('Easy cell', 'Only one choice'); res.easy = true;
+      res.nodes.set(id, 'loop'); res.place = [id];
+      say(res, text + ' So ' + d + ' goes in ' + cellName(cell) + '.', { [id]: 't' });
+      out.push(res);
+    };
+    for (let c = 0; c < 81; c++) if (!st.val[c] && bits(st.cand[c]) === 1) add(c, digits(st.cand[c])[0], cellName(c) + ' has only one candidate left.');
+    for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) { const cs = cellsFor(st, u, d); if (cs.length === 1) add(cs[0], d, 'In ' + unitName(u) + ' the digit ' + d + ' has only one place left.'); }
+    return out;
+  }
   function fillSingles(st) { let n = 0, s; while ((s = findSingle(st))) { place(st, s.cell, s.d); n++; } return n; }
   function apply(st, res) { for (const id of res.elim) eliminate(st, id); for (const id of res.place) if (alive(st, id)) place(st, cCell(id), cDig(id)); }
   const solved = st => st.val.every(v => v > 0);
@@ -480,6 +494,7 @@
   }
 
   const TECHNIQUES = [
+    { key: 'single', name: 'Easy cell', loop: 'only one choice', find: findSingles, blurb: 'A cell with one candidate left, or a digit with one place left.', easy: true },
     { key: 'locked', name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
     { key: 'naked', name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
     { key: 'hidden', name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
@@ -531,8 +546,9 @@
   }
   /* A random puzzle with exactly one solution that needs at least one technique and that the techniques can finish without a guess.
      Clues are removed in random order for as long as the solution stays unique. About half of such puzzles qualify,
-     so a few tries are enough; after 60 tries the last puzzle is returned whatever it needs. */
-  function randomPuzzle(rnd) {
+     so a few tries are enough; after 60 tries the last puzzle is returned whatever it needs.
+     With easy = true the puzzle is instead one that easy cells alone finish. */
+  function randomPuzzle(rnd, easy) {
     rnd = rnd || Math.random;
     let out = null;
     for (let tries = 1; tries <= 60; tries++) {
@@ -540,7 +556,7 @@
       for (const i of made.shuffle(Array.from({ length: 81 }, (_, k) => k))) { const keep = v[i]; v[i] = 0; if (solve(v).count !== 1) v[i] = keep; }
       const puzzle = v.map(x => x || '.').join(''), run = playThrough(puzzle);
       out = { puzzle, moves: run.moves, finishes: run.solved && run.guesses === 0, tries };
-      if (out.finishes && run.moves >= 1) break;
+      if (easy ? run.solved && run.moves === 0 : out.finishes && run.moves >= 1) break;
     }
     return out;
   }

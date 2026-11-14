@@ -103,3 +103,16 @@ console.log(JSON.stringify(firstAfterSingles, null, 1));
   }
   console.log('all ' + M + ' random puzzles finished: easy cells only ' + tally.easy + ', links ' + tally.links + ', needed a locked triple or a triple/quad ' + tally.patterns + ', needed a guess ' + tally.guess);
 }
+
+// Easy puzzles and easy-cell moves.
+{
+  let s4 = 555; const rnd4 = () => (s4 = (s4 * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let n = 0; n < 20; n++) {
+    const made = E.randomPuzzle(rnd4, true), chk = E.check(made.puzzle);
+    if (!chk.ok) throw new Error('easy puzzle is not proper');
+    const st = E.fromString(made.puzzle), single = E.TECHNIQUES.find(t => t.easy); let g = 0;
+    while (!E.solved(st) && g++ < 81) { const rs = single.find(st); if (!rs.length) throw new Error('easy puzzle got stuck on easy cells: ' + made.puzzle); for (const r of rs) check(st, chk.solution, r, 'single'); E.apply(st, rs[0]); }
+    if (!E.solved(st)) throw new Error('easy puzzle not finished by easy cells');
+  }
+  console.log('easy puzzles: 20 made, each finished one easy cell at a time');
+}

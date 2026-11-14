@@ -81,6 +81,8 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
+label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
+label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
 /* The play button always has the width of its longest label, so it does not resize between Play all steps, Pause and Resume.
    The hidden ::after holds that longest label and takes no height. */
 #play { display: inline-grid; justify-items: center; }
@@ -144,6 +146,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
           <button id="undo" type="button">Undo</button>
           <button id="reset" type="button">Start over</button>
         </div>
+        <label class="check"><input type="checkbox" id="autofill" checked> Fill easy cells automatically</label>
         <p class="msg" id="status" role="status"></p>
         <div class="legend" aria-label="Key">
           <span><i class="sw"></i>strong link: exactly one end true</span>
@@ -210,6 +213,8 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
   var st = null, original = '', solution = null, history = [], avail = {}, pick = {};
   var view = { kind: 'none' };   // 'result' {res, step}, 'probe' {id}, 'digit' {d}
   var playing = false, playTimer = null;        // automatic play
+  var autoFill = true;                          // easy cells are filled without being shown; off = each one is a visible step
+  var forcedOff = false;                        // the switch was turned off by choosing an easy puzzle, so it goes back on afterwards
   var paused = false;                           // play was stopped part-way, so the button offers to resume
   var removing = false, removeTimer = null;     // a move is being animated off the board
   var fresh = {};                               // cells filled by the last move, flashed once
@@ -315,6 +320,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
     var h = '';
     var divided = false;
     E.TECHNIQUES.forEach(function (t) {
+      if (t.easy && autoFill) return;
       if (t.beyond && !divided) { divided = true; h += '<p class="beyond">Beyond links: used only when no loop or colouring applies</p>'; }
       var n = avail[t.key].length, on = view.kind === 'result' && view.tech === t.key;
       h += '<button type="button" class="tech" data-key="' + t.key + '" aria-pressed="' + on + '"' + (n ? '' : ' disabled') + ' title="' + t.blurb + '"><span class="n">' + t.name + (n ? '<span class="c">' + n + '</span>' : '') + '</span><span class="k">' + t.loop + '</span></button>';
@@ -370,9 +376,10 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
     if (!res.ok) { msg.textContent = 'Not loaded. ' + res.reason; msg.className = 'msg bad'; return false; }
     st = res.state; original = E.toString(st); solution = res.solution; history = []; paused = false;
     msg.className = 'msg'; msg.textContent = 'Loaded. The puzzle has exactly one solution.';
-    var n = E.fillSingles(st);
-    afterChange(n ? 'Filled ' + n + ' easy cells first (cells or digits with only one place).' : 'No easy cells to fill.');
+    if (autoFill) { var n = E.fillSingles(st); afterChange(n ? 'Filled ' + n + ' easy cells first (cells or digits with only one place).' : 'No easy cells to fill.'); }
+    else afterChange('Nothing filled in yet: every candidate is shown.');
     if (techKey && avail[techKey] && avail[techKey].length) show(techKey, 0, true);
+    else nextStep(true);
     return true;
   }
   function markFresh(before) { fresh = {}; for (var c = 0; c < 81; c++) if (!before[c] && st.val[c]) fresh[c] = 1; }
@@ -388,20 +395,21 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
     }
     var finish = function () {
       removeTimer = null; removing = false;
-      var before = st.val.slice(); snapshot(); E.apply(st, res); var n = E.fillSingles(st); markFresh(before);
-      afterChange(res.tech + ': removed ' + res.elim.length + ' candidate' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') + (n ? ', then filled ' + n + ' easy cells.' : '.'));
+      var before = st.val.slice(); snapshot(); E.apply(st, res); var n = autoFill ? E.fillSingles(st) : 0; markFresh(before);
+      afterChange(res.tech + ': ' + (res.elim.length ? 'removed ' + res.elim.length + ' candidate' + (res.elim.length === 1 ? '' : 's') + (res.place.length ? ', placed ' + res.place.length : '') : 'placed ' + res.place.map(E.candName).join(', ')) + (n ? ', then filled ' + n + ' easy cells.' : '.'));
       if (done) done();
     };
     var ms = removalMs();
     if (!ms) { finish(); return true; }
     removing = true; render();
-    say('Removing ' + res.elim.map(E.candName).join(', ') + (res.place.length ? (res.elim.length ? '; placing ' : 'Placing ') + res.place.map(E.candName).join(', ') : '') + '.');
+    say((res.elim.length ? 'Removing ' + res.elim.map(E.candName).join(', ') + (res.place.length ? '; placing ' : '') : 'Placing ') + res.place.map(E.candName).join(', ') + '.');
     removeTimer = setTimeout(finish, ms);
     return true;
   }
   /* Returns 'filled', 'shown' or 'none'. */
   function nextStep(quiet) {
-    if (E.findSingle(st)) { fillEasy(); return 'filled'; }
+    if (E.solved(st)) return 'none';
+    if (autoFill && E.findSingle(st)) { fillEasy(); return 'filled'; }
     for (var i = 0; i < E.TECHNIQUES.length; i++) { var k = E.TECHNIQUES[i].key; if (avail[k].length) { show(k, 0, quiet === true); say('Simplest move available: ' + E.TECHNIQUES[i].name + '. Read the steps, then apply it.'); return 'shown'; } }
     say('No technique applies here.', true);
     return 'none';
@@ -420,7 +428,7 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
     if (view.kind !== 'result') {
       var r = nextStep(false);
       if (r === 'none') { stopPlay(); return; }
-      if (r === 'shown') say('Playing: ' + view.res.tech + '.');
+      if (r === 'shown') { say('Playing: ' + view.res.tech + '.'); if (view.res.easy) { view.step = 0; render(); } }
       schedule(E.solved(st) ? 0 : pace());
       return;
     }
@@ -441,20 +449,31 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
 
   /* ---------- wiring ---------- */
   /* The list: the tour puzzle, then "Random sudoku", then one example per technique. */
-  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>' + (i === 0 ? '<option value="random">Random sudoku</option>' : ''); }).join('');
-  function loadRandom() {
-    var made = E.randomPuzzle();
+  $('sample').innerHTML = SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>' + (i === 0 ? '<option value="random">Random sudoku</option><option value="easy">Random easy sudoku</option>' : ''); }).join('');
+  function setAuto(on) { autoFill = on; $('autofill').checked = on; }
+  function loadRandom(easy) {
+    var made = E.randomPuzzle(null, easy);
     $('puzzle').value = made.puzzle;
-    if (load(made.puzzle, null)) $('loadmsg').textContent = 'Loaded a new random sudoku with exactly one solution.' + (made.finishes ? ' It needs ' + made.moves + ' move' + (made.moves === 1 ? '' : 's') + ' beyond the easy cells.' : '');
+    if (!load(made.puzzle, null)) return;
+    $('loadmsg').textContent = easy ? 'Loaded a new easy sudoku: easy cells alone finish it. Automatic filling is off, so each cell is a step you can watch.'
+      : 'Loaded a new random sudoku with exactly one solution.' + (made.finishes ? ' It needs ' + made.moves + ' move' + (made.moves === 1 ? '' : 's') + ' beyond the easy cells.' : '');
   }
-  $('sample').addEventListener('change', function () {
-    interrupt();
-    var random = this.value === 'random'; $('again').hidden = !random;
-    if (random) { loadRandom(); return; }
-    var sm = SAMPLES[+this.value]; $('puzzle').value = sm.puzzle;
-    if (load(sm.puzzle, sm.tech) && !sm.tech) nextStep(true);
+  function pickSample() {
+    var v = $('sample').value, easy = v === 'easy';
+    $('again').hidden = !(v === 'random' || easy);
+    $('again').textContent = easy ? 'Another easy sudoku' : 'Another random sudoku';
+    if (easy && autoFill) { setAuto(false); forcedOff = true; }
+    if (!easy && forcedOff) { setAuto(true); forcedOff = false; }
+    if (v === 'random' || easy) { loadRandom(easy); return; }
+    var sm = SAMPLES[+v]; $('puzzle').value = sm.puzzle; load(sm.puzzle, sm.tech);
+  }
+  $('sample').addEventListener('change', function () { interrupt(); pickSample(); });
+  $('again').addEventListener('click', function () { interrupt(); loadRandom($('sample').value === 'easy'); });
+  /* Switching automatic filling on fills what is easy right now; switching it off changes nothing on the board. */
+  $('autofill').addEventListener('change', function () {
+    interrupt(); forcedOff = false; autoFill = this.checked;
+    if (autoFill && E.findSingle(st)) { fillEasy(); nextStep(true); } else { scan(); if (view.kind === 'result') view = { kind: 'none' }; render(); nextStep(true); }
   });
-  $('again').addEventListener('click', function () { interrupt(); loadRandom(); });
   $('load').addEventListener('click', function () { interrupt(); load($('puzzle').value, null); });
   $('puzzle').addEventListener('keydown', function (e) { if (e.key === 'Enter') { interrupt(); load(this.value, null); } });
   $('undo').addEventListener('click', function () { interrupt(); if (!history.length) return; st = history.pop(); afterChange('Went back one move.'); });
@@ -470,7 +489,6 @@ select#speed { flex: 0 0 auto; padding: 7px 8px; }
 
   $('puzzle').value = SAMPLES[0].puzzle;
   load(SAMPLES[0].puzzle, null);
-  nextStep(true);
 })();
 </script>
 </body>

@@ -53,6 +53,7 @@ Open `index.html` directly; it needs no server and no build step.
 
 - Paste a puzzle as 81 characters, row by row, with `.` or `0` for empty cells (spaces and line breaks are fine). Or pick one of the built-in examples.
 - Choose **Random sudoku** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
+- **Fill easy cells automatically** is on by default: cells with one candidate left, and digits with one place left, are filled without being shown. Switch it off to start from every candidate and have each easy cell appear as its own step. **Random easy sudoku** gives a puzzle that easy cells alone finish, with the switch off so there is something to watch.
 - Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
 - Tap a technique to see a move of that kind. Each move lists the chain of forced steps behind it, and the board marks candidates true or false as you walk through. **Apply to the board** carries it out.
 - **Play all steps** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Tap the board to pause.
