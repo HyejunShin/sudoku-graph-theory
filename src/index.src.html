@@ -41,7 +41,6 @@ p { margin: 0; }
   .cols, .cols > .stack { display: contents; }
   .board { position: sticky; top: 0; z-index: 5; max-width: 460px; width: 100%; align-self: center; box-shadow: 0 6px 14px -10px var(--ink); }
 }
-@media (min-width: 900px) { .cols > .stack:first-child { position: sticky; top: 16px; } }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 label { font-size: 13px; color: var(--muted); }
 select, input[type="text"] { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
@@ -157,13 +156,13 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
           <span><i class="dot a"></i><i class="dot b"></i>the two colours of a chain</span>
         </div>
       </section>
-    </div>
-
-    <div class="stack">
       <section class="card" aria-label="Techniques">
         <h2>Techniques available now</h2>
         <div class="techs" id="techs"></div>
       </section>
+    </div>
+
+    <div class="stack">
 
       <section class="card" id="explain" aria-label="Explanation">
         <h2 id="tname">Pick a technique</h2>
