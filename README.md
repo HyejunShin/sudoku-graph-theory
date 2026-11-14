@@ -61,10 +61,10 @@ Open `index.html` directly; it needs no server and no build step.
 - Choose **Random** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
 - **Skip single candidate cells** is on by default: cells with one candidate left, and digits with one place left, are filled without being shown. Switch it off to start from every candidate and have each such cell appear as its own step. **Random (single cells only)** gives a puzzle those cells alone finish, with the switch off so there is something to watch.
 - Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
-- Choose a technique to see a move of that kind. Each move lists the chain of forced steps behind it; tap a step (or use the arrow keys) and the board marks candidates true or false. **Apply** carries the move out.
-- **Play** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Tap the board to pause.
+- Choose a technique to see a move of that kind. Each move lists the chain of forced steps behind it; click a step (or use the arrow keys) and the board marks candidates true or false. **Apply** carries the move out.
+- **Play** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Click the board to pause.
 - **Graph of this move**: beside the board (below the play controls on a phone) the current move is redrawn as a plain graph, with the dots spread out and a group shown as one dot. It carries the same colors as the board and steps along with it, so the move reads as what it is: a two-coloring problem.
-- Tap any candidate on the board to see everything it is linked to, or pick a digit under the techniques to see its strong links. Pick a digit to see its strong links colored in two colors.
+- Click any candidate on the board to see everything it is linked to, or pick a digit under the techniques to see its strong links. Pick a digit to see its strong links colored in two colors.
 
 Techniques it finds: locked pair, naked pair, hidden pair, X-Wing, Skyscraper, Two-String Kite, XY-Wing, Simple Coloring, one-digit odd loops (Turbot Fish, X-Cycle), 3D Medusa, and general alternating chains (which include W-Wing and XY-Chain).
 

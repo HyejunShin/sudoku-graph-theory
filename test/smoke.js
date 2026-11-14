@@ -147,7 +147,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   loadSample(4);
   click(play);
   await until(() => document.querySelector('#steps li.on'), 4000, 'play to highlight a step');
-  if (!$('theorem').textContent.includes('tap the board to pause')) throw new Error('no pause hint while playing');
+  if (!$('theorem').textContent.includes('click the board to pause')) throw new Error('no pause hint while playing');
   click($('grid'));
   log.push('timed play: step highlighted, then paused');
   // 6g. "Moves only" goes from the loop straight to the removal, without highlighting any step
@@ -309,6 +309,11 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const blue = [...$('graph').querySelectorAll('g[data-node]')].filter(g => g.getAttribute('data-node').split(' ').length === 3);
     if (blue.length !== 1) throw new Error('the locked triple should be one dot in the graph view'); }
   log.push('graph view: dots match the board, none overlap, a group is one dot');
+  // the Apply row shows only for a technique's move, not when looking at links
+  { const vis = () => !$('stepnav').hidden;   // the CSS rule that makes [hidden] win is checked in a real browser
+    loadSample(4); if (!vis()) throw new Error('Apply should show for a move');
+    click(document.querySelector('#digits button')); if (vis()) throw new Error('Apply should be hidden while showing a digit\'s strong links');
+    click($('grid').querySelector('rect[data-id]')); if (vis()) throw new Error('Apply should be hidden while showing a candidate\'s links'); }
   if (scrolls) throw new Error('the page scrolled by itself ' + scrolls + ' times');
   log.push('scrolling: none');
   console.log(log.join('\n')); console.log('errors:', errors.length ? errors : 'none');

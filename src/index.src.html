@@ -67,7 +67,8 @@ p { margin: 0; }
   .board { position: sticky; top: 0; z-index: 5; max-width: 460px; width: 100%; align-self: center; box-shadow: 0 6px 14px -10px var(--ink); }
 }
 #graph { display: block; width: 100%; height: auto; }
-#graphcard[hidden] { display: none; }
+/* anything marked hidden stays hidden, even where a class gives it a display (the Apply row is a flex row) */
+[hidden] { display: none !important; }
 @media (max-width: 899px) {
   /* phone: the key (it scrolls away), the board with its controls (it stays), then the graph and the techniques */
   .cols .card { order: 4; } #key { order: 0; } .cols .board { order: 1; } #graphcard { order: 2; } .cols section[aria-label="Techniques"] { order: 3; }
@@ -186,7 +187,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           <label class="check"><input type="checkbox" id="autofill" checked> Skip single candidate cells</label>
         </div>
         <div class="techs" id="techs"></div>
-        <div class="row digits-row"><span class="theorem">Strong links of a digit:</span><span class="row digits" id="digits"></span><span class="theorem">or tap a candidate on the board.</span></div>
+        <div class="row digits-row"><span class="theorem">Strong links of a digit:</span><span class="row digits" id="digits"></span><span class="theorem">or click a candidate on the board.</span></div>
       </section>
     </div>
 
@@ -200,7 +201,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
       <section class="card" id="explain" aria-label="Explanation">
         <h2 id="tname">Pick a technique</h2>
-        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Tap it to see the loop.</p>
+        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Click it to see the loop.</p>
         <ol id="steps"></ol>
         <div class="row" id="stepnav" hidden>
           <button id="apply" type="button" class="primary">Apply</button>
@@ -487,7 +488,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   }
   function drawGraph() {
     var svg = $('graph'), card = $('graphcard');
-    if (view.kind !== 'result') { svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Tap a technique to see its graph.</text>'; return; }
+    if (view.kind !== 'result') { svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Click a technique to see its graph.</text>'; return; }
     var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
     var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
     if (removing) res.elim.forEach(function (id) { going[id] = 1; });
@@ -532,8 +533,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var nav = $('stepnav'), ol = $('steps');
     if (view.kind === 'result') {
       var res = view.res, total = avail[view.tech] ? avail[view.tech].length : 1;
-      $('tname').textContent = res.tech + (total > 1 ? ' (' + (view.index + 1) + ' of ' + total + ', tap again for the next)' : '');
-      $('theorem').textContent = res.theorem + (playing ? '. Playing: tap the board to pause.' : '. Tap a step to follow the argument, or use the arrow keys.');
+      $('tname').textContent = res.tech + (total > 1 ? ' (' + (view.index + 1) + ' of ' + total + ', click again for the next)' : '');
+      $('theorem').textContent = res.theorem + (playing ? '. Playing: click the board to pause.' : '. Click a step to follow the argument, or use the arrow keys.');
       ol.innerHTML = res.steps.map(function (sp, i) { return '<li data-i="' + i + '"' + (view.step === i ? ' class="on"' : '') + '>' + sp.text + '</li>'; }).join('');
       nav.hidden = false;
     } else if (view.kind === 'probe') {
@@ -548,7 +549,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       ol.innerHTML = ''; nav.hidden = true;
     } else {
       $('tname').textContent = E.solved(st) ? 'Solved' : 'Pick a technique';
-      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Tap it to see the loop.';
+      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Click it to see the loop.';
       ol.innerHTML = ''; nav.hidden = true;
     }
     var dg = '';
@@ -642,7 +643,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (playing || E.solved(st)) return;
     cancelRemoval();
     if (view.kind !== 'result') view = { kind: 'none' };
-    playing = true; paused = false; render(); say('Playing. Tap Pause or the board to stop.');
+    playing = true; paused = false; render(); say('Playing. Click Pause or the board to stop.');
     schedule(instant() ? 0 : 350);
   }
 
@@ -679,7 +680,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   $('reset').addEventListener('click', function () { interrupt(); load(original, null); });
   $('apply').addEventListener('click', function () { if (playing) stopPlay(true); applyCurrent(); });
   $('play').addEventListener('click', function () { if (playing) { interrupt(); say('Paused.'); } else startPlay(); });
-  /* Steps are followed by tapping them in the list, or with the left and right arrow keys. */
+  /* Steps are followed by clicking them in the list, or with the left and right arrow keys. */
   document.addEventListener('keydown', function (e) {
     if (view.kind !== 'result' || e.altKey || e.ctrlKey || e.metaKey || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target || {}).tagName || '')) return;
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
