@@ -1427,7 +1427,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       var v = view.id, sp = E.strongPartners(st, v), all = E.neighbors(st, v);
       $('tname').textContent = 'Edges of ' + E.candName(v);
       $('theorem').textContent = 'It has ' + all.length + ' edges, ' + sp.length + ' of them strong.';
-      ol.innerHTML = all.map(function (n) { var strong = sp.indexOf(n) >= 0; return '<li>' + E.candName(n) + ': ' + (strong ? 'strong, because ' + E.strongWhy(st, v, n) : 'weak, because ' + E.linkWhy(v, n)) + '.</li>'; }).join('');
+      ol.innerHTML = all.map(function (n) { var strong = sp.indexOf(n) >= 0; return '<li>' + E.candName(n) + ': ' + (strong ? 'strong edge; ' + E.strongWhy(st, v, n) : 'weak edge; ' + E.linkWhy(v, n)) + '.</li>'; }).join('');
       nav.hidden = true;
     } else if (view.kind === 'digit') {
       $('tname').textContent = 'Strong edges of digit ' + view.d;
