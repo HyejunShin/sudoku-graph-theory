@@ -52,7 +52,7 @@ The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves
 Open `index.html` directly; it needs no server and no build step.
 
 - Paste a puzzle as 81 characters, row by row, with `.` or `0` for empty cells (spaces and line breaks are fine). Or pick one of the built-in examples.
-- Choose **Random sudoku** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished with them.
+- Choose **Random sudoku** from the list for a fresh puzzle each time. Every one has exactly one solution, needs at least one of the techniques, and can be finished without a guess.
 - Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
 - Tap a technique to see a move of that kind. Each move lists the chain of forced steps behind it, and the board marks candidates true or false as you walk through. **Apply to the board** carries it out.
 - **Play all steps** solves the puzzle by itself, one move after another. Each candidate that goes is circled in red, struck through and then fades from the board. Choose a speed, or pick *Moves only* to skip the reasoning and just watch the loops and removals. Tap the board to pause.
@@ -61,6 +61,24 @@ Open `index.html` directly; it needs no server and no build step.
 Techniques it finds: locked pair, naked pair, hidden pair, X-Wing, Skyscraper, Two-String Kite, XY-Wing, Simple Colouring, one-digit odd loops (Turbot Fish, X-Cycle), 3D Medusa, and general alternating chains (which include W-Wing and XY-Chain).
 
 It only knows techniques that follow from links. When a puzzle needs something else, such as a naked triple or a larger fish, it says so. The write-up proves that this limit is real.
+
+## Beyond links
+
+Links join two candidates at a time, so some puzzles cannot be finished by loops and colourings alone. A test on 2,000 random puzzles gave:
+
+| Outcome | Puzzles |
+| --- | --- |
+| Solved by easy cells alone | 971 |
+| Solved by the link techniques | 965 |
+| Stuck: no link argument exists | 64 (3.2%) |
+
+A search for everything links can prove, on a smaller sample, solved nothing the Loop Finder had missed. So the stuck puzzles are a limit of pairwise reasoning, not of the tool. For those, the Loop Finder has three further steps, kept apart under **Beyond links** and tried only when no loop or colouring applies:
+
+- **Locked triple**: a digit confined to three cells that share a second line or box. The three act as one candidate.
+- **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. This is a counting argument on the cells and digits of one row, column or box.
+- **Trial and error**, the last resort: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is offered only when nothing else applies.
+
+Of the 64 stuck puzzles, 22 were finished with the first two and 42 needed a guess. With the guess every puzzle can be finished. The last three entries of the example list are puzzles of this kind.
 
 ## The website
 

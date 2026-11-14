@@ -82,7 +82,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   if (play.textContent !== 'Play all steps') throw new Error('fresh puzzle: button says ' + play.textContent);
   if (!(play.compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) || !($('speed').compareDocumentPosition($('undo')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING)) throw new Error('play and speed are not above the manual buttons');
   const speeds = [...$('speed').options].map(o => o.textContent + '=' + o.value + (o.selected ? '*' : '')).join(' ');
-  if (speeds !== 'Slow=1700 Normal=800* Fast=400 Moves only=1000') throw new Error('unexpected speeds: ' + speeds);
+  if (speeds !== 'Slow=1700 Normal=800 Fast=400* Moves only=1000') throw new Error('unexpected speeds: ' + speeds);
   click(play);
   if (play.textContent !== 'Pause' || play.getAttribute('aria-pressed') !== 'true') throw new Error('play did not start');
   await until(() => play.textContent !== 'Pause', 20000, 'play to finish the tour puzzle');
@@ -175,6 +175,29 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   click($('reset'));
   if ($('puzzle').value !== [...seen].pop() || $('tname').textContent === 'Solved') throw new Error('Start over did not restore the same random puzzle');
   log.push('random: 6 different proper puzzles, each finished by play; Start over keeps the puzzle');
+  // 6i. the three "Beyond links" examples sit at the bottom of the list, and play finishes each using the named step
+  document.documentElement.setAttribute('data-instant', '1');
+  const lastThree = [...sel.options].slice(-3);
+  const wanted = [['needs a locked triple', 'Locked triple'], ['needs a naked triple', 'Naked triple'], ['needs a guess', 'Trial and error']];
+  for (let n = 0; n < 3; n++) {
+    const opt = lastThree[n];
+    if (!opt.textContent.startsWith('Beyond links') || !opt.textContent.includes(wanted[n][0])) throw new Error('unexpected example at the bottom of the list: ' + opt.textContent);
+    sel.value = opt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    const names = new Set(); let lastResortAlone = true;
+    const watch = setInterval(() => {
+      const t = $('tname').textContent.replace(/ \(.*/, ''); if (!$('stepnav').hidden) names.add(t);
+      const on = [...document.querySelectorAll('#techs button[data-key]:not([disabled])')].map(b => b.getAttribute('data-key'));
+      if (on.includes('guess') && on.length > 1) lastResortAlone = false;
+    }, 0);
+    click(play);
+    await until(() => play.textContent !== 'Pause', 30000, 'play to finish "' + opt.textContent + '"');
+    clearInterval(watch);
+    if ($('tname').textContent !== 'Solved') throw new Error('play could not finish "' + opt.textContent + '": ' + $('status').textContent);
+    if (!names.has(wanted[n][1])) throw new Error('"' + opt.textContent + '" was solved without ' + wanted[n][1] + ': ' + [...names].join(', '));
+    if (!lastResortAlone) throw new Error('Trial and error was offered while another technique was available');
+    log.push(opt.textContent + ' -> solved, using ' + [...names].join(', '));
+  }
+  if (!document.querySelector('#techs .beyond')) throw new Error('no "Beyond links" divider in the technique list');
   if (scrolls) throw new Error('the page scrolled by itself ' + scrolls + ' times');
   log.push('scrolling: none');
   console.log(log.join('\n')); console.log('errors:', errors.length ? errors : 'none');

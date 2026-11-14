@@ -365,6 +365,120 @@
   const solved = st => st.val.every(v => v > 0);
   const broken = st => st.val.some((v, c) => !v && st.cand[c] === 0);
 
+  /* ---------- beyond links ----------
+     A link joins two candidates. The three finders below need a fact about three or more at once, so no loop explains them.
+     They are tried only when every link technique has failed. */
+  const combos = (arr, k) => { const out = []; (function rec(i, cur) { if (cur.length === k) { out.push(cur.slice()); return; } for (let j = i; j < arr.length; j++) { cur.push(arr[j]); rec(j + 1, cur); cur.pop(); } })(0, []); return out; };
+  const cellList = cs => cs.map(cellName).join(', ');
+  const digitList = ds => ds.length > 1 ? ds.slice(0, -1).join(', ') + ' and ' + ds[ds.length - 1] : String(ds[0]);
+
+  /* Locked triple: in one unit a digit has exactly three places, and all three lie in a second unit.
+     One of the three is true whichever it is, so the digit leaves the rest of the second unit.
+     With two places this is the Locked pair triangle; with three, the group has to act as one candidate. */
+  function findLockedGroup(st) {
+    const out = [];
+    for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) {
+      const cs = cellsFor(st, u, d); if (cs.length !== 3) continue;
+      for (const u2 of cellUnits(cs[0])) if (u2 !== u && cs.every(c => UNITS[u2].includes(c))) {
+        const targets = cellsFor(st, u2, d).filter(c => !cs.includes(c)).map(c => cid(c, d));
+        if (!targets.length) continue;
+        const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
+        const res = mkResult('Locked triple', 'Beyond links: three candidates act as one');
+        group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim'));
+        group.forEach(g => res.links.push({ a: v, b: g, strong: false }));
+        res.elim = targets;
+        const snap = () => Object.assign({}, marks);
+        say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
+        say(res, 'One of the three circled ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. A link joins only two candidates, so no loop can say this. Treat the three as one group.');
+        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
+        group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three circled ' + d + 's are false: each shares ' + unitName(u2) + ' with it.', snap());
+        say(res, 'Now ' + unitName(u) + ' has no place for ' + d + '. Contradiction, so ' + candName(v) + ' is false.', snap());
+        if (targets.length > 1) say(res, 'The same argument removes: ' + list(targets.slice(1)) + '.');
+        out.push(res);
+      }
+    }
+    return out;
+  }
+
+  /* Triples and quads. Naked: k cells of a unit hold only k digits between them, so those digits are used up there.
+     Hidden: k digits fit only in k cells of a unit, so those cells hold nothing else.
+     Both are counting arguments (Hall's theorem on the cells and digits of the unit), not link arguments. */
+  function findSubsets(st) {
+    const out = [], seen = new Set();
+    const push = (res, elim) => { const key = elim.slice().sort((a, b) => a - b).join(','); if (seen.has(key)) return; seen.add(key); res.elim = elim; elim.forEach(e => res.nodes.set(e, 'elim')); out.push(res); };
+    for (const k of [3, 4]) for (let u = 0; u < 27; u++) {
+      const cells = UNITS[u].filter(c => !st.val[c]);
+      if (cells.length <= k) continue;
+      const word = k === 3 ? 'triple' : 'quad', num = k === 3 ? 'Three' : 'Four';
+      for (const cs of combos(cells, k)) {
+        let m = 0; for (const c of cs) m |= st.cand[c];
+        if (bits(m) !== k) continue;
+        const elim = []; for (const c of cells) if (!cs.includes(c)) for (const d of digits(st.cand[c] & m)) elim.push(cid(c, d));
+        if (!elim.length) continue;
+        const res = mkResult('Naked ' + word, 'Beyond links: ' + k + ' cells need ' + k + ' digits');
+        for (const c of cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
+        say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
+        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so ' + digitList(digits(m)) + ' are all used up inside these cells, whichever way round. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
+        say(res, 'No other cell of ' + unitName(u) + ' can hold them. That removes: ' + list(elim) + '.');
+        push(res, elim);
+      }
+      const ds = []; for (let d = 1; d <= 9; d++) if (cells.some(c => has(st, c, d))) ds.push(d);
+      for (const dd of combos(ds, k)) {
+        const where = cells.filter(c => dd.some(d => has(st, c, d)));
+        if (where.length !== k) continue;
+        const elim = []; for (const c of where) for (const d of digits(st.cand[c])) if (!dd.includes(d)) elim.push(cid(c, d));
+        if (!elim.length) continue;
+        const res = mkResult('Hidden ' + word, 'Beyond links: ' + k + ' digits need ' + k + ' cells');
+        for (const c of where) for (const d of dd) if (has(st, c, d)) res.nodes.set(cid(c, d), 'loop');
+        say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
+        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so these cells are all used up by ' + digitList(dd) + '. This counts ' + num.toLowerCase() + ' things at once, which no link can do.');
+        say(res, 'Nothing else fits in these cells. That removes: ' + list(elim) + '.');
+        push(res, elim);
+      }
+    }
+    return out;
+  }
+
+  /* Trial and error, the last resort. Suppose a candidate is true, keep filling easy cells, and look for a dead end.
+     Of all candidates that lead to one, the shortest route is shown. If none does, the rest is searched in full. */
+  function deadEnd(st) {
+    for (let c = 0; c < 81; c++) if (!st.val[c] && !st.cand[c]) return cellName(c) + ' has no candidate left';
+    for (let u = 0; u < 27; u++) for (let d = 1; d <= 9; d++) if (!UNITS[u].some(c => st.val[c] === d) && !cellsFor(st, u, d).length) return unitName(u) + ' has no place for ' + d;
+    return null;
+  }
+  function findGuess(st) {
+    if (solved(st)) return [];
+    let best = null;
+    for (let id = 0; id < 729; id++) if (alive(st, id)) {
+      const t = clone(st), forced = []; place(t, cCell(id), cDig(id));
+      let dead = deadEnd(t), s;
+      while (!dead && forced.length < 81 && (s = findSingle(t))) { forced.push({ id: cid(s.cell, s.d), why: s.why }); place(t, s.cell, s.d); dead = deadEnd(t); }
+      if (dead && (!best || forced.length < best.forced.length)) best = { id, forced, dead };
+      if (best && best.forced.length === 0) break;
+    }
+    const res = mkResult('Trial and error', 'A last resort: this is a guess, not a link argument');
+    if (!best) {
+      const sol = solve(st.val).solution; if (!sol) return [];
+      let v = -1; for (let id = 0; id < 729 && v < 0; id++) if (alive(st, id) && sol[cCell(id)] !== cDig(id)) v = id;
+      if (v < 0) return [];
+      res.nodes.set(v, 'elim'); res.elim = [v];
+      say(res, 'No loop, colouring or counting argument applies here, so the only move left is a guess.');
+      say(res, 'Suppose ' + candName(v) + ' were true.', { [v]: 't' });
+      say(res, 'Filling easy cells does not settle it, so everything that follows was searched in full. No solution has ' + candName(v) + '.', { [v]: 't' });
+      say(res, 'So ' + candName(v) + ' is false.');
+      return [res];
+    }
+    const v = best.id, marks = {}, snap = () => Object.assign({}, marks);
+    res.nodes.set(v, 'elim'); best.forced.forEach(f => res.nodes.set(f.id, 'loop')); res.elim = [v];
+    say(res, 'No loop, colouring or counting argument applies here, so the only move left is a guess.');
+    marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true, and fill the easy cells that follow.', snap());
+    const shown = best.forced.slice(0, 5), rest = best.forced.slice(5);
+    for (const f of shown) { marks[f.id] = 't'; say(res, 'Then ' + candName(f.id) + ': ' + f.why.charAt(0).toLowerCase() + f.why.slice(1) + '.', snap()); }
+    if (rest.length) { rest.forEach(f => { marks[f.id] = 't'; }); say(res, 'Then ' + rest.length + ' more cell' + (rest.length === 1 ? ' is' : 's are') + ' forced the same way.', snap()); }
+    say(res, 'Now ' + best.dead + '. Contradiction, so ' + candName(v) + ' is false.', snap());
+    return [res];
+  }
+
   const TECHNIQUES = [
     { key: 'locked', name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong link.' },
     { key: 'naked', name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
@@ -374,9 +488,13 @@
     { key: 'kite', name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row link and a column link joined inside a box.' },
     { key: 'xywing', name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
     { key: 'colour', name: 'Simple Colouring', loop: '2-colouring', find: findSimpleColouring, blurb: 'Colour one digit’s strong links with two colours.' },
-    { key: 'xchain', name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
+    { key: 'xchain', name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Colouring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
     { key: 'medusa', name: '3D Medusa', loop: '2-colouring', find: st => findColouring(st, 0), blurb: 'Colouring that hops between digits.' },
-    { key: 'chain', name: 'Alternating chain', loop: 'odd loop', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' }
+    { key: 'chain', name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' },
+    /* Beyond links. These are tried only after every loop and colouring above has failed. */
+    { key: 'group', name: 'Locked triple', loop: 'three candidates as one', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.', beyond: true },
+    { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true },
+    { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, lastResort: true }
   ];
 
   /* ---------- random puzzles ---------- */
@@ -401,16 +519,17 @@
   /* Solve a puzzle the way the page does: easy cells, then the simplest technique that applies, repeated. */
   function playThrough(str) {
     const st = fromString(str); fillSingles(st);
-    let moves = 0;
-    while (!solved(st) && moves < 200) {
-      let res = null;
-      for (const t of TECHNIQUES) { const rs = t.find(st); if (rs.length) { res = rs[0]; break; } }
-      if (!res) return { solved: false, moves };
+    let moves = 0, guesses = 0, beyond = 0;
+    while (!solved(st) && moves < 300) {
+      let res = null, tech = null;
+      for (const t of TECHNIQUES) { const rs = t.find(st); if (rs.length) { res = rs[0]; tech = t; break; } }
+      if (!res) return { solved: false, moves, guesses, beyond };
       apply(st, res); fillSingles(st); moves++;
+      if (tech.lastResort) guesses++; else if (tech.beyond) beyond++;
     }
-    return { solved: solved(st), moves };
+    return { solved: solved(st), moves, guesses, beyond };
   }
-  /* A random puzzle with exactly one solution that needs at least one technique and that these techniques can finish.
+  /* A random puzzle with exactly one solution that needs at least one technique and that the techniques can finish without a guess.
      Clues are removed in random order for as long as the solution stays unique. About half of such puzzles qualify,
      so a few tries are enough; after 60 tries the last puzzle is returned whatever it needs. */
   function randomPuzzle(rnd) {
@@ -420,12 +539,12 @@
       const made = randomGrid(rnd), v = made.grid.slice();
       for (const i of made.shuffle(Array.from({ length: 81 }, (_, k) => k))) { const keep = v[i]; v[i] = 0; if (solve(v).count !== 1) v[i] = keep; }
       const puzzle = v.map(x => x || '.').join(''), run = playThrough(puzzle);
-      out = { puzzle, moves: run.moves, finishes: run.solved, tries };
-      if (run.solved && run.moves >= 1) break;
+      out = { puzzle, moves: run.moves, finishes: run.solved && run.guesses === 0, tries };
+      if (out.finishes && run.moves >= 1) break;
     }
     return out;
   }
 
-  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, randomPuzzle, playThrough, toString, clone, has, alive, place, eliminate, cellsFor,
+  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, randomPuzzle, playThrough, chainFor, deadEnd, toString, clone, has, alive, place, eliminate, cellsFor,
     solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColouring };
 })(typeof window !== 'undefined' ? window : globalThis);

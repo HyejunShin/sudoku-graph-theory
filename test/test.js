@@ -67,3 +67,39 @@ console.log(JSON.stringify(firstAfterSingles, null, 1));
   if (distinct.size !== M) throw new Error('randomPuzzle repeated itself');
   console.log('random puzzles: ' + M + ' made, ' + (tries / M).toFixed(1) + ' tries each, ' + (moves / M).toFixed(1) + ' moves each on average, ' + ((Date.now() - t1) / M).toFixed(0) + ' ms each');
 }
+
+// Beyond links: the extra finders are sound, and with them every puzzle can be finished.
+{
+  const sets = {
+    'Locked triple': '4.29......9...2.....7.1...8..5....46...37.8..3.18....5.1.....7..6...1..9..3...6..',
+    'Naked triple': '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....',
+    'Trial and error': '...39.2..........732..1.........7....3.85.......2..4569......2......19..85....364'
+  };
+  for (const [want, puzzle] of Object.entries(sets)) {
+    const sol = E.check(puzzle).solution, st = E.fromString(puzzle); E.fillSingles(st);
+    const seen = new Set(); let g = 0, linkOnlyStuck = false;
+    while (!E.solved(st) && g++ < 300) {
+      let res = null, tech = null;
+      for (const t of E.TECHNIQUES) { const rs = t.find(st); for (const r of rs) check(st, sol, r, t.key + ' on ' + puzzle); if (rs.length && !res) { res = rs[0]; tech = t; } if (res && t === tech) break; }
+      if (!res) throw new Error('nothing applies on ' + puzzle);
+      if (tech.beyond) { linkOnlyStuck = true; seen.add(res.tech); }
+      if (tech.lastResort && E.TECHNIQUES.some(t => !t.lastResort && t.find(st).length)) throw new Error('a guess was used while a pattern was available');
+      E.apply(st, res); E.fillSingles(st);
+    }
+    if (!E.solved(st)) throw new Error('could not finish ' + puzzle);
+    if (!linkOnlyStuck || !seen.has(want)) throw new Error(puzzle + ' was expected to need ' + want + ' but used ' + [...seen].join(', '));
+    const run = E.playThrough(puzzle);
+    if (!run.solved || (want === 'Trial and error') !== (run.guesses > 0)) throw new Error('playThrough disagrees on ' + puzzle + ': ' + JSON.stringify(run));
+  }
+  // every puzzle, random or not, now ends solved; count how many needed each kind of help
+  let s3 = 31337; const rnd3 = () => (s3 = (s3 * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const sh = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd3() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const tally = { easy: 0, links: 0, patterns: 0, guess: 0 }, M = 300;
+  for (let n = 0; n < M; n++) {
+    const g = randomFull(), v = g.slice(); for (const i of sh([...Array(81).keys()])) { const keep = v[i]; v[i] = 0; if (E.solve(v).count !== 1) v[i] = keep; }
+    const puzzle = v.map(x => x || '.').join(''), run = E.playThrough(puzzle);
+    if (!run.solved) throw new Error('playThrough could not finish ' + puzzle);
+    tally[run.guesses ? 'guess' : run.beyond ? 'patterns' : run.moves ? 'links' : 'easy']++;
+  }
+  console.log('all ' + M + ' random puzzles finished: easy cells only ' + tally.easy + ', links ' + tally.links + ', needed a locked triple or a triple/quad ' + tally.patterns + ', needed a guess ' + tally.guess);
+}
