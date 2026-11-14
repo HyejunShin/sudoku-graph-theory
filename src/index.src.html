@@ -41,6 +41,7 @@ p { margin: 0; }
   .cols, .cols > .stack { display: contents; }
   .board { position: sticky; top: 0; z-index: 5; max-width: 460px; width: 100%; align-self: center; box-shadow: 0 6px 14px -10px var(--ink); }
 }
+@media (min-width: 900px) { .cols > .stack:first-child { position: sticky; top: 16px; } }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 label { font-size: 13px; color: var(--muted); }
 select, input[type="text"] { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
@@ -136,8 +137,8 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
           <label for="speed">Speed</label>
           <select id="speed" aria-label="Playback speed">
             <option value="1700">Slow</option>
-            <option value="800">Normal</option>
-            <option value="400" selected>Fast</option>
+            <option value="600">Normal</option>
+            <option value="250" selected>Fast</option>
             <option value="1000" data-skip="1">Moves only</option>
           </select>
         </div>
@@ -156,13 +157,14 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
           <span><i class="dot a"></i><i class="dot b"></i>the two colours of a chain</span>
         </div>
       </section>
+    </div>
+
+    <div class="stack">
+
       <section class="card" aria-label="Techniques">
         <h2>Techniques available now</h2>
         <div class="techs" id="techs"></div>
       </section>
-    </div>
-
-    <div class="stack">
 
       <section class="card" id="explain" aria-label="Explanation">
         <h2 id="tname">Pick a technique</h2>
@@ -203,10 +205,15 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     { name: 'One-digit odd loop (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
     { name: '3D Medusa', puzzle: '5.........8.....4...2.1...6.9...6.31.4.8.......6...9..2....7.....7...68...1.6.3.4', tech: 'medusa' },
     { name: 'Alternating chain', puzzle: '.23..5.96....7..2.........5.5.........9.24......893..4.753.....24875..3......2..1', tech: 'chain' },
+    /* Rare techniques, shown as soon as the puzzle loads. */
+    { name: 'Beyond links: Swordfish', puzzle: '......6......9...2.1..248.3624.19........8.1.18...5....5.7............76..3...9..', tech: 'fish' },
+    { name: 'Beyond links: XYZ-Wing', puzzle: '7........14..5.....351.7........32.88........3.....51..2..957..4.18....2....2.4.9', tech: 'xyz' },
+    { name: 'Beyond links: unique rectangle', puzzle: '4....8............7..53.........15.6.....2..9...95..3....1...231.5..9.4..42.6..9.', tech: 'ur' },
+    { name: 'Beyond links: needs a grouped chain', puzzle: '..32.....7..9.....82...7...9...5..4....4.6..9..2.8.37.6.....1...387...2...7..5...', tech: null },
     /* Puzzles that links alone cannot finish. Each starts with loops and then needs the named step. */
     { name: 'Beyond links: needs a locked triple', puzzle: '4.29......9...2.....7.1...8..5....46...37.8..3.18....5.1.....7..6...1..9..3...6..', tech: null },
     { name: 'Beyond links: needs a naked triple', puzzle: '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....', tech: null },
-    { name: 'Beyond links: needs a guess', puzzle: '...39.2..........732..1.........7....3.85.......2..4569......2......19..85....364', tech: null }
+    { name: 'Beyond links: needs a guess', puzzle: '...4......3.86......23..1.7.78..13..35.....2.1.9....8.......63....5....8....839..', tech: null }
   ];
   var $ = function (id) { return document.getElementById(id); };
   var st = null, original = '', solution = null, history = [], avail = {}, pick = {};
@@ -222,7 +229,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
   function pace() { return instant() ? 0 : +$('speed').value; }
   /* "Moves only" shows each loop and its removal, without walking through the argument. */
   function skipSteps() { var sp = $('speed'), o = sp.options[sp.selectedIndex]; return !!o && o.getAttribute('data-skip') === '1'; }
-  function removalMs() { return instant() ? 0 : Math.max(500, Math.min(1600, Math.round(pace() * 0.7))); }
+  function removalMs() { return instant() ? 0 : Math.max(300, Math.min(1600, Math.round(pace() * 0.7))); }
 
   /* ---------- geometry ---------- */
   var S = 60, M = 2;
@@ -320,7 +327,7 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
     var divided = false;
     E.TECHNIQUES.forEach(function (t) {
       if (t.easy && autoFill) return;
-      if (t.beyond && !divided) { divided = true; h += '<p class="beyond">Beyond links: used only when no loop or colouring applies</p>'; }
+      if (t.beyond && !divided) { divided = true; h += '<p class="beyond">Beyond links: rarer steps, used only when no loop or colouring applies</p>'; }
       var n = avail[t.key].length, on = view.kind === 'result' && view.tech === t.key;
       h += '<button type="button" class="tech" data-key="' + t.key + '" aria-pressed="' + on + '"' + (n ? '' : ' disabled') + ' title="' + t.blurb + '"><span class="n">' + t.name + (n ? '<span class="c">' + n + '</span>' : '') + '</span><span class="k">' + t.loop + '</span></button>';
     });

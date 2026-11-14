@@ -18,7 +18,7 @@ function check(st, sol, res, tag) {
   for (const id of res.elim) if (sol[E.cCell(id)] === E.cDig(id)) throw new Error(tag + ': eliminated a true candidate ' + E.candName(id));
   for (const id of res.place) if (sol[E.cCell(id)] !== E.cDig(id)) throw new Error(tag + ': placed a false candidate ' + E.candName(id));
   if (!res.elim.length && !res.place.length) throw new Error(tag + ': empty result');
-  for (const l of res.links) { if (!E.linked(l.a, l.b)) throw new Error(tag + ': drawn link is not a link'); if (l.strong && !E.strongInfo(st, l.a, l.b)) throw new Error(tag + ': drawn strong link is not strong'); }
+  for (const l of res.links) { if (!l.group && !E.linked(l.a, l.b)) throw new Error(tag + ': drawn link is not a link'); if (l.strong && !l.group && !E.strongInfo(st, l.a, l.b)) throw new Error(tag + ': drawn strong link is not strong'); }
 }
 const used = {}, firstAfterSingles = {}, counts = { puzzles: 0, solvedByThese: 0, results: 0 };
 const t0 = Date.now();
@@ -73,7 +73,7 @@ console.log(JSON.stringify(firstAfterSingles, null, 1));
   const sets = {
     'Locked triple': '4.29......9...2.....7.1...8..5....46...37.8..3.18....5.1.....7..6...1..9..3...6..',
     'Naked triple': '............4...97.973.68...548...696....238..8.....1.42..19..............6.5....',
-    'Trial and error': '...39.2..........732..1.........7....3.85.......2..4569......2......19..85....364'
+    'Trial and error': '...4......3.86......23..1.7.78..13..35.....2.1.9....8.......63....5....8....839..'
   };
   for (const [want, puzzle] of Object.entries(sets)) {
     const sol = E.check(puzzle).solution, st = E.fromString(puzzle); E.fillSingles(st);

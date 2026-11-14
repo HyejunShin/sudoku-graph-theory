@@ -76,10 +76,14 @@ Links join two candidates at a time, so some puzzles cannot be finished by loops
 A search for everything links can prove, on a smaller sample, solved nothing the Loop Finder had missed. So the stuck puzzles are a limit of pairwise reasoning, not of the tool. For those, the Loop Finder has three further steps, kept apart under **Beyond links** and tried only when no loop or colouring applies:
 
 - **Locked triple**: a digit confined to three cells that share a second line or box. The three act as one candidate.
-- **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. This is a counting argument on the cells and digits of one row, column or box.
+- **Triples and quads**, naked or hidden: three cells that hold only three digits between them, and the like. A counting argument on the cells and digits of one row, column or box.
+- **Grouped chain** (Empty Rectangle, grouped X-Cycle): the odd loop again, where a dot may be a group of cells in one box that share a row or column. This one still follows the loop rule.
+- **Bigger fish** (Swordfish, Jellyfish): the same counting as a triple, on the rows and columns of one digit.
+- **XYZ-Wing**: a pivot with three candidates and two wings.
+- **Unique rectangle**: four corners that would allow two solutions. It uses the fact that a proper sudoku has one.
 - **Trial and error**, the last resort: suppose a candidate is true, fill the easy cells that follow, and reach a contradiction. It is offered only when nothing else applies.
 
-Of the 64 stuck puzzles, 22 were finished with the first two and 42 needed a guess. With the guess every puzzle can be finished. The last three entries of the example list are puzzles of this kind.
+Of the 64 stuck puzzles above, 22 were finished with locked triples and triples or quads alone, before the other steps were added. With all of them, a second test on 3,000 random puzzles ended with 36 (1.2%) still needing a guess. Swordfish, Jellyfish, XYZ-Wing and unique rectangles were never needed there: they exist, but random puzzles almost never require them. With the guess every puzzle can be finished. The last entries of the example list show these steps.
 
 ## The website
 

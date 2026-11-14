@@ -453,6 +453,137 @@
     return out;
   }
 
+  /* Swordfish and Jellyfish: one digit, k rows whose places for it lie in only k columns (or the other way round).
+     k rows need k different columns, so the digit leaves the rest of those columns. The same counting as a triple or quad. */
+  function findFish(st) {
+    const out = [], seen = new Set();
+    for (const k of [3, 4]) for (let d = 1; d <= 9; d++) for (const [base, cover, baseOf, coverOf, bn, cn] of [[0, 9, ROW, COL, 'rows', 'columns'], [9, 0, COL, ROW, 'columns', 'rows']]) {
+      const lines = []; for (let i = 0; i < 9; i++) { const cs = cellsFor(st, base + i, d); if (cs.length >= 2 && cs.length <= k) lines.push({ i, cs }); }
+      for (const ls of combos(lines, k)) {
+        const cov = new Set(); for (const l of ls) for (const c of l.cs) cov.add(coverOf(c));
+        if (cov.size !== k) continue;
+        const bi = ls.map(l => l.i), cv = [...cov].sort((a, b) => a - b), elim = [];
+        for (const x of cv) for (const c of UNITS[cover + x]) if (!bi.includes(baseOf(c)) && has(st, c, d)) elim.push(cid(c, d));
+        const key = elim.join(','); if (!elim.length || seen.has(key)) continue; seen.add(key);
+        const num = k === 3 ? 'three' : 'four';
+        const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Beyond links: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
+        for (const l of ls) for (const c of l.cs) res.nodes.set(cid(c, d), 'loop');
+        elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+        say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
+        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so all ' + num + ' ' + cn + ' get their ' + d + ' from these ' + bn + '. This counts ' + num + ' things at once, which no link can do.');
+        say(res, 'No other cell of those ' + cn + ' can hold ' + d + '. That removes: ' + list(elim) + '.');
+        out.push(res);
+      }
+    }
+    return out;
+  }
+
+  /* XYZ-Wing: a pivot cell holding x, y, z and two wings it sees, holding x z and y z.
+     Whichever digit the pivot takes, one of the three cells is z, so a cell that sees all three cannot be z. */
+  function findXYZWing(st) {
+    const out = [];
+    for (let p = 0; p < 81; p++) if (!st.val[p] && bits(st.cand[p]) === 3) {
+      const wings = PEERS[p].filter(c => !st.val[c] && bits(st.cand[c]) === 2 && (st.cand[c] & ~st.cand[p]) === 0);
+      for (const [w1, w2] of combos(wings, 2)) {
+        if (st.cand[w1] === st.cand[w2]) continue;
+        const z = digits(st.cand[w1] & st.cand[w2])[0], x = digits(st.cand[w1] & ~(1 << z))[0], y = digits(st.cand[w2] & ~(1 << z))[0];
+        const elim = []; for (let c = 0; c < 81; c++) if (c !== p && c !== w1 && c !== w2 && has(st, c, z) && sees(c, p) && sees(c, w1) && sees(c, w2)) elim.push(cid(c, z));
+        if (!elim.length) continue;
+        const res = mkResult('XYZ-Wing', 'Beyond links: the pivot has three candidates');
+        for (const c of [p, w1, w2]) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
+        elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+        const zs = { [cid(p, z)]: 't', [cid(w1, z)]: 't', [cid(w2, z)]: 't' };
+        say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(w1) + ', which holds ' + digitList([x, z].sort()) + ', and ' + cellName(w2) + ', which holds ' + digitList([y, z].sort()) + '.');
+        say(res, 'If the pivot is ' + x + ', then ' + cellName(w1) + ' is ' + z + '. If it is ' + y + ', then ' + cellName(w2) + ' is ' + z + '. Otherwise the pivot itself is ' + z + '.', zs);
+        say(res, 'So one of the three green ' + z + 's is true. The pivot has three candidates, so this is one fact about three things, which no link can state.', zs);
+        say(res, 'A cell that sees all three cannot be ' + z + '. That removes: ' + list(elim) + '.', zs);
+        out.push(res);
+      }
+    }
+    return out;
+  }
+
+  /* Grouped chain: the odd loop of Theorem 5.2 for one digit, where a dot may be a group: two or three cells of a box
+     that share a row or column. A group is "true" when one of its cells holds the digit. Two dots are linked when they
+     share no cell and all their cells lie in one unit; the link is strong when together they are every place left for the
+     digit in that unit. Empty Rectangle and grouped X-Cycles are loops of this kind. */
+  function findGroupedChains(st) {
+    const out = [];
+    for (let d = 1; d <= 9 && !out.length; d++) {
+      const nodes = [];
+      for (let c = 0; c < 81; c++) if (has(st, c, d)) nodes.push([c]);
+      for (let b = 0; b < 9; b++) { const cs = cellsFor(st, 18 + b, d); for (const key of [ROW, COL]) { const by = {}; for (const c of cs) (by[key(c)] = by[key(c)] || []).push(c); for (const k in by) if (by[k].length >= 2) nodes.push(by[k]); } }
+      const n = nodes.length, unitOf = (A, B) => { if (A.some(c => B.includes(c))) return -1; for (const u of cellUnits(A[0])) if (A.every(c => UNITS[u].includes(c)) && B.every(c => UNITS[u].includes(c))) return u; return -1; };
+      const weak = Array.from({ length: n }, () => []), strong = Array.from({ length: n }, () => []);
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j) {
+        const u = unitOf(nodes[i], nodes[j]); if (u < 0) continue;
+        weak[i].push({ j, u });
+        for (const u2 of cellUnits(nodes[i][0])) if (nodes[i].every(c => UNITS[u2].includes(c)) && nodes[j].every(c => UNITS[u2].includes(c)) && cellsFor(st, u2, d).length === nodes[i].length + nodes[j].length) { strong[i].push({ j, u: u2 }); break; }
+      }
+      const nm = A => A.length === 1 ? candName(cid(A[0], d)) : 'the group of ' + d + 's in ' + A.map(cellName).join(', ');
+      for (let v = 0; v < n && !out.length; v++) if (nodes[v].length === 1) {
+        // breadth-first over "false" dots; each is reached from v or from a true dot, and leads to its strong partners
+        let frontier = [{ f: null, t: v, uw: -1, us: -1, prev: null }], hit = null; const seenT = new Set([v]);
+        for (let depth = 1; depth <= 5 && !hit && frontier.length; depth++) {
+          const next = [];
+          for (const cur of frontier) { if (hit) break;
+            for (const w of weak[cur.t]) { if (hit) break;
+              for (const sgl of strong[w.j]) {
+                if (seenT.has(sgl.j)) continue; seenT.add(sgl.j);
+                const step = { f: w.j, t: sgl.j, uw: w.u, us: sgl.u, prev: cur };
+                const close = weak[sgl.j].find(e => e.j === v);
+                if (close) { step.uc = close.u; hit = step; break; }
+                next.push(step);
+              } } }
+          frontier = next;
+        }
+        if (!hit) continue;
+        const path = []; for (let x = hit; x && x.f !== null; x = x.prev) path.unshift(x);
+        if (!path.some(x => nodes[x.f].length > 1 || nodes[x.t].length > 1)) continue;      // no group in it: an ordinary loop, left to the link techniques
+        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Theorem 5.2 with a group as one dot'), marks = {}, snap = () => Object.assign({}, marks);
+        const ids = A => A.map(c => cid(c, d)), near = (A, B) => { let best = null; for (const a of A) for (const b of B) { const dist = Math.abs(ROW(a) - ROW(b)) + Math.abs(COL(a) - COL(b)); if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
+        const link = (A, B, strongLink) => { const pr = near(A, B); res.links.push({ a: cid(pr[0], d), b: cid(pr[1], d), strong: strongLink, group: true }); };
+        for (const x of path) for (const A of [nodes[x.f], nodes[x.t]]) ids(A).forEach(id => res.nodes.set(id, A.length > 1 ? 'k0' : 'loop'));
+        res.nodes.set(vid, 'elim'); res.elim = [vid];
+        let prev = nodes[v];
+        for (const x of path) { link(prev, nodes[x.f], false); link(nodes[x.f], nodes[x.t], true); prev = nodes[x.t]; }
+        link(prev, nodes[v], false);
+        say(res, 'This is an odd loop for the digit ' + d + ', but some of its dots are groups (blue): cells of one box that share a row or column. A group counts as true when one of its cells holds the ' + d + '.');
+        marks[vid] = 't'; say(res, 'Suppose ' + candName(vid) + ' were true.', snap());
+        for (const x of path) {
+          ids(nodes[x.f]).forEach(id => { marks[id] = 'f'; }); say(res, 'Then ' + nm(nodes[x.f]) + ' is false: it shares ' + unitName(x.uw) + ' with the one before.', snap());
+          ids(nodes[x.t]).forEach(id => { marks[id] = 't'; }); say(res, 'Then ' + nm(nodes[x.t]) + ' is true: ' + d + ' has no other place left in ' + unitName(x.us) + '.', snap());
+        }
+        say(res, 'But that shares ' + unitName(hit.uc) + ' with ' + candName(vid) + ', so both cannot hold. Contradiction, so ' + candName(vid) + ' is false.', snap());
+        out.push(res);
+      }
+    }
+    return out;
+  }
+
+  /* Unique rectangle: four cells in two rows, two columns and two boxes. Three hold only a and b; the fourth holds a, b and more.
+     If the fourth were a or b, the four cells could swap a and b to give a second solution. A proper sudoku has one. */
+  function findUniqueRectangle(st) {
+    const out = [];
+    for (let r1 = 0; r1 < 9; r1++) for (let r2 = r1 + 1; r2 < 9; r2++) for (let c1 = 0; c1 < 9; c1++) for (let c2 = c1 + 1; c2 < 9; c2++) {
+      const cells = [r1 * 9 + c1, r1 * 9 + c2, r2 * 9 + c1, r2 * 9 + c2];
+      if (cells.some(c => st.val[c]) || new Set(cells.map(BOX)).size !== 2) continue;
+      const pair = cells.filter(c => bits(st.cand[c]) === 2);
+      if (pair.length !== 3 || pair.some(c => st.cand[c] !== st.cand[pair[0]])) continue;
+      const m = st.cand[pair[0]], odd = cells.find(c => !pair.includes(c));
+      if ((st.cand[odd] & m) !== m || bits(st.cand[odd]) < 3) continue;
+      const ab = digits(m), elim = ab.map(d => cid(odd, d));
+      const res = mkResult('Unique rectangle', 'Beyond links: uses the fact that the puzzle has one solution');
+      for (const c of pair) for (const d of ab) res.nodes.set(cid(c, d), 'loop');
+      elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
+      say(res, 'The cells ' + cellList(pair) + ' hold only ' + digitList(ab) + '. With ' + cellName(odd) + ' they form a rectangle across two rows, two columns and two boxes.');
+      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would hold only ' + digitList(ab) + ', and swapping the two digits would give a second solution.');
+      say(res, 'A proper sudoku has exactly one solution, so ' + cellName(odd) + ' is neither. That removes: ' + list(elim) + '. This is not a link argument: it reasons about the puzzle as a whole.');
+      out.push(res);
+    }
+    return out;
+  }
+
   /* Trial and error, the last resort. Suppose a candidate is true, keep filling easy cells, and look for a dead end.
      Of all candidates that lead to one, the shortest route is shown. If none does, the rest is searched in full. */
   function deadEnd(st) {
@@ -509,6 +640,10 @@
     /* Beyond links. These are tried only after every loop and colouring above has failed. */
     { key: 'group', name: 'Locked triple', loop: 'three candidates as one', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.', beyond: true },
     { key: 'subset', name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true },
+    { key: 'gchain', name: 'Grouped chain', loop: 'Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a dot may be a group of cells.', beyond: true },
+    { key: 'fish', name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true },
+    { key: 'xyz', name: 'XYZ-Wing', loop: 'three-candidate pivot', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.', beyond: true },
+    { key: 'ur', name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true },
     { key: 'guess', name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the easy cells to a contradiction.', beyond: true, lastResort: true }
   ];
 
