@@ -114,8 +114,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
-    <p class="lede">A graph is a set of dots joined by lines. Coloring it with two colors means giving every dot one of the two, so that no two joined dots have the same color.</p>
-    <p class="lede">Here each dot is a candidate, a digit that could still go in a cell, and the two colors are <b>true</b> and <b>false</b>. Two candidates are joined when the rules of sudoku stop both from being true. Across a solid line exactly one is true, so the two ends must take different colors. Every technique below works out where that coloring is forced.</p>
+    <p class="lede">Each move colors a graph with two colors, so that no two adjacent nodes have the same color.</p>
     <p class="lede">Press <b>Play all steps</b> to watch the whole puzzle being solved.</p>
   </header>
 
