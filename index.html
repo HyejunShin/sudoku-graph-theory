@@ -62,12 +62,12 @@ button.primary:hover:not(:disabled) { border-color: var(--accent); }
 .msg { font-size: 13px; color: var(--muted); min-height: 1.4em; }
 .msg.bad { color: var(--out); }
 svg#grid { width: 100%; height: auto; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-.techs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.tech { text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; }
+.techs { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.tech { text-align: left; display: flex; flex-direction: column; gap: 0; padding: 5px 8px; font-size: 13px; line-height: 1.25; }
 .tech .n { font-weight: 600; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.tech .k { font-size: 12px; color: var(--muted); }
-.techs .beyond { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
-.tech .c { font-family: var(--font-mono); font-size: 12px; line-height: 18px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 0 7px; flex: none; }
+.tech .k { font-size: 10.5px; line-height: 1.25; color: var(--muted); }
+.techs .beyond { grid-column: 1 / -1; margin: 2px 0 0; font-size: 11px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 5px; }
+.tech .c { font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 0 7px; flex: none; }
 .tech[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 ol#steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 ol#steps li { padding: 4px 8px 4px 12px; border-radius: 6px; cursor: pointer; }
@@ -163,18 +163,19 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           <span><i class="dot a"></i><i class="dot b"></i>the two colors of a chain</span>
         </div>
       </section>
-      <section class="card" id="graphcard" aria-label="The move as a graph">
-        <h2>The same move as a graph</h2>
-        <p class="sub" id="graphnote">One dot per candidate, or per group of candidates that acts as one.</p>
-        <svg id="graph" viewBox="0 0 520 300" role="img" aria-label="The current move drawn as a graph"></svg>
+      <section class="card" aria-label="Techniques">
+        <h2>Techniques available now</h2>
+        <div class="techs" id="techs"></div>
       </section>
     </div>
 
     <div class="stack">
 
-      <section class="card" aria-label="Techniques">
-        <h2>Techniques available now</h2>
-        <div class="techs" id="techs"></div>
+
+      <section class="card" id="graphcard" aria-label="The move as a graph">
+        <h2>The same move as a graph</h2>
+        <p class="sub" id="graphnote">One dot per candidate, or per group of candidates that acts as one.</p>
+        <svg id="graph" viewBox="0 0 520 300" role="img" aria-label="The current move drawn as a graph"></svg>
       </section>
 
       <section class="card" id="explain" aria-label="Explanation">
