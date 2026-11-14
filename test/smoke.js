@@ -202,7 +202,9 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   const lt = [...sel.options].find(o => o.textContent === 'Locked triple'); sel.value = lt.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=group]:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
   click(document.querySelector('#techs button[data-key=group]'));
-  if ($('grid').querySelectorAll('rect.group').length !== 1) throw new Error('the locked triple is not drawn as one outlined group');
+  if ($('grid').querySelectorAll('.group').length !== 1) throw new Error('the locked triple is not drawn as one outlined group');
+  const xz = [...sel.options].find(o => o.textContent === 'XYZ-Wing'); sel.value = xz.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error('the XYZ-Wing does not show its group dot');
   if (document.querySelectorAll('#techs .beyond').length !== 3) throw new Error('expected three dividers: counting, one-solution, last resort');
   // 6j. the easy-cell switch and "Random easy sudoku"
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');

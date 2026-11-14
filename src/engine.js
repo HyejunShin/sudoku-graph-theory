@@ -490,14 +490,25 @@
         const elim = []; for (let c = 0; c < 81; c++) if (c !== p && c !== w1 && c !== w2 && has(st, c, z) && sees(c, p) && sees(c, w1) && sees(c, w2)) elim.push(cid(c, z));
         if (!elim.length) continue;
         const res = mkResult('XYZ-Wing', 'Lemma 7.6 and Theorem 5.2: a triangle whose link is counted');
+        // the group dot is the z of the pivot together with the z of one wing; the wing in line with the pivot draws best
+        const inLine = w => ROW(w) === ROW(p) || COL(w) === COL(p);
+        // ...but not if a removed candidate would sit inside the outline drawn round the two
+        const between = w => elim.some(e => { const c = cCell(e); return ROW(c) >= Math.min(ROW(p), ROW(w)) && ROW(c) <= Math.max(ROW(p), ROW(w)) && COL(c) >= Math.min(COL(p), COL(w)) && COL(c) <= Math.max(COL(p), COL(w)); });
+        const first = [w1, w2].filter(w => !between(w)).sort((a, b) => inLine(b) - inLine(a))[0];
+        const [ga, gb, xa, xb] = first === w2 ? [w2, w1, y, x] : [w1, w2, x, y];
+        const zp = cid(p, z), zg = cid(ga, z), zo = cid(gb, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
         for (const c of [p, w1, w2]) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
+        res.nodes.set(zp, 'k0'); res.nodes.set(zg, 'k0'); res.groups = first === undefined ? [] : [[zp, zg]];
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
-        for (const c of [p, w1, w2]) res.links.push({ a: elim[0], b: cid(c, z), strong: false });
-        const zs = { [cid(p, z)]: 't', [cid(w1, z)]: 't', [cid(w2, z)]: 't' };
-        say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(w1) + ', which holds ' + digitList([x, z].sort()) + ', and ' + cellName(w2) + ', which holds ' + digitList([y, z].sort()) + '.');
-        say(res, 'If the pivot is ' + x + ', then ' + cellName(w1) + ' is ' + z + '. If it is ' + y + ', then ' + cellName(w2) + ' is ' + z + '. Otherwise the pivot itself is ' + z + '.', zs);
-        say(res, 'So the three green ' + z + 's cannot all be false. That is a link counted across the three cells, and with the red ' + z + ' it closes a triangle, as in a Locked pair.', zs);
-        say(res, 'A cell that sees all three cannot be ' + z + '. That removes: ' + list(elim) + '.', zs);
+        res.links.push({ a: v, b: zp, strong: false }); res.links.push({ a: zg, b: zo, strong: true, group: true }); res.links.push({ a: zo, b: v, strong: false });
+        say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(ga) + ', which holds ' + digitList([xa, z].sort()) + ', and ' + cellName(gb) + ', which holds ' + digitList([xb, z].sort()) + '.');
+        say(res, 'Take the two blue ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one dot: true when one of them is ' + z + '.');
+        say(res, 'If the blue dot is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So the blue dot and ' + candName(zo) + ' cannot both be false: a link found by counting (solid line).');
+        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
+        marks[zp] = 'f'; marks[zg] = 'f'; say(res, 'Then the blue dot is false: ' + cellName(cCell(v)) + ' sees both of its cells.', snap());
+        marks[zo] = 't'; say(res, 'Then ' + candName(zo) + ' is true, by the counted link.', snap());
+        say(res, 'But ' + candName(zo) + ' and ' + candName(v) + ' cannot both be true: ' + linkWhy(zo, v) + '. Contradiction, so ' + candName(v) + ' is false.', snap(), [zo, v]);
+        if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
         out.push(res);
       }
     }

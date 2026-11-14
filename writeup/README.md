@@ -471,6 +471,8 @@ The Cycle Lemma and Theorem 5.2 used nothing about a dot except these two rules.
 
 In colours: the k true candidates of the B's are exactly the k true candidates of the C's. Counting them twice is the whole proof, as counting round the loop was for the Cycle Lemma.
 
+In dots: for each C, the candidates it shares with the B's form one dot, as a group did above, and the count proves that dot true. Every other candidate of that C is linked to it, so it is false. The sets rule is the Locked triple again, with a count standing in for a single constraint set.
+
 ![The sets rule on a naked triple · k = 3](figures/fig26.png)
 
 *Figure 26. The sets rule on a naked triple · k = 3*

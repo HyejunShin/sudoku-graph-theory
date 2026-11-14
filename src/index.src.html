@@ -257,8 +257,9 @@ label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
       /* a group is one dot: draw one outline round its candidates */
       (res.groups || []).forEach(function (g) {
         var ps = g.map(pos), xs = ps.map(function (q) { return q.x; }), ys = ps.map(function (q) { return q.y; });
-        var x0 = Math.min.apply(null, xs) - 14, y0 = Math.min.apply(null, ys) - 14, w = Math.max.apply(null, xs) - x0 + 14, hgt = Math.max.apply(null, ys) - y0 + 14;
-        links += '<rect class="group" x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + hgt + '" rx="14" fill="var(--k0)" fill-opacity="0.1" stroke="var(--k0)" stroke-width="2"/>';
+        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), x1 = Math.max.apply(null, xs), y1 = Math.max.apply(null, ys);
+        if (x0 === x1 || y0 === y1) links += '<rect class="group" x="' + (x0 - 14) + '" y="' + (y0 - 14) + '" width="' + (x1 - x0 + 28) + '" height="' + (y1 - y0 + 28) + '" rx="14" fill="var(--k0)" fill-opacity="0.1" stroke="var(--k0)" stroke-width="2"/>';
+        else links += '<polyline class="group" points="' + ps.map(function (q) { return q.x + ',' + q.y; }).join(' ') + '" fill="none" stroke="var(--k0)" stroke-opacity="0.22" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>';   // members not in line: a slanted capsule
       });
       res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash ? 'clash' : l.strong ? 'strong' : 'weak'); });
       if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');
