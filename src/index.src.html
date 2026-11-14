@@ -80,6 +80,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
+/* The play button always has the width of its longest label, so it does not resize between Play all steps, Pause and Resume.
+   The hidden ::after holds that longest label and takes no height. */
+#play { display: inline-grid; justify-items: center; }
+#play::after { content: 'Play all steps'; height: 0; overflow: hidden; visibility: hidden; }
 /* While playing, the play button gets a ring so it reads as active. */
 #play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
