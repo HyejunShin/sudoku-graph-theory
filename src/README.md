@@ -1,6 +1,6 @@
 # Code, build and tests
 
-This is the code behind the [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/). Paths below are from the top of the repository.
+This is the code behind the [Solving Sudoku Using Graph Coloring](https://hyejunshin.github.io/sudoku-graph-theory/). Paths below are from the top of the repository.
 
 ## What is here
 
@@ -8,7 +8,7 @@ This is the code behind the [Sudoku Loop Finder](https://hyejunshin.github.io/su
 | --- | --- |
 | [`writeup/README.md`](../writeup/README.md) | The write-up, readable on GitHub: six steps, 24 figures, a short proof for every claim |
 | [`writeup/index.html`](../writeup/index.html) | The same write-up as a web page |
-| [`index.html`](../index.html) | **Sudoku Loop Finder**: one self-contained page, built from the two files below. Open it in a browser; it needs no server |
+| [`index.html`](../index.html) | **Solving Sudoku Using Graph Coloring**: one self-contained page, built from the two files below. Open it in a browser; it needs no server |
 | [`src/engine.js`](engine.js) | The link-graph engine: candidates, links, strong links, the strict puzzle check, and a finder for each technique |
 | [`src/index.src.html`](index.src.html) | The page's markup, styles and interface code |
 | [`build.js`](../build.js) | Inlines the engine into the page and writes `index.html` |

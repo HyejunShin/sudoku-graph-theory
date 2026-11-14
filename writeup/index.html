@@ -30,13 +30,13 @@ code { font-size: 0.92em; }
 </head>
 <body>
 <main>
-<nav><a href="../index.html">Open the Sudoku Loop Finder</a></nav>
+<nav><a href="../index.html">Open Solving Sudoku Using Graph Coloring</a></nav>
 <h1 id="why-advanced-sudoku-strategies-work-one-graph-theory-rule-behind-x-wing-x-cycle-and-colouring">Why Advanced Sudoku Strategies Work: One Graph-Theory Rule Behind X-Wing, X-Cycle and Colouring</h1>
 <p>2026-11-14 · Hyejun Shin</p>
 <p><strong>What this is.</strong> Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Colouring. They are usually memorised as separate tricks. This write-up shows they are one idea, and proves it step by step.</p>
 <p><strong>The idea.</strong> Treat each candidate (a digit that could still go in a cell) as a dot. Join two dots when the rules forbid both from being true. One counting rule about loops of dots then explains every strategy on the list.</p>
 <p><strong>How to read it.</strong> Steps 1 to 4 build the idea with pictures. Step 5 walks through more than a dozen named strategies. Step 6 shows where the idea stops working. No maths background is assumed, and each claim comes with a short &quot;why&quot;.</p>
-<p><strong>Try it.</strong> The companion page <a href="../index.html">Sudoku Loop Finder</a> finds these loops in real puzzles and walks through each one, step by step.</p>
+<p><strong>Try it.</strong> The companion page <a href="../index.html">Solving Sudoku Using Graph Coloring</a> finds these loops in real puzzles and walks through each one, step by step.</p>
 <h2 id="1-the-idea-in-one-minute">1. The idea in one minute</h2>
 <ol><li><p>A <em>candidate</em> is one digit in one cell: a digit that could still go there.</p></li><li><p>Two candidates are <em>linked</em> if the rules say they cannot both be true. Two 5s in one row are linked. So are two digits in one cell.</p></li><li><p>A link is <em>strong</em> if exactly one of the two must be true. That happens when a cell has only two candidates left, or a digit has only two places left in a row, column or box.</p></li><li><p>Draw the candidates as dots and the links as lines. A solution marks each dot true or false.</p></li><li><p><strong>The counting rule.</strong> Go round any loop of k dots. The links with both ends false number k minus twice the true dots. So an odd loop always has such a link, and it is never a strong one.</p></li></ol>
 <p>Everything else follows from point 5.</p>

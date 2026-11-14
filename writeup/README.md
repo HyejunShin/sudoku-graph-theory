@@ -8,7 +8,7 @@
 
 **How to read it.** Steps 1 to 4 build the idea with pictures. Step 5 walks through more than a dozen named strategies. Step 6 shows where the idea stops working. No maths background is assumed, and each claim comes with a short "why".
 
-**Try it.** The companion page [Sudoku Loop Finder](../index.html) (open `index.html` from the repository root in a browser) finds these loops in real puzzles and walks through each one, step by step.
+**Try it.** The companion page [Solving Sudoku Using Graph Coloring](../index.html) (open `index.html` from the repository root in a browser) finds these loops in real puzzles and walks through each one, step by step.
 
 ## 1. The idea in one minute
 

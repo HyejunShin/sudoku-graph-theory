@@ -9,11 +9,11 @@ The idea: take a loop of candidates (digits still possible in a cell) in which e
 
 Marking things with two labels so that neighbours always differ is called *two-colouring*, and a graph where that is possible is called *bipartite*.
 
-**Try it:** [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
+**Try it:** [Solving Sudoku Using Graph Coloring](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
-[![The Sudoku Loop Finder explaining an X-Wing: the loop drawn on the board, with the steps of the argument beside it](writeup/figures/loop-finder.png)](https://hyejunshin.github.io/sudoku-graph-theory/)
+[![The solver explaining an X-Wing: the loop drawn on the board, with the steps of the argument beside it](writeup/figures/loop-finder.png)](https://hyejunshin.github.io/sudoku-graph-theory/)
 
-*The Loop Finder explaining an X-Wing on a real puzzle. Click the picture to open it.*
+*The solver explaining an X-Wing on a real puzzle. Click the picture to open it.*
 
 ## Every move is a small graph
 
@@ -53,7 +53,7 @@ To be exact about the claim: only step 3 uses a bipartite graph as such. Steps 4
 
 The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves each step, shows where the method stops, and has 24 pictures like these.
 
-## The Loop Finder
+## The solver
 
 Open `index.html` directly; it needs no server and no build step.
 
@@ -80,7 +80,7 @@ Links join two candidates at a time, so some puzzles cannot be finished by loops
 | Solved by the link techniques | 965 |
 | Stuck: no link argument exists | 64 (3.2%) |
 
-A search for everything links can prove, on a smaller sample, solved nothing the Loop Finder had missed. So the stuck puzzles are a limit of reasoning about two candidates at a time, not of the tool.
+A search for everything links can prove, on a smaller sample, solved nothing the solver had missed. So the stuck puzzles are a limit of reasoning about two candidates at a time, not of the tool.
 
 **Groups extend the loop rule.** Let a dot stand for a group: two or three cells of one box that share a row or column, true when one of them holds the digit. The same odd-loop argument then covers **Locked triple** and **Grouped chain** (Empty Rectangle, grouped X-Cycle). These sit with the other loop techniques. The write-up proves this in its last step.
 
@@ -101,7 +101,7 @@ In a test on 6,000 random puzzles with all of these, 106 used a group step (lock
 
 ## The website
 
-GitHub Pages serves this repository from the root of the main branch: the Loop Finder is the [home page](https://hyejunshin.github.io/sudoku-graph-theory/) and the write-up is at [`/writeup/`](https://hyejunshin.github.io/sudoku-graph-theory/writeup/). Every push to `main` updates the site.
+GitHub Pages serves this repository from the root of the main branch: the solver is the [home page](https://hyejunshin.github.io/sudoku-graph-theory/) and the write-up is at [`/writeup/`](https://hyejunshin.github.io/sudoku-graph-theory/writeup/). Every push to `main` updates the site.
 
 ## Code
 
