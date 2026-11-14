@@ -53,6 +53,22 @@
     return { count, solution };
   }
 
+  /* Strict check of a pasted puzzle. Returns {ok: true, state, solution} or {ok: false, reason}. */
+  function check(str) {
+    const t = String(str).replace(/\s+/g, '');
+    const bad = t.match(/[^0-9.]/);
+    if (bad) return { ok: false, reason: 'Only digits 1 to 9 are allowed, with . or 0 for empty cells. Found "' + bad[0] + '".' };
+    if (t.length !== 81) return { ok: false, reason: 'A sudoku has 81 cells. This has ' + t.length + '.' };
+    for (let u = 0; u < 27; u++) {
+      const seen = {};
+      for (const c of UNITS[u]) { const d = t[c] === '.' ? 0 : +t[c]; if (!d) continue; if (seen[d]) return { ok: false, reason: 'Digit ' + d + ' appears twice in ' + unitName(u) + '.' }; seen[d] = true; }
+    }
+    const state = fromString(t), sol = solve(state.val);
+    if (sol.count === 0) return { ok: false, reason: 'This grid has no solution.' };
+    if (sol.count > 1) return { ok: false, reason: 'This grid has more than one solution, so it is not a proper sudoku. A proper puzzle has exactly one.' };
+    return { ok: true, state: state, solution: sol.solution };
+  }
+
   /* Links */
   function linked(a, b) { if (a === b) return false; const ca = cCell(a), cb = cCell(b); if (ca === cb) return true; return cDig(a) === cDig(b) && sees(ca, cb); }
   function linkInfo(a, b) { const ca = cCell(a), cb = cCell(b); if (ca === cb) return { kind: 'cell', cell: ca }; return { kind: 'unit', unit: commonUnits(ca, cb)[0] }; }
@@ -363,6 +379,6 @@
     { key: 'chain', name: 'Alternating chain', loop: 'odd loop', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' }
   ];
 
-  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, toString, clone, has, alive, place, eliminate, cellsFor,
+  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, toString, clone, has, alive, place, eliminate, cellsFor,
     solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColouring };
 })(typeof window !== 'undefined' ? window : globalThis);

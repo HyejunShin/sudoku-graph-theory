@@ -27,7 +27,8 @@ The idea in three lines:
 
 Open `index.html` directly; it needs no server and no build step.
 
-- Paste any puzzle as 81 characters, row by row, with `.` or `0` for empty cells. Or pick one of the built-in examples.
+- Paste a puzzle as 81 characters, row by row, with `.` or `0` for empty cells (spaces and line breaks are fine). Or pick one of the built-in examples.
+- Only proper sudokus load: no digit twice in a row, column or box, and exactly one solution. Anything else is refused with the reason.
 - **Next step** shows the simplest move available. Each move lists the chain of forced steps behind it, and the board marks candidates true or false as you walk through.
 - Tap any pencil mark to see everything it is linked to. Pick a digit to see its strong links coloured in two colours.
 

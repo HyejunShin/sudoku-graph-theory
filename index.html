@@ -205,6 +205,22 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
     return { count, solution };
   }
 
+  /* Strict check of a pasted puzzle. Returns {ok: true, state, solution} or {ok: false, reason}. */
+  function check(str) {
+    const t = String(str).replace(/\s+/g, '');
+    const bad = t.match(/[^0-9.]/);
+    if (bad) return { ok: false, reason: 'Only digits 1 to 9 are allowed, with . or 0 for empty cells. Found "' + bad[0] + '".' };
+    if (t.length !== 81) return { ok: false, reason: 'A sudoku has 81 cells. This has ' + t.length + '.' };
+    for (let u = 0; u < 27; u++) {
+      const seen = {};
+      for (const c of UNITS[u]) { const d = t[c] === '.' ? 0 : +t[c]; if (!d) continue; if (seen[d]) return { ok: false, reason: 'Digit ' + d + ' appears twice in ' + unitName(u) + '.' }; seen[d] = true; }
+    }
+    const state = fromString(t), sol = solve(state.val);
+    if (sol.count === 0) return { ok: false, reason: 'This grid has no solution.' };
+    if (sol.count > 1) return { ok: false, reason: 'This grid has more than one solution, so it is not a proper sudoku. A proper puzzle has exactly one.' };
+    return { ok: true, state: state, solution: sol.solution };
+  }
+
   /* Links */
   function linked(a, b) { if (a === b) return false; const ca = cCell(a), cb = cCell(b); if (ca === cb) return true; return cDig(a) === cDig(b) && sees(ca, cb); }
   function linkInfo(a, b) { const ca = cCell(a), cb = cCell(b); if (ca === cb) return { kind: 'cell', cell: ca }; return { kind: 'unit', unit: commonUnits(ca, cb)[0] }; }
@@ -515,7 +531,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
     { key: 'chain', name: 'Alternating chain', loop: 'odd loop', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong links.' }
   ];
 
-  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, toString, clone, has, alive, place, eliminate, cellsFor,
+  root.SudokuEngine = { ROW, COL, BOX, UNITS, PEERS, sees, unitName, cellName, cid, cCell, cDig, candName, bits, digits, fromString, check, toString, clone, has, alive, place, eliminate, cellsFor,
     solve, linked, linkInfo, strongInfo, neighbours, strongPartners, linkWhy, strongWhy, findSingle, fillSingles, apply, solved, broken, TECHNIQUES, findChains, findColouring };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -663,12 +679,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 16%, transparent);
   function snapshot() { history.push(E.clone(st)); if (history.length > 200) history.shift(); }
   function afterChange(text) { view = { kind: 'none' }; pick = {}; scan(); render(); say(text + (E.solved(st) ? ' The puzzle is solved.' : ' ' + left() + ' cells left.')); }
   function load(str, techKey) {
-    var s = E.fromString(str), msg = $('loadmsg');
-    if (!s) { msg.textContent = 'That is not a valid grid. Enter 81 characters row by row, digits 1 to 9 with . or 0 for empty cells, and no digit twice in a row, column or box.'; msg.className = 'msg bad'; return false; }
-    var sol = E.solve(s.val);
-    if (sol.count === 0) { msg.textContent = 'This puzzle has no solution, so nothing can be shown.'; msg.className = 'msg bad'; return false; }
-    st = s; original = E.toString(s); solution = sol.count === 1 ? sol.solution : null; history = [];
-    msg.className = 'msg'; msg.textContent = sol.count === 1 ? 'Loaded. The puzzle has exactly one solution.' : 'Loaded. This puzzle has more than one solution; the techniques are still valid.';
+    var res = E.check(str), msg = $('loadmsg');
+    if (!res.ok) { msg.textContent = 'Not loaded. ' + res.reason; msg.className = 'msg bad'; return false; }
+    st = res.state; original = E.toString(st); solution = res.solution; history = [];
+    msg.className = 'msg'; msg.textContent = 'Loaded. The puzzle has exactly one solution.';
     var n = E.fillSingles(st);
     afterChange(n ? 'Filled ' + n + ' easy cells first (cells or digits with only one place).' : 'No easy cells to fill.');
     if (techKey && avail[techKey] && avail[techKey].length) show(techKey, 0, true);
