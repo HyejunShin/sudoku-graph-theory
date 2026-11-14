@@ -272,6 +272,13 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     for (let a = 0; a < pts.length; a++) for (let b = a + 1; b < pts.length; b++) closest = Math.min(closest, Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]));
     if (closest < 46) throw new Error(where + ': two dots of the graph view overlap (' + closest.toFixed(0) + ' apart)');
     if (pts.some(q => q[0] < 15 || q[0] > 505 || q[1] < 15 || q[1] > H - 15)) throw new Error(where + ': a dot of the graph view is off the picture');
+    // no straight edge may lie on top of another straight edge, or run through a dot that is not one of its ends
+    const segs = [...$('graph').querySelectorAll('line:not(.strike)')].map(l => ['x1', 'y1', 'x2', 'y2'].map(k => +l.getAttribute(k)));
+    const offLine = (s, x, y) => { const dx = s[2] - s[0], dy = s[3] - s[1], len = Math.hypot(dx, dy) || 1; return [((x - s[0]) * dx + (y - s[1]) * dy) / len, Math.abs((x - s[0]) * dy - (y - s[1]) * dx) / len, len]; };
+    for (let a = 0; a < segs.length; a++) {
+      for (const q of pts) { const [t, d, len] = offLine(segs[a], q[0], q[1]); if (t > 12 && t < len - 12 && d < 12) throw new Error(where + ': an edge of the graph view runs straight through a dot'); }
+      for (let b = a + 1; b < segs.length; b++) { const [t1, d1, len] = offLine(segs[a], segs[b][0], segs[b][1]), [t2, d2] = offLine(segs[a], segs[b][2], segs[b][3]); if (d1 < 3 && d2 < 3 && Math.min(len, Math.max(t1, t2)) - Math.max(0, Math.min(t1, t2)) > 14) throw new Error(where + ': two edges of the graph view lie on top of each other'); }
+    }
     graphsSeen++;
   };
   for (const o of [...sel.options].filter(x => /^\d+$/.test(x.value))) {
