@@ -78,6 +78,8 @@ label { font-size: 13px; color: var(--muted); }
 select, input[type="text"] { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
 input[type="text"] { font-family: var(--font-mono); font-size: 13px; flex: 1 1 220px; }
 select { flex: 1 1 220px; }
+/* the example list is only as wide as its longest name on wide screens */
+@media (min-width: 900px) { select#sample { flex: 0 1 auto; width: auto; max-width: 100%; } }
 button { font: inherit; font-weight: 500; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: 0.45; cursor: default; }
@@ -139,7 +141,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
     <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. The edge is <b>strong</b> when exactly one of them must be true, and <b>weak</b> when at most one can be.</p>
-    <p class="lede">Assume one candidate is true and color the graph in two colors, true and false. A true node makes all its neighbors false. A false node makes its strong neighbors true. If two connected nodes end up both true, the initial assumption was false.</p>
+    <p class="lede">Assume one candidate is true and color the graph in two colors, true and false. A true node makes all its neighbors false. A false node makes its strong neighbors true. If two connected nodes end up both true, the initial assumption was false. Remove nodes that were falsely assumed to be true.</p>
     <p class="lede">Press <b>Play</b> to solve the puzzle.</p>
   </header>
 
