@@ -1,6 +1,6 @@
 # Why Advanced Sudoku Strategies Work
 
-Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they all come from one fact about **bipartite graphs**: a graph can be coloured with two colours exactly when it has no odd loop.
+Advanced sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Colouring and others) are usually memorised as separate tricks. This project shows they all come down to one question from the theory of **bipartite graphs**: can this loop be coloured with two colours? When it can, true and false alternate round it. When it cannot, something has to give, and that tells you which candidate to remove.
 
 **Try it:** [Sudoku Loop Finder](https://hyejunshin.github.io/sudoku-graph-theory/) · **Read it:** [the write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/)
 
@@ -35,6 +35,8 @@ Why draw the lines? Because what you learn about one candidate travels along the
 ![An odd loop forces a candidate out, in four steps](writeup/figures/fig10.png)
 
 **5. Even loops keep the colouring.** When the strong links pair up every candidate on an even loop, true and false alternate perfectly, so every link on it has exactly one true end. Anything linked to both ends of such a link can be removed. That is X-Wing, naked pair and hidden pair.
+
+To be exact about the claim: only step 3 uses a bipartite graph as such. Steps 4 and 5 apply the same two-colour fact to single loops in the graph of all links, and that graph is not bipartite. Its odd loops are exactly what step 4 exploits.
 
 The [write-up](https://hyejunshin.github.io/sudoku-graph-theory/writeup/) proves each step, shows where the method stops, and has 24 pictures like these.
 
