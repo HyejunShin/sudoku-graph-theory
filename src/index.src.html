@@ -8,19 +8,19 @@
 <style>
 :root {
   /* layout: board on the left, explanation on the right; one column on phones */
-  --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78;
+  --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #6b3fa0; --soft: #e6dbf7; --soft-line: #b9a1e3; --on-soft: #3b1f66;
   --true: #1b8f4b; --false: #86919d; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
   --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf;
+    --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #c9aef2; --soft: #c9aef2; --soft-line: #c9aef2; --on-soft: #19212a;
     --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf;
+  --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #c9aef2; --soft: #c9aef2; --soft-line: #c9aef2; --on-soft: #19212a;
   --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -50,7 +50,9 @@ select { flex: 1 1 220px; }
 button { font: inherit; font-weight: 500; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: 0.45; cursor: default; }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+/* main buttons are a light purple with dark text, not a solid block */
+button.primary { background: var(--soft); border-color: var(--soft-line); color: var(--on-soft); font-weight: 600; }
+button.primary:hover:not(:disabled) { border-color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .msg { font-size: 13px; color: var(--muted); min-height: 1.4em; }
 .msg.bad { color: var(--out); }
@@ -79,8 +81,8 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 /* The play button is yellow in both themes so it is easy to find; the text stays dark for contrast. */
-#play { background: #fbdc62; border-color: #d9ae1a; color: #18212b; font-weight: 600; }
-#play:hover:not(:disabled) { background: #f6c72a; border-color: #c99700; }
+#play { background: #fdeb9b; border-color: #e0bd3c; color: #18212b; font-weight: 600; }
+#play:hover:not(:disabled) { background: #fbdc62; border-color: #d9ae1a; }
 #play[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #18212b; }
 /* a candidate being removed: it pulses, is struck through, then shrinks away */
 #grid .going, #grid .landing { transform-box: fill-box; transform-origin: center; }
