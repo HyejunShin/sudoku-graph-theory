@@ -1352,9 +1352,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
      The same dots and links as on the board, laid out so that nothing overlaps. A group of candidates that acts as
      one dot is drawn as one dot. Colors and marks are the ones the board shows at the same step. */
   var layouts = new WeakMap();
-  /* Every cell written out, in reading order: a node made of several candidates is named by all of them. */
   function cellsLabel(cells) {
-    return cells.slice().sort(function (a, b) { return a - b; }).map(E.cellName).join(', ');
+    var rows = cells.map(E.ROW), cols = cells.map(E.COL), same = function (a) { return a.every(function (x) { return x === a[0]; }); };
+    if (cells.length === 1) return E.cellName(cells[0]);
+    if (same(rows)) return 'r' + (rows[0] + 1) + 'c' + cols.map(function (c) { return c + 1; }).join('');
+    if (same(cols)) return 'r' + rows.map(function (r) { return r + 1; }).join('') + 'c' + (cols[0] + 1);
+    return cells.map(E.cellName).join(' ');
   }
   function buildGraph(res) {
     var owner = {}, nodes = [], byKey = {};
