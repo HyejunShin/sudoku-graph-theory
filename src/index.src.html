@@ -9,19 +9,19 @@
 :root {
   /* layout: board on the left, explanation on the right; one column on phones */
   --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78; --soft: #d6ecee; --soft-line: #8fc4ca; --on-soft: #0a4a51;
-  --true: #1b8f4b; --false: #2767cf; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
+  --true: #1b8f4b; --false: #d96d14; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
   --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-    --true: #45c680; --false: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+    --true: #45c680; --false: #ffa457; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-  --true: #45c680; --false: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+  --true: #45c680; --false: #ffa457; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -110,7 +110,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
 .dot.t { border-color: var(--true); background: color-mix(in srgb, var(--true) 35%, transparent); }
 .dot.f { border-color: var(--false); background: color-mix(in srgb, var(--false) 35%, transparent); }
-.dot.o { border-color: var(--out); background: color-mix(in srgb, var(--out) 25%, transparent); }
+.dot.o { border-color: var(--out); background: linear-gradient(45deg, transparent 42%, var(--out) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--out) 42% 58%, transparent 58%), color-mix(in srgb, var(--out) 15%, transparent); }
 .dot.n { border-color: var(--muted); background: color-mix(in srgb, var(--muted) 18%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
@@ -287,7 +287,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var bow = Math.min(18, 9 + len * 0.05);
     return '<path d="M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + ((p.x + q.x) / 2 + dy / len * bow).toFixed(1) + ' ' + ((p.y + q.y) / 2 - dx / len * bow).toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" fill="none" ' + style + ' stroke-linecap="round"/>';
   }
-  /* Node colors. Gray: a candidate with no value assumed. Green: assumed true. Blue: assumed false. Red: can be removed.
+  /* Node colors. Gray: a candidate with no value assumed. Green: assumed true. Orange: assumed false. Red with a cross: can be removed.
      A chain of strong edges uses the same colors: one class assumed true, the other assumed false. */
   var NODE_COLORS = { loop: ['var(--muted)', 'var(--muted)', 0.16], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.35], f: ['var(--false)', 'var(--false)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
   NODE_COLORS.k0 = NODE_COLORS.t; NODE_COLORS.k1 = NODE_COLORS.f;
@@ -295,8 +295,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var p = pos(id), map = NODE_COLORS;
     var m = map[kind] || map.loop;
     var out = '<circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="var(--panel)"/><circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="' + m[1] + '" fill-opacity="' + m[2] + '" stroke="' + m[0] + '" stroke-width="2"/>';
+    if (kind === 'elim') out += cross(p.x, p.y, 6.5, 1.8);
     return out;
   }
+  /* A removed candidate: red, with a cross over it. */
+  function cross(x, y, d, w) { return '<path d="M' + (x - d) + ' ' + (y - d) + 'L' + (x + d) + ' ' + (y + d) + 'M' + (x + d) + ' ' + (y - d) + 'L' + (x - d) + ' ' + (y + d) + '" stroke="var(--out)" stroke-width="' + w + '" stroke-linecap="round" fill="none"/>'; }
 
   /* ---------- overlay for the current view ---------- */
   /* Which part of a move is on screen. 'plain': the nodes and edges only, how play starts a move.
@@ -319,7 +322,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var links = '', rings = '', marked = {}; drawn = [];
     if (view.kind === 'result') {
       var res = view.res, step = view.step === null ? null : res.steps[view.step];
-      /* A group is one dot: one blue boundary round its candidates. The boundary is a tube from member to member.
+      /* A group is one dot: one gray boundary round its candidates. The boundary is a tube from member to member.
          Where a candidate that is not in the group lies in the way, the tube bends round it. */
       var outside = res.elim.slice();   // only candidates being removed must stay outside a boundary
       (res.groups || []).forEach(function (g) {
@@ -568,6 +571,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       var c = color[nodeKind(n)] || color.loop, r = n.group ? 21 : 16, out = n.ids.some(function (id) { return going[id]; });
       var body = (n.group ? '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + (r + 4) + '" fill="none" stroke="' + c[0] + '" stroke-width="1.5"/>' : '')
         + '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="var(--panel)"/><circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="' + c[1] + '" fill-opacity="' + c[2] + '" stroke="' + c[0] + '" stroke-width="2.2"/>'
+        + (nodeKind(n) === 'elim' ? cross(n.x, n.y, 11, 2.2) : '')
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
         + (out ? '<line class="strike" x1="' + (n.x - 13) + '" y1="' + (n.y + 13) + '" x2="' + (n.x + 13) + '" y2="' + (n.y - 13) + '" stroke="var(--out)" stroke-width="2.5" stroke-linecap="round"/>' : '');
       s += '<g' + (out ? ' class="going"' : '') + ' data-node="' + n.ids.join(' ') + '">' + body + '</g>'
