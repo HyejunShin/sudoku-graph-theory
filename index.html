@@ -31,6 +31,13 @@ h1 { font-size: 24px; font-weight: 600; margin: 0; text-wrap: balance; }
 h2 { font-size: 16px; font-weight: 600; margin: 0; text-wrap: balance; }
 p { margin: 0; }
 .lede { color: var(--muted); max-width: 65ch; }
+.e-strong, .e-weak { color: var(--ink); font-weight: 400; padding: 0 4px; border-radius: 3px; }
+.e-strong { border: 1.6px solid var(--ink); }
+.e-weak { border: 1.6px dashed var(--muted); }
+.c-true, .c-false { color: var(--ink); padding: 0 3px; border-radius: 3px; }
+.c-true { background: color-mix(in srgb, var(--true) 28%, transparent); }
+.c-false { background: color-mix(in srgb, var(--false) 30%, transparent); }
+.c-out { color: var(--ink); padding: 0 3px; border-radius: 3px; background: color-mix(in srgb, var(--out) 25%, transparent); }
 .more { color: var(--muted); max-width: 65ch; margin: -2px 0 10px; font-size: 14px; }
 .morelink { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -147,9 +154,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
-    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. The edge is <b>strong</b> when exactly one endpoint must be true, and <b>weak</b> when at most one endpoint can be true. A set of candidates can also act as a single node. <button type="button" class="morelink" id="moreBtn" aria-expanded="false" aria-controls="moreText">More</button></p>
+    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. The edge is <span class="e-strong">strong</span> when exactly one endpoint must be true, and <span class="e-weak">weak</span> when at most one endpoint can be true. Multiple candidates are sometimes grouped into a single node. <button type="button" class="morelink" id="moreBtn" aria-expanded="false" aria-controls="moreText">More</button></p>
     <p class="more" id="moreText" hidden>A group node is a set of candidates that is true when just one of them is true, and false when all of them are false. A candidate adjacent to every member is adjacent to the group. The edge is strong when exactly one endpoint must be true.</p>
-    <p class="lede">Assume one candidate is true and color the graph in two colors, true and false. A true node makes all its neighbors false. A false node makes its strong neighbors true. If two connected nodes end up both true, the initial assumption was false. Remove nodes that were falsely assumed to be true.</p>
+    <p class="lede">Assume one candidate is true and color the graph in two colors, <span class="c-true">true</span> and <span class="c-false">false</span>. A true node makes all its neighbors false. A false node makes its strong neighbors true. If two connected nodes end up both true, the initial assumption was false. <span class="c-out">Remove</span> nodes that were falsely assumed to be true, or that are false in every coloring.</p>
     <p class="lede">Press <b>Play</b> to solve the puzzle.</p>
   </header>
 
@@ -158,7 +165,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       <label for="sample">Example</label>
       <select id="sample"></select>
       <button id="rand" type="button">Random</button>
-      <button id="randEasy" type="button">Random (single cells only)</button>
+      <button id="randEasy" type="button" title="Finished by single candidate cells alone">Random easy</button>
     </div>
     <div class="row">
       <label for="puzzle">Your own puzzle</label>

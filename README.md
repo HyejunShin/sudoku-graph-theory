@@ -61,7 +61,7 @@ In 2,500 random puzzles, about half were finished by single candidate cells alon
 - Pick an example, press **Random**, or paste 81 characters (row by row, `.` or `0` for empty cells). Only proper sudokus load: one solution, no repeated digit.
 - **Play** solves the puzzle step by step. Pick a speed, or *Moves only* to skip the reasoning. Click the board to pause.
 - **Choose a technique** to see one move: the steps beside it, the board marking true and false, and the **Graph of this move**. Click a step, or use the arrow keys. **Apply** carries the move out.
-- **Skip single candidate cells** fills cells with only one option left. Switch it off, or press **Random (single cells only)**, to watch them one by one.
+- **Skip single candidate cells** fills cells with only one option left. Switch it off, or press **Random easy**, to watch them one by one.
 - Click a candidate to see its edges, or pick a digit to see its strong edges, each chain colored assumed true and assumed false.
 
 Open `index.html` directly; it needs no server.

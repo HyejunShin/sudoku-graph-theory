@@ -246,7 +246,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
   loadSample(4);
   if (!auto.checked || easyBtn()) throw new Error('automatic filling should be on by default, with no Easy cell button');
-  const againEasy = $('randEasy'); if (againEasy.textContent !== 'Random (single cells only)') throw new Error('no Random (single cells only) button');
+  const againEasy = $('randEasy'); if (againEasy.textContent !== 'Random easy') throw new Error('no Random easy button');
   click(againEasy);
   if (auto.checked) throw new Error('an easy puzzle should switch automatic filling off');
   const ep = $('puzzle').value, givens = ep.replace(/\./g, '').length;
