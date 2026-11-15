@@ -142,16 +142,22 @@
     }
     if (!elim.size) return null;
     res.elim = [...elim]; res.elim.forEach(t => res.nodes.set(t, 'elim'));
-    // every removed candidate gets one dashed link, to the nearer end of the loop link it is linked to (it is linked to both ends)
-    for (const x of res.elim) for (let i = 0; i < n; i++) { const a = loop[i], b = loop[(i + 1) % n]; if (linked(x, a) && linked(x, b)) { const far = c => Math.abs(ROW(cCell(x)) - ROW(cCell(c))) + Math.abs(COL(cCell(x)) - COL(cCell(c))); res.links.push({ a: x, b: far(a) <= far(b) ? a : b, strong: false }); break; } }
+    // every removed candidate is drawn with its edges to both endpoints of the cycle edge it is adjacent to: that pair is the reason it goes
+    const why = new Map();
+    for (const x of res.elim) for (let i = 0; i < n; i++) { const a = loop[i], b = loop[(i + 1) % n]; if (linked(x, a) && linked(x, b)) { res.links.push({ a: x, b: a, strong: false }); res.links.push({ a: x, b: b, strong: false }); why.set(x, [a, b]); break; } }
     const pat = k => { const m = {}; loop.forEach((c, i) => { m[c] = i % 2 === k ? 't' : 'f'; }); res.elim.forEach(c => { m[c] = 'f'; }); return m; };
     if (intro) say(res, intro);
     say(res, 'The ' + n + ' circled candidates form a cycle. Its ' + (n / 2) + ' strong edges form a perfect matching of them, so exactly ' + (n / 2) + ' of them are true.');
     say(res, 'True candidates are never adjacent, so true and false alternate round the cycle. Only two patterns do that.');
     say(res, 'Pattern A: assume ' + list(loop.filter((_, i) => i % 2 === 0)) + ' are true.', pat(0));
     say(res, 'Pattern B: assume ' + list(loop.filter((_, i) => i % 2 === 1)) + ' are true.', pat(1));
-    say(res, 'In both patterns every dashed edge has exactly one true endpoint. A candidate adjacent to both endpoints of a dashed edge is therefore false.');
-    say(res, 'That removes: ' + list(res.elim) + '.');
+    say(res, 'In both patterns every dashed edge has exactly one true endpoint.');
+    const byEdge = new Map();
+    for (const x of res.elim) { const [a, b] = why.get(x), k = a + ',' + b; if (!byEdge.has(k)) byEdge.set(k, [a, b, []]); byEdge.get(k)[2].push(x); }
+    for (const [a, b, xs] of byEdge.values()) {
+      const m = {}; xs.forEach(x => { m[x] = 'elim'; });
+      say(res, list(xs) + (xs.length > 1 ? ' are' : ' is') + ' adjacent to both endpoints of the edge ' + candName(a) + ' \u2013 ' + candName(b) + '. One endpoint is true, so ' + (xs.length > 1 ? 'they are' : 'it is') + ' false and removed.', m);
+    }
     return res;
   }
 
@@ -451,7 +457,7 @@
         if (bits(m) !== k) continue;
         const elim = []; for (const c of cells) if (!cs.includes(c)) for (const d of digits(st.cand[c] & m)) elim.push(cid(c, d));
         if (!elim.length) continue;
-        const res = mkResult('Naked ' + word, 'Theorem 7.5, the sets rule: ' + k + ' cells need ' + k + ' digits');
+        const res = mkResult('Naked ' + word, 'Theorem 7.5: ' + k + ' cells need ' + k + ' digits');
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: cs.includes(c) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each cell takes one digit', cellName, d => String(d), ed, cs, digits(m)); }
@@ -467,7 +473,7 @@
         if (where.length !== k) continue;
         const elim = []; for (const c of where) for (const d of digits(st.cand[c])) if (!dd.includes(d)) elim.push(cid(c, d));
         if (!elim.length) continue;
-        const res = mkResult('Hidden ' + word, 'Theorem 7.5, the sets rule: ' + k + ' digits need ' + k + ' cells');
+        const res = mkResult('Hidden ' + word, 'Theorem 7.5: ' + k + ' digits need ' + k + ' cells');
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: where.includes(c) && dd.includes(d) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each digit takes one cell', cellName, d => String(d), ed, where, dd); }
@@ -494,7 +500,7 @@
         for (const x of cv) for (const c of UNITS[cover + x]) if (!bi.includes(baseOf(c)) && has(st, c, d)) elim.push(cid(c, d));
         const key = elim.join(','); if (!elim.length || seen.has(key)) continue; seen.add(key);
         const num = k === 3 ? 'three' : 'four';
-        const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5, the sets rule: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
+        const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
         res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
         res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
@@ -522,7 +528,7 @@
         const z = digits(st.cand[w1] & st.cand[w2])[0], x = digits(st.cand[w1] & ~(1 << z))[0], y = digits(st.cand[w2] & ~(1 << z))[0];
         const elim = []; for (let c = 0; c < 81; c++) if (c !== p && c !== w1 && c !== w2 && has(st, c, z) && sees(c, p) && sees(c, w1) && sees(c, w2)) elim.push(cid(c, z));
         if (!elim.length) continue;
-        const res = mkResult('XYZ-Wing', 'Lemma 7.6 and Theorem 5.2: a triangle whose edge is counted');
+        const res = mkResult('XYZ-Wing', 'Lemma 7.6 and Theorem 5.2: a triangle');
         // the group dot is the z of the pivot together with the z of one wing; the wing in line with the pivot draws best
         const inLine = w => ROW(w) === ROW(p) || COL(w) === COL(p);
         // ...but not if a removed candidate would sit inside the outline drawn round the two
@@ -540,7 +546,7 @@
         say(res, 'If the outlined node is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So at least one of the outlined node and ' + candName(zo) + ' is true (solid line).');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
         marks[zp] = 'f'; marks[zg] = 'f'; say(res, 'Then the outlined node is false: ' + cellName(cCell(v)) + ' is adjacent to both of its cells.', snap());
-        marks[zo] = 't'; say(res, 'Then ' + candName(zo) + ' is true, by the counted edge.', snap());
+        marks[zo] = 't'; say(res, 'Then ' + candName(zo) + ' is true (solid line).', snap());
         say(res, 'But ' + candName(zo) + ' and ' + candName(v) + ' cannot both be true: ' + linkWhy(zo, v) + '. Contradiction, so ' + candName(v) + ' is false.', snap(), [zo, v]);
         if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
         out.push(res);
@@ -738,7 +744,7 @@
           const key = elim.join(','); if (seen.has(key)) continue; seen.add(key);
           const v = elim[0], line = coverOf(cCell(v)), dot = all.filter(c => coverOf(c) === line).map(c => cid(c, d)), F = fins.map(c => cid(c, d));
           if (!dot.length) continue;
-          const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a fish with a counted edge'), marks = {}, snap = () => Object.assign({}, marks);
+          const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a fish with a fin'), marks = {}, snap = () => Object.assign({}, marks);
           all.forEach(c => res.nodes.set(cid(c, d), 'loop')); F.concat(dot).forEach(id => res.nodes.set(id, 'loop')); res.groups = [F, dot];
           elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
           res.links.push({ a: F[0], b: dot[0], strong: true, group: true });
@@ -748,7 +754,7 @@
           say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).sort().join(', ') + ', except for the fin: ' + list(F) + ', in box ' + (box + 1) + '.');
           say(res, 'The fin is one node (outlined). The ' + d + 's of these ' + bn + ' in ' + one + ' ' + (line + 1) + ' are another. If the fin is false, this is a plain fish and the count proves the second node true. So at least one of the two is true (solid line).');
           marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
-          F.concat(dot).forEach(id => { marks[id] = 'f'; }); say(res, 'It shares box ' + (box + 1) + ' with the fin and ' + one + ' ' + (line + 1) + ' with the other node, so both are false. That breaks the counted edge. Contradiction, so ' + candName(v) + ' is false.', snap());
+          F.concat(dot).forEach(id => { marks[id] = 'f'; }); say(res, 'It shares box ' + (box + 1) + ' with the fin and ' + one + ' ' + (line + 1) + ' with the other node, so both are false. But at least one of the two is true. Contradiction, so ' + candName(v) + ' is false.', snap());
           if (elim.length > 1) say(res, 'The same argument, with the node of its own ' + one + ', removes: ' + list(elim.slice(1)) + '.');
           out.push(res);
         }
@@ -837,11 +843,11 @@
     { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd cycle with alternating strong edges.' },
     { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one node', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
     { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one node: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd cycle of one digit in which a node may be a group of cells.'},
-    { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle with a counted edge', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
+    { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
     /* Beyond links. These are tried only after every loop and coloring above has failed. */
     { key: 'subset', used: 11, name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
     { key: 'fish', used: 0, name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
-    { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a counted edge', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
+    { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a fin', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
     { key: 'als', used: 81, name: 'Almost-locked sets', loop: 'ALS-XZ, WXYZ-Wing, ALS chain, Sue de Coq', find: findALS, blurb: 'Two sets of cells with one digit too many, joined by a shared digit.', beyond: true, section: 'count', late: true },
     { key: 'ur', used: 1, name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
     { key: 'guess', used: 0, name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the single candidate cells to a contradiction.', beyond: true, section: 'last', lastResort: true }

@@ -407,7 +407,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   function scan() { avail = {}; var any = false; E.TECHNIQUES.forEach(function (t) { avail[t.key] = E.solved(st) || ((t.lastResort || t.late) && any) ? [] : t.find(st); if (avail[t.key].length) any = true; }); }
   function drawTechs() {
     var h = '';
-    var section = '', heads = { count: 'Counting across sets (the sets rule): used when no cycle or coloring applies', unique: 'Outside the coloring: needs the one-solution fact, or a guess as the last resort', last: null };
+    var section = '', heads = { count: 'Counting over constraint sets (Theorem 7.5): used when no cycle or coloring applies', unique: 'Outside the coloring: needs the one-solution fact, or a guess as the last resort', last: null };
     /* shown by section, and inside a section from most used to least; the order they are tried in stays simplest first */
     var rankSec = { count: 1, unique: 2, last: 3 }, shown = E.TECHNIQUES.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
       return (a.t.easy ? -1 : rankSec[a.t.section] || 0) - (b.t.easy ? -1 : rankSec[b.t.section] || 0) || (b.t.used || 0) - (a.t.used || 0) || a.i - b.i; }).map(function (x) { return x.t; });
