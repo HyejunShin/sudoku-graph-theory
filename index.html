@@ -31,6 +31,8 @@ h1 { font-size: 24px; font-weight: 600; margin: 0; text-wrap: balance; }
 h2 { font-size: 16px; font-weight: 600; margin: 0; text-wrap: balance; }
 p { margin: 0; }
 .lede { color: var(--muted); max-width: 65ch; }
+.more { color: var(--muted); max-width: 65ch; margin: -2px 0 10px; font-size: 14px; }
+.morelink { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); } }
@@ -115,6 +117,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.o { border-color: var(--out); background: linear-gradient(45deg, transparent 42%, var(--out) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--out) 42% 58%, transparent 58%), color-mix(in srgb, var(--out) 15%, transparent); }
 .dot.m { border-color: var(--must); background: color-mix(in srgb, var(--must) 35%, transparent); }
 .dot.n { border-color: var(--muted); background: color-mix(in srgb, var(--muted) 18%, transparent); }
+.dot.g { width: 10px; height: 10px; margin: 0 2px; box-shadow: 0 0 0 1.5px var(--paper), 0 0 0 3px var(--muted); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
 label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -144,7 +147,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 <div class="wrap">
   <header class="stack" style="gap:6px">
     <h1>Solving Sudoku Using Graph Coloring</h1>
-    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. The edge is <b>strong</b> when exactly one of them must be true, and <b>weak</b> when at most one can be.</p>
+    <p class="lede">Each candidate is a node. Two candidates that can't both be true are joined by an edge. The edge is <b>strong</b> when exactly one endpoint must be true, and <b>weak</b> when at most one endpoint can be true. A set of candidates can also act as a single node. <button type="button" class="morelink" id="moreBtn" aria-expanded="false" aria-controls="moreText">More</button></p>
+    <p class="more" id="moreText" hidden>A group node is a set of candidates that is true when just one of them is true, and false when all of them are false. A candidate adjacent to every member is adjacent to the group. The edge is strong when exactly one endpoint must be true.</p>
     <p class="lede">Assume one candidate is true and color the graph in two colors, true and false. A true node makes all its neighbors false. A false node makes its strong neighbors true. If two connected nodes end up both true, the initial assumption was false. Remove nodes that were falsely assumed to be true.</p>
     <p class="lede">Press <b>Play</b> to solve the puzzle.</p>
   </header>
@@ -170,6 +174,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         <span><i class="sw weak"></i>weak edge: at most one endpoint true</span>
         <i class="br" aria-hidden="true"></i>
         <span><i class="dot n"></i>candidate</span>
+        <span><i class="dot n g"></i>group</span>
         <span><i class="dot t"></i>assumed true</span>
         <span><i class="dot f"></i>assumed false</span>
         <span><i class="dot m"></i>true</span>
@@ -1524,7 +1529,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (view.kind === 'result') {
       var res = view.res, total = avail[view.tech] ? avail[view.tech].length : 1;
       $('tname').textContent = res.tech + (total > 1 ? ' (' + (view.index + 1) + ' of ' + total + ', click again for the next)' : '');
-      $('theorem').textContent = res.theorem + (playing ? '. Playing: click the board to pause.' : '. Click a step to follow the argument, or use the arrow keys.');
+      $('theorem').textContent = res.theorem + (playing ? '. Playing: click the board to pause.' : '.');
       ol.innerHTML = res.steps.map(function (sp, i) { return '<li data-i="' + i + '"' + (view.step === i ? ' class="on"' : '') + '>' + sp.text + '</li>'; }).join('');
       nav.hidden = false;
     } else if (view.kind === 'probe') {
@@ -1639,6 +1644,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   }
 
   /* ---------- wiring ---------- */
+  $('moreBtn').addEventListener('click', function () { var t = $('moreText'), open = t.hidden; t.hidden = !open; this.textContent = open ? 'Less' : 'More'; this.setAttribute('aria-expanded', String(open)); });
   /* The list holds only fixed puzzles. A random puzzle shows as "Random puzzle" in it, an entry that cannot be picked. */
   $('sample').innerHTML = '<option value="" disabled hidden>Random puzzle</option>' + SAMPLES.map(function (sm, i) { return '<option value="' + i + '">' + sm.name + '</option>'; }).join('');
   function setAuto(on) { autoFill = on; $('autofill').checked = on; }
