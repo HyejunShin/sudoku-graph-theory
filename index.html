@@ -1460,7 +1460,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   }
   function drawGraph() {
     var svg = $('graph'), card = $('graphcard');
-    if (view.kind !== 'result') { svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = '<text x="260" y="150" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--muted)">Click a technique to see its graph.</text>'; return; }
+    if (view.kind !== 'result') { svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = ''; return; }
     if (view.res.matching) { drawMatching(view.res); return; }
     var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
     var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
