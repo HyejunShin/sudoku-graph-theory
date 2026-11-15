@@ -438,12 +438,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
      The same dots and links as on the board, laid out so that nothing overlaps. A group of candidates that acts as
      one dot is drawn as one dot. Colors and marks are the ones the board shows at the same step. */
   var layouts = new WeakMap();
+  /* Every cell written out, in reading order: a node made of several candidates is named by all of them. */
   function cellsLabel(cells) {
-    var rows = cells.map(E.ROW), cols = cells.map(E.COL), same = function (a) { return a.every(function (x) { return x === a[0]; }); };
-    if (cells.length === 1) return E.cellName(cells[0]);
-    if (same(rows)) return 'r' + (rows[0] + 1) + 'c' + cols.map(function (c) { return c + 1; }).join('');
-    if (same(cols)) return 'r' + rows.map(function (r) { return r + 1; }).join('') + 'c' + (cols[0] + 1);
-    return cells.map(E.cellName).join(' ');
+    return cells.slice().sort(function (a, b) { return a - b; }).map(E.cellName).join(', ');
   }
   function buildGraph(res) {
     var owner = {}, nodes = [], byKey = {};
@@ -590,9 +587,18 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
         + (out ? '<line class="strike" x1="' + (n.x - 13) + '" y1="' + (n.y + 13) + '" x2="' + (n.x + 13) + '" y2="' + (n.y - 13) + '" stroke="var(--out)" stroke-width="2.5" stroke-linecap="round"/>' : '');
       s += '<g' + (out ? ' class="going"' : '') + ' data-node="' + n.ids.join(' ') + '">' + body + '</g>'
-        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one node' : '') + '</text>';
+        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)" stroke="var(--panel)" stroke-width="4" stroke-linejoin="round" paint-order="stroke">' + n.small + '</text>';
     });
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
+    /* Each almost-locked set: a dashed box round its nodes, labelled with all of its cells. */
+    (res.sets || []).forEach(function (S) {
+      var inside = g.nodes.filter(function (n) { return n.ids.every(function (id) { return S.cs.indexOf(E.cCell(id)) >= 0; }); });
+      if (!inside.length) return;
+      var x0 = Math.min.apply(null, inside.map(function (n) { return n.x; })) - 34, x1 = Math.max.apply(null, inside.map(function (n) { return n.x; })) + 34;
+      var y0 = Math.min.apply(null, inside.map(function (n) { return n.y; })) - 30, y1 = Math.max.apply(null, inside.map(function (n) { return n.y; })) + 40;
+      s = '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '" rx="14" fill="var(--muted)" fill-opacity="0.06" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="6 5"/>'
+        + '<text x="' + ((x0 + x1) / 2).toFixed(1) + '" y="' + (y1 + 15).toFixed(1) + '" text-anchor="middle" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--muted)" stroke="var(--panel)" stroke-width="4" stroke-linejoin="round" paint-order="stroke">set ' + S.label + ': ' + cellsLabel(S.cs) + '</text>' + s;
+    });
     svg.setAttribute('viewBox', '0 0 520 ' + g.H);
     svg.innerHTML = s;
   }

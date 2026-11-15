@@ -638,7 +638,7 @@
     const outsideSeeing = (cellsIn, d, sets3) => { const e = []; for (let c = 0; c < 81; c++) if (has(st, c, d) && !sets3.some(S => S.cs.includes(c)) && cellsIn.every(q => sees(c, q))) e.push(cid(c, d)); return e; };
     const nearest = (X, Y) => { let best = null; for (const a of X) for (const b of Y) { const dist = Math.abs(ROW(cCell(a)) - ROW(cCell(b))) + Math.abs(COL(cCell(a)) - COL(cCell(b))) + Math.abs(cDig(a) - cDig(b)) * 0.1; if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
     const describe = (S, name) => 'Set ' + name + ': ' + cellList(S.cs) + ' hold' + (S.cs.length === 1 ? 's' : '') + ' ' + (S.cs.length + 1) + ' digits in ' + S.cs.length + (S.cs.length === 1 ? ' cell' : ' cells');
-    const start = (name, theorem, used) => { const res = mkResult(name, theorem); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
+    const start = (name, theorem, used) => { const res = mkResult(name, theorem); res.sets = used.map((S, i) => ({ label: 'ABC'.charAt(i), cs: S.cs.slice() })); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
     const finish = (res, elim) => {
       elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
       // every removed candidate gets a dashed edge to every node it is adjacent to as a whole: those nodes are why it goes

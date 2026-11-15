@@ -862,7 +862,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     const outsideSeeing = (cellsIn, d, sets3) => { const e = []; for (let c = 0; c < 81; c++) if (has(st, c, d) && !sets3.some(S => S.cs.includes(c)) && cellsIn.every(q => sees(c, q))) e.push(cid(c, d)); return e; };
     const nearest = (X, Y) => { let best = null; for (const a of X) for (const b of Y) { const dist = Math.abs(ROW(cCell(a)) - ROW(cCell(b))) + Math.abs(COL(cCell(a)) - COL(cCell(b))) + Math.abs(cDig(a) - cDig(b)) * 0.1; if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
     const describe = (S, name) => 'Set ' + name + ': ' + cellList(S.cs) + ' hold' + (S.cs.length === 1 ? 's' : '') + ' ' + (S.cs.length + 1) + ' digits in ' + S.cs.length + (S.cs.length === 1 ? ' cell' : ' cells');
-    const start = (name, theorem, used) => { const res = mkResult(name, theorem); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
+    const start = (name, theorem, used) => { const res = mkResult(name, theorem); res.sets = used.map((S, i) => ({ label: 'ABC'.charAt(i), cs: S.cs.slice() })); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
     const finish = (res, elim) => {
       elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
       // every removed candidate gets a dashed edge to every node it is adjacent to as a whole: those nodes are why it goes
@@ -1352,12 +1352,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
      The same dots and links as on the board, laid out so that nothing overlaps. A group of candidates that acts as
      one dot is drawn as one dot. Colors and marks are the ones the board shows at the same step. */
   var layouts = new WeakMap();
+  /* Every cell written out, in reading order: a node made of several candidates is named by all of them. */
   function cellsLabel(cells) {
-    var rows = cells.map(E.ROW), cols = cells.map(E.COL), same = function (a) { return a.every(function (x) { return x === a[0]; }); };
-    if (cells.length === 1) return E.cellName(cells[0]);
-    if (same(rows)) return 'r' + (rows[0] + 1) + 'c' + cols.map(function (c) { return c + 1; }).join('');
-    if (same(cols)) return 'r' + rows.map(function (r) { return r + 1; }).join('') + 'c' + (cols[0] + 1);
-    return cells.map(E.cellName).join(' ');
+    return cells.slice().sort(function (a, b) { return a - b; }).map(E.cellName).join(', ');
   }
   function buildGraph(res) {
     var owner = {}, nodes = [], byKey = {};
@@ -1504,9 +1501,18 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
         + (out ? '<line class="strike" x1="' + (n.x - 13) + '" y1="' + (n.y + 13) + '" x2="' + (n.x + 13) + '" y2="' + (n.y - 13) + '" stroke="var(--out)" stroke-width="2.5" stroke-linecap="round"/>' : '');
       s += '<g' + (out ? ' class="going"' : '') + ' data-node="' + n.ids.join(' ') + '">' + body + '</g>'
-        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">' + n.small + (n.group ? ' · one node' : '') + '</text>';
+        + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + r + (n.group ? 18 : 14)).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)" stroke="var(--panel)" stroke-width="4" stroke-linejoin="round" paint-order="stroke">' + n.small + '</text>';
     });
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
+    /* Each almost-locked set: a dashed box round its nodes, labelled with all of its cells. */
+    (res.sets || []).forEach(function (S) {
+      var inside = g.nodes.filter(function (n) { return n.ids.every(function (id) { return S.cs.indexOf(E.cCell(id)) >= 0; }); });
+      if (!inside.length) return;
+      var x0 = Math.min.apply(null, inside.map(function (n) { return n.x; })) - 34, x1 = Math.max.apply(null, inside.map(function (n) { return n.x; })) + 34;
+      var y0 = Math.min.apply(null, inside.map(function (n) { return n.y; })) - 30, y1 = Math.max.apply(null, inside.map(function (n) { return n.y; })) + 40;
+      s = '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '" rx="14" fill="var(--muted)" fill-opacity="0.06" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="6 5"/>'
+        + '<text x="' + ((x0 + x1) / 2).toFixed(1) + '" y="' + (y1 + 15).toFixed(1) + '" text-anchor="middle" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--muted)" stroke="var(--panel)" stroke-width="4" stroke-linejoin="round" paint-order="stroke">set ' + S.label + ': ' + cellsLabel(S.cs) + '</text>' + s;
+    });
     svg.setAttribute('viewBox', '0 0 520 ' + g.H);
     svg.innerHTML = s;
   }
