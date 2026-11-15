@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why Advanced Sudoku Strategies Work</title>
+<title>Sudoku Strategies as Graph Coloring</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <style>
 :root { --paper: #f6f7f9; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #d3dae1; --accent: #0d6e78; }
@@ -31,216 +31,456 @@ code { font-size: 0.92em; }
 <body>
 <main>
 <nav><a href="../index.html">Open Solving Sudoku Using Graph Coloring</a></nav>
-<h1 id="why-advanced-sudoku-strategies-work-one-graph-theory-rule-behind-x-wing-x-cycle-and-coloring">Why Advanced Sudoku Strategies Work: One Graph-Theory Rule Behind X-Wing, X-Cycle and Coloring</h1>
-<p>2026-11-14 · Hyejun Shin</p>
-<p><strong>What this is.</strong> Advanced sudoku strategies have names like X-Wing, XY-Wing, Skyscraper and Simple Coloring. They are usually memorized as separate tricks. This write-up shows they are one idea, and proves it step by step.</p>
-<p><strong>The idea.</strong> Treat each candidate (a digit that could still go in a cell) as a node. Join two nodes when the rules forbid both from being true. One counting rule about loops of nodes then explains every strategy on the list.</p>
-<p><strong>How to read it.</strong> Steps 1 to 4 build the idea with pictures. Step 5 walks through more than a dozen named strategies. Step 6 shows where the idea stops working. No maths background is assumed, and each claim comes with a short &quot;why&quot;.</p>
-<p><strong>Try it.</strong> The companion page <a href="../index.html">Solving Sudoku Using Graph Coloring</a> finds these loops in real puzzles and walks through each one, step by step.</p>
-<h2 id="1-the-idea-in-one-minute">1. The idea in one minute</h2>
-<ol><li><p>A <em>candidate</em> is one digit in one cell: a digit that could still go there.</p></li><li><p>Two candidates are <em>adjacent</em> if the rules say they cannot both be true. Two 5s in one row are adjacent. So are two digits in one cell.</p></li><li><p>An edge is <em>strong</em> if exactly one of the two must be true. That happens when a cell has only two candidates left, or a digit has only two places left in a row, column or box.</p></li><li><p>Draw the candidates as nodes and the edges as lines. A solution marks each node true or false.</p></li><li><p><strong>The counting rule.</strong> Go round any loop of k nodes. The edges with both ends false number k minus twice the true nodes. So an odd loop always has such an edge, and it is never a strong one.</p></li></ol>
-<p>Everything else follows from point 5.</p>
-<ul><li><p>Strong edges alone can always be 2-colored, true against false (Theorem 5.1).</p></li><li><p>An odd loop with enough strong edges forces one candidate to be false (Theorem 5.2) or true (Theorem 5.3).</p></li><li><p>An even loop with enough strong edges turns each of its edges into an either-or (Theorem 5.4).</p></li></ul>
-<p>None of the strategies is new, and Section 8 says who found them. What is here is one short proof for all of them. This write-up grew out of an earlier essay of mine.</p>
-<h2 id="2-step-1-graphs-and-two-colors">2. Step 1: Graphs and two colors</h2>
-<p>A <em>graph</em> is a set of nodes (<em>nodes</em>) with lines (<em>edges</em>) joining some pairs. Two nodes joined by an edge are <em>adjacent</em>, or <em>neighbors</em>. All our graphs are finite, and no edge joins a node to itself.</p>
-<ul><li><p>A <em>path</em> of length n is a row of n + 1 different nodes, each adjacent to the next.</p></li><li><p>A <em>cycle</em> of length k ≥ 3 is k different nodes v1, ..., vk in a ring: each is adjacent to the next, and vk to v1. It is <em>odd</em> or <em>even</em> as k is.</p></li><li><p>A graph is <em>connected</em> if a path joins any two nodes. Its connected pieces are its <em>components</em>. The <em>distance</em> d(u, v) is the length of a shortest path from u to v.</p></li><li><p>A <em>2-coloring</em> gives each node color 0 or 1 so that the two ends of every edge differ.</p></li><li><p>A graph is <em>bipartite</em> if its nodes split into two groups X and Y with every edge running between the groups. That is the same as having a 2-coloring: X is color 0 and Y is color 1.</p></li></ul>
+<h1>Sudoku Strategies as Graph Coloring</h1>
+<p>2026-11-15 · Hyejun Shin</p>
+<p>This write-up shows that common sudoku strategies (X-Wing, XY-Wing, Skyscraper, Simple Coloring and others) follow from Lemma 4.1, a counting identity for cycles in a graph whose nodes are the candidates. Sections 2 to 5 give the definitions and proofs. Section 6 applies them to each strategy. Section 7 covers what the lemma does not reach and how it extends. The solver page <a href="../index.html">Solving Sudoku Using Graph Coloring</a> applies the same rules to real puzzles.</p>
+<h2 id="1-summary">1. Summary</h2>
+<ol type="1">
+<li><p>A <em>candidate</em> is a triple (r, c, d), the proposition that the cell in row r and column c contains digit d. The candidates that have not been eliminated form a set P.</p></li>
+<li><p>Two candidates are <em>adjacent</em>, joined by an <em>edge</em>, if they cannot both be true: two digits in one cell, or one digit in two cells of the same row, column or box. A <em>solution</em> assigns true to exactly one candidate of each cell, and of each digit in each row, column and box, and false to the others.</p></li>
+<li><p>An edge uv is <em>strong</em> if a cell has only the candidates u and v, or a digit has only the places u and v in a row, column or box. Then exactly one of u and v is true. Every other edge is <em>weak</em>; at most one of its endpoints is true.</p></li>
+<li><p><strong>Lemma 4.1.</strong> Let C be a cycle of k candidates, t of them true. The number of edges of C with both endpoints false is k − 2t. So an odd cycle has at least one edge with both endpoints false, and that edge is weak.</p></li>
+</ol>
+<p>The results:</p>
+<ul>
+<li><p>The strong edges can be 2-colored, true and false (Theorem 5.1).</p></li>
+<li><p>If the strong edges of an odd cycle contain a perfect matching of all its candidates but one, that candidate is false (Theorem 5.2). A similar condition makes a candidate true (Theorem 5.3).</p></li>
+<li><p>If the strong edges of an even cycle contain a perfect matching of the cycle, every edge of the cycle has exactly one true endpoint (Theorem 5.4).</p></li>
+</ul>
+<p>The strategies are not new; Section 8 lists sources. This write-up gives one proof for all of them.</p>
+<h2 id="2-graphs-and-2-colorings">2. Graphs and 2-colorings</h2>
+<p>A <em>graph</em> is a set of nodes with edges joining some pairs. Two nodes joined by an edge are <em>adjacent</em>, or <em>neighbors</em>. All graphs here are finite, and no edge joins a node to itself.</p>
+<ul>
+<li><p>A <em>path</em> of length n is a sequence of n + 1 different nodes, each adjacent to the next.</p></li>
+<li><p>A <em>cycle</em> of length k ≥ 3 is k different nodes v1, ..., vk in which each is adjacent to the next, and vk is adjacent to v1. It is <em>odd</em> or <em>even</em> as k is.</p></li>
+<li><p>A graph is <em>connected</em> if a path joins any two nodes. Its connected parts are its <em>components</em>. The <em>distance</em> d(u, v) is the length of a shortest path from u to v.</p></li>
+<li><p>A <em>2-coloring</em> gives each node color 0 or 1 so that the two endpoints of every edge differ.</p></li>
+<li><p>A graph is <em>bipartite</em> if its nodes split into two sets X and Y with every edge between the sets. This is the same as having a 2-coloring: X is color 0 and Y is color 1.</p></li>
+</ul>
 <figure><img src="figures/fig01.png" alt="paths, bipartite graphs, even and odd cycles" loading="lazy"><figcaption>Figure 1. paths, bipartite graphs, even and odd cycles</figcaption></figure>
-<p>Round a cycle the colors must alternate. That works only when the number of nodes is even. In the odd cycle above, the gray node has a neighbor of each color, so no color is left for it.</p>
-<p><strong>Theorem 2.1 (König).</strong> A graph is bipartite exactly when it has no odd cycle.</p>
-<p><em>Why, first half.</em> Suppose a 2-coloring exists and v1, ..., vk is a cycle. Neighbors differ, so vi has the color of v1 exactly when i is odd. But vk is adjacent to v1, so their colors differ, and k is even.</p>
-<p><em>Why, second half.</em> Suppose there is no odd cycle. No edge joins two components, so we can color one component at a time. Assume the graph is connected and fix a node r. We need two facts about distances from r.</p>
-<ul><li><p>(D1) Adjacent nodes have distances from r that differ by at most 1.</p></li><li><p>(D2) On a shortest path from r, the node in position i is at distance exactly i.</p></li></ul>
-<p>Both rest on one remark. A <em>walk</em> is like a path but may repeat nodes. A walk of length n from x to y shows d(x, y) ≤ n: keep cutting out the stretch between two visits to the same node until none repeats.</p>
-<p>For (D1), a shortest path to u followed by v is a walk of length d(r, u) + 1, so d(r, v) ≤ d(r, u) + 1. Swap u and v for the other direction. For (D2), the first i steps form a path, so the distance is at most i. A shorter route to that node, followed by the rest of the path, would be a walk to the end that beats a shortest path.</p>
-<p>Now the proof itself.</p>
-<ol><li><p>Color each node by its distance from r: even distance color 0, odd distance color 1.</p></li><li><p>Suppose some edge uv has both ends the same color. By (D1) their distances differ by at most 1. They have the same parity, so they are equal. Call the distance n.</p></li><li><p>Take shortest paths A from r to u and B from r to v. Let w be the last node of A that is also on B, at distance j. By (D2), w is in position j on both paths.</p></li><li><p>If w were u, then u would sit on B at distance n, which is where B ends. So u = v, impossible for the two ends of an edge. Likewise w is not v. So j &lt; n.</p></li><li><p>Below w the two paths each have n − j ≥ 1 edges and share no node. With the edge uv they form a cycle of 2(n − j) + 1 edges. That is odd, against our assumption.</p></li></ol>
-<p>So no edge fails, and the coloring works. ∎</p>
+
+<p>Around a cycle the colors alternate, which requires an even number of nodes. In the odd cycle in Figure 1, the gray node has a neighbor of each color.</p>
+<p><strong>Theorem 2.1 (König).</strong> A graph is bipartite if and only if it has no odd cycle.</p>
+<p><em>Proof, first half.</em> Suppose a 2-coloring exists and v1, ..., vk is a cycle. Neighbors differ, so vi has the color of v1 exactly when i is odd. Since vk is adjacent to v1, their colors differ, so k is even.</p>
+<p><em>Proof, second half.</em> Suppose there is no odd cycle. No edge joins two components, so each component can be colored separately. Assume the graph is connected and fix a node r. Two facts about distances from r are needed.</p>
+<ul>
+<li><p>(D1) Adjacent nodes have distances from r that differ by at most 1.</p></li>
+<li><p>(D2) On a shortest path from r, the node in position i is at distance i.</p></li>
+</ul>
+<p>Both use this: a <em>walk</em> is like a path but may repeat nodes, and a walk of length n from x to y shows d(x, y) ≤ n, because removing the part between two visits to the same node, until no node repeats, gives a path no longer than the walk.</p>
+<p>For (D1), a shortest path to u followed by v is a walk of length d(r, u) + 1, so d(r, v) ≤ d(r, u) + 1. Swapping u and v gives the other direction. For (D2), the first i steps form a path, so the distance is at most i. A shorter path to that node, followed by the rest of the path, would be a walk to the end shorter than a shortest path.</p>
+<ol type="1">
+<li><p>Color each node by its distance from r: color 0 for even distance, color 1 for odd.</p></li>
+<li><p>Suppose an edge uv has both endpoints the same color. By (D1) their distances differ by at most 1. They have the same parity, so they are equal. Call the distance n.</p></li>
+<li><p>Take shortest paths A from r to u and B from r to v. Let w be the last node of A that is also on B, at distance j. By (D2), w is in position j on both paths.</p></li>
+<li><p>If w were u, then u would be on B at distance n, which is the end of B, so u = v. The two endpoints of an edge differ, so w is not u. Likewise w is not v. So j &lt; n.</p></li>
+<li><p>After w the two paths each have n − j ≥ 1 edges and share no node. With the edge uv they form a cycle of 2(n − j) + 1 edges, which is odd. This contradicts the assumption.</p></li>
+</ol>
+<p>So no edge has both endpoints the same color, and the coloring is a 2-coloring. ∎</p>
 <figure><img src="figures/fig02.png" alt="Theorem 2.1, second half · three steps" loading="lazy"><figcaption>Figure 2. Theorem 2.1, second half · three steps</figcaption></figure>
-<p>Here w is where the two shortest paths part for the last time. The two branches below w have equal length, so with the edge uv they always close an odd cycle.</p>
+
+<p>In Figure 2, w is the last common node of the two paths. The two branches after w have equal length, so with uv they form an odd cycle.</p>
 <p><strong>Corollary 2.2.</strong> A connected bipartite graph has exactly two 2-colorings, and each is the other with the colors swapped.</p>
-<p><em>Why.</em> Fix a node r. Along a shortest path from r the colors alternate, so the color of r decides the color of every node. There are two choices for r, and both work: one 2-coloring exists by Theorem 2.1, and swapping its colors gives the other. ∎</p>
-<p>The two color groups of a connected bipartite graph are its <em>color classes</em>. A path between two nodes of the same class has even length; between different classes, odd length.</p>
-<p>A side note: a graph with no edges needs only one color. So bipartite means &quot;at most two colors&quot;, not &quot;exactly two&quot;.</p>
-<h2 id="3-step-2-sudoku-as-dots-and-links">3. Step 2: Sudoku as nodes and edges</h2>
-<p><strong>The grid is already a graph.</strong> Every cell has 20 <em>neighbors</em>: the other cells of its row, its column and its box. Join each cell to its neighbors and the grid becomes one graph with 81 nodes and 810 edges. Solving a sudoku means coloring that graph with nine digits so that neighbors differ [2].</p>
-<figure><img src="figures/fig03.png" alt="the grid as a graph · one cell&#x27;s neighbors, and a whole mini sudoku" loading="lazy"><figcaption>Figure 3. the grid as a graph · one cell&#39;s neighbors, and a whole mini sudoku</figcaption></figure>
-<p>On the left, the blue cell must differ from each of the 20 shaded cells. On the right, the same idea drawn for every cell of a small 4 by 4 sudoku at once: each line means &quot;these two must differ&quot;, and the four colors are the four digits.</p>
-<p>That graph is too coarse for solving strategies, which are about candidates. So we go one level down and make every candidate a node.</p>
+<p><em>Proof.</em> Fix a node r. Along a shortest path from r the colors alternate, so the color of r determines the color of every node. Both choices for r give a 2-coloring: one exists by Theorem 2.1, and swapping its colors gives the other. ∎</p>
+<p>The two color sets of a connected bipartite graph are its <em>color classes</em>. A path between two nodes of the same class has even length; between different classes, odd length.</p>
+<p>A graph with no edges is also bipartite: bipartite means at most two colors.</p>
+<h2 id="3-sudoku-as-nodes-and-edges">3. Sudoku as nodes and edges</h2>
+<p><strong>The cell graph.</strong> Each cell has 20 <em>neighbors</em>: the other cells of its row, its column and its box. Joining each cell to its neighbors gives a graph with 81 nodes and 810 edges. A solution colors this graph with nine digits so that neighbors differ [2].</p>
+<figure><img src="figures/fig03.png" alt="the grid as a graph · one cell&#x27;s neighbors, and a whole mini sudoku" loading="lazy"><figcaption>Figure 3. the grid as a graph · one cell's neighbors, and a whole mini sudoku</figcaption></figure>
+
+<p>Left: the blue cell must differ from each of the 20 shaded cells. Right: the same graph for a 4 by 4 sudoku. Each edge joins two cells that must differ, and the four colors are the four digits.</p>
+<p>Strategies work on candidates, so the graph used from here on has a node for each candidate.</p>
 <p><strong>Candidates.</strong> A <em>candidate</em> is a triple (r, c, d): digit d in the cell at row r, column c. There are 9 × 9 × 9 = 729 of them.</p>
-<p><strong>Constraint sets.</strong> Each rule of sudoku says &quot;exactly one of these nine candidates is true&quot;. There are four kinds, 81 of each, 324 in all:</p>
+<p><strong>Constraint sets.</strong> Each rule of sudoku says that exactly one of nine candidates is true. There are four kinds, 81 of each, 324 in all:</p>
 <div class="tex">\begin{aligned}
 \mathrm{Cell}(r,c) &amp;= \{(r,c,d) : 1 \le d \le 9\} \\
 \mathrm{Row}(r,d) &amp;= \{(r,c,d) : 1 \le c \le 9\} \\
 \mathrm{Col}(c,d) &amp;= \{(r,c,d) : 1 \le r \le 9\} \\
 \mathrm{Box}(b,d) &amp;= \{(r,c,d) : \text{cell } (r,c) \text{ lies in box } b\}
 \end{aligned}</div>
-<p>Every candidate lies in exactly four constraint sets, one of each kind. A <em>solution</em> is a set T of candidates with exactly one member in every constraint set. This is sudoku as an exact-cover problem [5].</p>
+
+<p>Every candidate is in exactly four constraint sets, one of each kind. A <em>solution</em> is a set T of candidates with exactly one member in every constraint set. This is sudoku as an exact-cover problem [5].</p>
 <figure><img src="figures/fig04.png" alt="candidates and constraint sets · one example" loading="lazy"><figcaption>Figure 4. candidates and constraint sets · one example</figcaption></figure>
-<p><strong>States.</strong> A <em>state</em> P is the set of candidates still on the grid. Sol(P) is the set of solutions that use only candidates from P, and we always assume there is at least one. For a solution T, a candidate is <em>true</em> if it belongs to T and <em>false</em> otherwise. We write T(u) = 1 or 0.</p>
-<p>A candidate <em>can be eliminated</em> if it is false in every solution in Sol(P). Erasing it loses no solution.</p>
-<p><strong>Edges.</strong> Two candidates in P are joined by an <em>edge</em>, and called <em>adjacent</em>, if some constraint set contains both. In practice that means two digits in one cell, or one digit in two cells of the same row, column or box. The edge is <em>strong</em> if some constraint set contains those two and no other candidate of P. Otherwise it is <em>weak</em>.</p>
-<p><strong>Why draw the edges.</strong> An edge is how a fact about one candidate becomes a fact about another. If a candidate is true, every candidate adjacent to it is false. If a candidate is false and one of its edges is strong, the candidate at the other end is true. Every strategy in this write-up is a chain of such steps, so on the graph each one shows up as a path or a loop.</p>
-<p>Two graphs come out of this. The <em>candidate graph</em> W(P) has the candidates of P as nodes and all these edges. The <em>strong graph</em> S(P) keeps only the strong edges.</p>
-<p>In the empty grid every candidate has 28 neighbors in the candidate graph: the 8 other digits of its cell, and the same digit in the 20 neighboring cells. As candidates are removed the graph thins out, and strong edges appear.</p>
+
+<p><strong>States.</strong> A <em>state</em> P is the set of candidates still on the grid. Sol(P) is the set of solutions that use only candidates from P; it is assumed to be non-empty. For a solution T, a candidate is <em>true</em> if it is in T and <em>false</em> otherwise. We write T(u) = 1 or 0.</p>
+<p>A candidate <em>can be eliminated</em> if it is false in every solution in Sol(P). Removing it loses no solution.</p>
+<p><strong>Edges.</strong> Two candidates in P are joined by an <em>edge</em>, and are <em>adjacent</em>, if some constraint set contains both. That means two digits in one cell, or one digit in two cells of the same row, column or box. The edge is <em>strong</em> if some constraint set contains those two and no other candidate of P. Otherwise it is <em>weak</em>.</p>
+<p><strong>What an edge does.</strong> If a candidate is true, every candidate adjacent to it is false. If a candidate is false and one of its edges is strong, the other endpoint of that edge is true. Each strategy is a sequence of these two steps, so on the graph it is a path or a cycle.</p>
+<p>The <em>candidate graph</em> W(P) has the candidates of P as nodes and all these edges. The <em>strong graph</em> S(P) has only the strong edges.</p>
+<p>In the empty grid every candidate has 28 neighbors in the candidate graph: the 8 other digits of its cell, and the same digit in the 20 neighboring cells. As candidates are removed, edges disappear and some become strong.</p>
 <figure><img src="figures/fig05.png" alt="one candidate and all its edges in the empty grid" loading="lazy"><figcaption>Figure 5. one candidate and all its edges in the empty grid</figcaption></figure>
-<p>Every dashed line is a weak edge: the 7 in this cell and the thing at the other end cannot both be true. The whole candidate graph of an empty grid has 729 nodes like this one.</p>
+
+<p>Each dashed line is a weak edge. The candidate graph of the empty grid has 729 such nodes.</p>
 <figure><img src="figures/fig06.png" alt="strong and weak edges · three small examples" loading="lazy"><figcaption>Figure 6. strong and weak edges · three small examples</figcaption></figure>
-<p>Solvers call the first two pictures <em>bivalue</em> and <em>bilocation</em> edges.</p>
-<p><strong>Lemma 3.1 (the two edge rules).</strong> Let T be a solution and uv an edge.</p>
-<ol><li><p>At most one of u, v is true: T(u) + T(v) ≤ 1.</p></li><li><p>If the edge is strong, exactly one is true: T(u) + T(v) = 1.</p></li></ol>
-<p><em>Why.</em> Some constraint set A contains both, and T has exactly one member in A. That gives rule 1. If the edge is strong, A can be chosen so that u and v are its only candidates left in P. The one member of T in A lies in P, so it is u or v. ∎</p>
-<p>In short: a weak edge says &quot;not both&quot;, a strong edge says &quot;exactly one&quot;. Keeping the two apart is what makes everything below work.</p>
-<h2 id="4-step-3-the-counting-rule">4. Step 3: The counting rule</h2>
-<p>Pick a solution T and a cycle C of length k in the candidate graph. Count two things on C:</p>
-<ul><li><p>t, the number of true candidates on C;</p></li><li><p>f, the number of <em>empty</em> edges of C, meaning edges with both ends false.</p></li></ul>
-<p><strong>Lemma 4.1 (Cycle Lemma).</strong></p>
-<div class="tex">f = k - 2t</div>
-<p><em>Why.</em></p>
-<ol><li><p>No edge has two true ends (Lemma 3.1).</p></li><li><p>Each true candidate sits on exactly two edges of the cycle.</p></li><li><p>So the true candidates cover 2t edges, and no edge is counted twice. Each of these has exactly one true end.</p></li><li><p>The remaining k − 2t edges have no true end. They are the empty ones. ∎</p></li></ol>
-<figure><img src="figures/fig07.png" alt="proof of the Cycle Lemma · three steps on a 7-cycle" loading="lazy"><figcaption>Figure 7. proof of the Cycle Lemma · three steps on a 7-cycle</figcaption></figure>
-<p>Four things follow at once.</p>
-<ol><li><p><strong>Parity.</strong> f is odd when k is odd and even when k is even. So every odd cycle has at least one empty edge.</p></li><li><p><strong>Empty edges are weak.</strong> A strong edge always has a true end (Lemma 3.1).</p></li><li><p><strong>At most half are true.</strong> Since f ≥ 0, we get t ≤ k/2.</p></li><li><p><strong>Strong edges count.</strong> If C has m strong edges that share no node, each has its own true end. So t ≥ m, and f ≤ k − 2m.</p></li></ol>
-<p>Three more examples follow. Green candidates are true, thick edges are empty, and f = k − 2t every time.</p>
-<figure><img src="figures/fig08.png" alt="the Cycle Lemma on three cycles" loading="lazy"><figcaption>Figure 8. the Cycle Lemma on three cycles</figcaption></figure>
-<p>For readers who know optimization: rule 3 on an odd cycle, t ≤ (k − 1)/2, is the classical odd-cycle inequality for stable sets [4].</p>
-<h2 id="5-step-4-what-a-loop-forces">5. Step 4: What a loop forces</h2>
-<p>From here on, P is a state with at least one solution, and &quot;true&quot; and &quot;false&quot; refer to any one solution. One piece of vocabulary: some edges <em>pair up</em> a set of candidates if no two of them share an end and their ends are exactly that set.</p>
-<p><strong>Theorem 5.1 (strong edges 2-color).</strong> The strong graph S(P) has no odd cycle. In each component K of S(P), with color classes K0 and K1, every solution makes one class all true and the other all false.</p>
-<p><em>Why.</em> Across a strong edge exactly one end is true (Lemma 3.1). So &quot;true or false&quot; is a 2-coloring of the strong graph, and Theorem 2.1 rules out odd cycles. A connected graph has only two 2-colorings (Corollary 2.2): K0 true and K1 false, or the reverse. ∎</p>
-<figure><img src="figures/fig09.png" alt="Theorem 5.1 · one component, two possibilities" loading="lazy"><figcaption>Figure 9. Theorem 5.1 · one component, two possibilities</figcaption></figure>
-<p>Decide one candidate, and the strong edges decide the rest of its component one edge at a time.</p>
-<p>A useful by-product: if the strong edges of your grid ever contain an odd cycle, the grid has no solution. A mistake has crept in.</p>
-<p><strong>Theorem 5.2 (an odd loop forces a false).</strong> Let C be a cycle in the candidate graph and v a candidate on it. If strong edges of C pair up all the other candidates of C, then C is odd and v is false in every solution.</p>
-<p><em>Why.</em> Say C has length k. The pairing uses (k − 1)/2 strong edges, so k is odd. Each of them has a true end, and none of those ends is v. If v were true as well, C would carry (k + 1)/2 true candidates. The Cycle Lemma allows at most k/2. ∎</p>
-<figure><img src="figures/fig10.png" alt="Theorem 5.2 in four steps · a 5-cycle" loading="lazy"><figcaption>Figure 10. Theorem 5.2 in four steps · a 5-cycle</figcaption></figure>
-<p>The same proof as a chain of forced moves: assuming v is true ends with two adjacent candidates both true.</p>
-<p>In this situation exactly one edge of the loop is empty. The pairing forces t ≥ (k − 1)/2, the Cycle Lemma forces t ≤ (k − 1)/2, so f = k − 2t = 1.</p>
-<p><strong>Theorem 5.3 (an odd loop forces a true).</strong> Let v be a candidate on a cycle C, with neighbors a and b on C. If the edges va and vb are strong, and strong edges of C pair up all candidates other than v, a and b, then C is odd and v is true in every solution. Every candidate adjacent to v is then false.</p>
-<p><em>Why.</em> The pairing uses (k − 3)/2 strong edges, so k is odd. If v were false, a and b would both be true, and each pairing edge would add another true end. That makes (k + 1)/2 true candidates, more than the Cycle Lemma allows. ∎</p>
-<figure><img src="figures/fig11.png" alt="Theorem 5.3 in four steps · a 5-cycle" loading="lazy"><figcaption>Figure 11. Theorem 5.3 in four steps · a 5-cycle</figcaption></figure>
-<p>This is the mirror image of the last picture: assuming v is false leaves a strong edge with no true end.</p>
-<p><strong>Theorem 5.4 (an even loop makes every edge either-or).</strong> Let C be a cycle whose strong edges pair up all of its candidates. Then C is even, and every edge of C has exactly one true end. So any other candidate adjacent to both ends of an edge of C is false.</p>
-<p><em>Why.</em> The pairing uses k/2 strong edges, so k is even. Rule 4 of the Cycle Lemma gives f ≤ k − 2(k/2) = 0, so no edge is empty. A candidate adjacent to both ends of such an edge is adjacent to a true candidate, so it is false. ∎</p>
-<figure><img src="figures/fig12.png" alt="Theorem 5.4 in four steps · a 6-cycle" loading="lazy"><figcaption>Figure 12. Theorem 5.4 in four steps · a 6-cycle</figcaption></figure>
-<p>Three strong edges need three true ends among six candidates, and true candidates are never neighbors. Only the two alternating patterns manage that.</p>
-<p>Here are the three loop theorems side by side.</p>
-<figure><img src="figures/fig13.png" alt="three cycle patterns · Theorems 5.2 to 5.4" loading="lazy"><figcaption>Figure 13. three cycle patterns · Theorems 5.2 to 5.4</figcaption></figure>
-<p>Solid lines are strong edges. Dashed lines can be weak or strong.</p>
-<p><strong>Corollary 5.5 (the coloring rules).</strong> Let K be a component of the strong graph with classes K0 and K1. Let K′ be another component with classes K′0 and K′1.</p>
-<ol><li><p><em>Wrap.</em> If an edge joins two candidates of K0, then K0 is false and K1 is true.</p></li><li><p><em>Trap.</em> If a candidate v outside K is adjacent to a candidate of K0 and to one of K1, then v is false.</p></li><li><p><em>Bridge.</em> Suppose an edge joins a candidate of K0 to one of K′0. If v, outside both components, is adjacent to a candidate of K1 and to one of K′1, then v is false.</p></li><li><p><em>Double bridge.</em> If edges join a in K0 to c in K′0, and b in K0 to d in K′1, then K0 is false and K1 is true.</p></li></ol>
-<figure><img src="figures/fig14.png" alt="Corollary 5.5 · Wrap, Trap, Bridge, Double bridge" loading="lazy"><figcaption>Figure 14. Corollary 5.5 · Wrap, Trap, Bridge, Double bridge</figcaption></figure>
-<p><em>Why.</em> Each rule closes an odd cycle and applies Theorem 5.2. Two facts do the work. Inside a component a path of strong edges joins any two candidates; its length is even if they share a class and odd if not. And a path with an even number of nodes is paired up by its 1st, 3rd, 5th, ... edges.</p>
-<ul><li><p><em>Wrap.</em> Say the edge joins u and w in K0. A strong path from u to w has even length, at least 2. With the edge it closes a cycle. Take away u, and an even number of nodes remain on a strong path, so they are paired up. Theorem 5.2 makes u false, and Theorem 5.1 then settles both classes.</p></li><li><p><em>Trap.</em> Say v is adjacent to x in K0 and y in K1. A strong path from x to y has odd length and misses v. The two edges close it into a cycle through v, and the path itself is paired up. Theorem 5.2 makes v false.</p></li><li><p><em>Bridge.</em> Say the bridge joins a in K0 to c in K′0, and v is adjacent to x in K1 and y in K′1. Take strong paths from x to a and from c to y; both have odd length. With the three edges they form a cycle through v. Its nodes are all different, because K, K′ and v are separate. Each path is paired up by its own edges. Theorem 5.2 makes v false.</p></li><li><p><em>Double bridge.</em> If a = b, then a is adjacent to both classes of K′, so Trap makes a false. Otherwise take a strong path from a to b (even length) and one from d to c (odd length). With the two edges they form a cycle. Without a, each stretch has an even number of nodes and is paired up. Theorem 5.2 makes a false. Either way Theorem 5.1 makes K0 false and K1 true. ∎</p></li></ul>
-<p>One more rule needs no strong edges at all.</p>
-<p><strong>Corollary 5.6 (guardians).</strong> Take any odd cycle in the candidate graph. For each of its edges pick a constraint set containing both ends. The other candidates of P in those sets are the <em>guardians</em>. Then at least one guardian is true. So a candidate adjacent to every guardian is false, and a lone guardian is true.</p>
-<p><em>Why.</em> An odd cycle has an empty edge uv (Cycle Lemma, rule 1). The constraint set picked for uv has a true candidate, and it is neither u nor v. So it is a guardian. ∎</p>
-<h2 id="6-step-5-the-strategies">6. Step 5: The strategies</h2>
-<p>Each named strategy is one of the results above, applied to a particular shape of edges.</p>
-<div class="scroll"><table><thead><tr><th>Strategy</th><th>Shape in the candidate graph</th><th>Result used</th><th>What it gives</th></tr></thead><tbody><tr><td>Naked pair</td><td>4-cycle: two cells of a unit, each holding only a and b</td><td>Theorem 5.4</td><td>a and b go from the rest of the unit</td></tr><tr><td>Hidden pair</td><td>4-cycle: a and b each fit only the same two cells of a unit</td><td>Theorem 5.4</td><td>Other digits go from those two cells</td></tr><tr><td>X-Wing</td><td>4-cycle of one digit: two strong edges in parallel lines</td><td>Theorem 5.4</td><td>Other candidates in the two crossing lines go</td></tr><tr><td>Swordfish, 2-2-2 form</td><td>6-cycle of one digit: three strong edges in three lines</td><td>Theorem 5.4</td><td>Other candidates in the three crossing lines go</td></tr><tr><td>X-Cycle, continuous</td><td>Even cycle of one digit, strong edges alternating</td><td>Theorem 5.4</td><td>Candidates seeing both ends of an edge on the loop go</td></tr><tr><td>X-Cycle, two weak edges meet at v</td><td>Odd cycle of one digit</td><td>Theorem 5.2</td><td>v is false</td></tr><tr><td>X-Cycle, two strong edges meet at v</td><td>Odd cycle of one digit</td><td>Theorem 5.3</td><td>v is true</td></tr><tr><td>Skyscraper</td><td>5-cycle of one digit: two strong edges in parallel lines that share a line at one end</td><td>Theorem 5.2</td><td>A candidate seeing both far ends goes</td></tr><tr><td>Two-String Kite</td><td>5-cycle of one digit: a strong edge in a row and one in a column, joined inside a box</td><td>Theorem 5.2</td><td>A candidate seeing both far ends goes</td></tr><tr><td>Turbot Fish</td><td>Any 5-cycle of one digit with two strong edges</td><td>Theorem 5.2</td><td>The fifth candidate goes</td></tr><tr><td>XY-Wing</td><td>7-cycle through three two-digit cells: pivot ab, wings ac and bc</td><td>Theorem 5.2</td><td>c goes from cells seeing both wings</td></tr><tr><td>W-Wing</td><td>7-cycle: two cells holding ab, joined by a strong edge on a</td><td>Theorem 5.2</td><td>b goes from cells seeing both</td></tr><tr><td>XY-Chain</td><td>Longer odd cycle through two-digit cells</td><td>Theorem 5.2</td><td>The end digit goes from cells seeing both ends</td></tr><tr><td>Remote Pairs</td><td>An even number of cells in a chain, all holding ab</td><td>Theorem 5.2, twice</td><td>a and b go from cells seeing both ends</td></tr><tr><td>Simple Coloring</td><td>One component of strong edges of one digit</td><td>Corollary 5.5, Wrap and Trap</td><td>A whole color, or a candidate seeing both colors, goes</td></tr><tr><td>3D Medusa, rules 1 to 5</td><td>One component of strong edges across digits</td><td>Corollary 5.5, Wrap and Trap</td><td>The same</td></tr><tr><td>Multi-Coloring</td><td>Two components of one digit</td><td>Corollary 5.5, Bridge and Double bridge</td><td>A candidate seeing both far colors, or a whole color, goes</td></tr><tr><td>Broken Wing</td><td>Odd cycle of one digit with one edge not strong</td><td>Corollary 5.6</td><td>A guardian is true</td></tr><tr><td>Alternating Inference Chain</td><td>Any cycle mixing digits, strong edges alternating</td><td>Theorems 5.2 to 5.4</td><td>As above</td></tr></tbody></table></div>
-<p>The smallest loop of all is a triangle. A candidate that sees both ends of a strong edge is false: that is Theorem 5.2 with k = 3. Solvers know it as a pointing pair or a box-line reduction, in the case where the digit has two places.</p>
-<p>The worked examples below write candidates as (row, column, digit).</p>
-<p><strong>X-Wing.</strong> Digit 2 has only two places in column 4 and only two in column 8, in rows 4 and 7 both times. That gives strong edges (4,4,2)–(7,4,2) and (4,8,2)–(7,8,2). Rows 4 and 7 edge the corners into a 4-cycle, and the two strong edges pair it up. By Theorem 5.4 each row edge has exactly one true end, so (4,6,2) and (7,5,2) are false.</p>
-<figure><img src="figures/fig15.png" alt="X-Wing on digit 2 · four steps on the grid" loading="lazy"><figcaption>Figure 15. X-Wing on digit 2 · four steps on the grid</figcaption></figure>
-<p>Steps 2 and 3 are the only two ways to color the loop, and the red candidates are false in both.</p>
-<p><strong>X-Cycle.</strong> For digit 8 there are strong edges (3,2,8)–(7,2,8) in column 2, (8,3,8)–(8,9,8) in row 8 and (9,7,8)–(3,7,8) in column 7. Edges through box 7, box 9 and row 3 join them into a 6-cycle, which the strong edges pair up. Theorem 5.4 removes every other 8 from row 3, box 7 and box 9: (3,3,8), (3,9,8), (7,3,8) and (7,9,8).</p>
-<figure><img src="figures/fig16.png" alt="X-Cycle on digit 8 · two steps on the grid" loading="lazy"><figcaption>Figure 16. X-Cycle on digit 8 · two steps on the grid</figcaption></figure>
-<p><strong>Simple Coloring.</strong> For digit 6 the strong edges form one chain: (2,2,6), (2,6,6), (1,5,6), (9,5,6), (9,3,6), (5,3,6). Color it alternately. The candidates (5,2,6) and (6,2,6) are each adjacent to (2,2,6), of one color, and to (5,3,6), of the other. The Trap rule makes both false.</p>
-<figure><img src="figures/fig17.png" alt="Simple Coloring on digit 6 · two steps on the grid" loading="lazy"><figcaption>Figure 17. Simple Coloring on digit 6 · two steps on the grid</figcaption></figure>
-<p>Each red candidate closes a 7-cycle with the chain. That is the odd cycle behind the Trap rule.</p>
-<p><strong>3D Medusa.</strong> The same coloring, except that the chain may hop between digits through cells with two candidates. If two candidates of one color turn out to be adjacent, Wrap removes that color. One caution: colors mean something only inside one component, so a clash in one component says nothing about another.</p>
-<p><strong>Multi-Coloring.</strong> For digit 2 there is a long chain with classes K0 = {(4,6,2), (9,4,2), (1,5,2), (8,3,2)} and K1 = {(6,4,2), (8,5,2)}. A short chain is the strong edge (4,1,2)–(7,1,2). Row 4 edges (4,6,2) to (4,1,2), and box 7 edges (8,3,2) to (7,1,2). So K0 is adjacent to both ends of the short chain. Double bridge makes K0 false and K1 true, which places a 2 at row 6, column 4 and at row 8, column 5.</p>
-<figure><img src="figures/fig18.png" alt="Multi-Coloring on digit 2 · two steps on the grid" loading="lazy"><figcaption>Figure 18. Multi-Coloring on digit 2 · two steps on the grid</figcaption></figure>
-<p>If K0 were true, both ends of the short chain would be false, and a strong edge forbids that.</p>
-<p><strong>Naked pair.</strong> Two cells of a row each hold only 4 and 7. Inside each cell the two candidates are strongly adjacent. Along the row the two 4s are adjacent, and so are the two 7s. That is a 4-cycle paired up by the two in-cell edges. By Theorem 5.4 the row&#39;s 4 and its 7 both sit in those two cells, so every other 4 and 7 in the row goes. A hidden pair is the same loop with cells and digits swapped.</p>
-<figure><img src="figures/fig19.png" alt="naked pair · the 4-cycle drawn on one row" loading="lazy"><figcaption>Figure 19. naked pair · the 4-cycle drawn on one row</figcaption></figure>
-<p><strong>Skyscraper and Two-String Kite.</strong> Both are 5-cycles of one digit with two strong edges, so both are Theorem 5.2. In a Skyscraper the strong edges stand in two columns and share a row at one end. In a Kite one strong edge lies in a row, the other in a column, and a box joins them. Any 5-cycle of this kind is called a Turbot Fish.</p>
-<figure><img src="figures/fig20.png" alt="Skyscraper and Two-String Kite · 5-cycles on the grid" loading="lazy"><figcaption>Figure 20. Skyscraper and Two-String Kite · 5-cycles on the grid</figcaption></figure>
-<p><strong>XY-Wing.</strong> Three cells hold the pairs 12, 13 and 23, and the middle one sees both others. Follow the loop: 3 in the first wing, 1 in the first wing, 1 in the pivot, 2 in the pivot, 2 in the second wing, 3 in the second wing. The three in-cell edges are strong and pair up six of the seven candidates. Theorem 5.2 removes the seventh, a 3 that sees both wings. W-Wing, XY-Chain and Remote Pairs are longer loops of the same kind.</p>
-<figure><img src="figures/fig21.png" alt="XY-Wing · on the grid and as a 7-cycle" loading="lazy"><figcaption>Figure 21. XY-Wing · on the grid and as a 7-cycle</figcaption></figure>
-<p><strong>Broken Wing.</strong> Take an odd loop of one digit in which every edge but one is strong. By Corollary 5.6 the row, column or box of the odd edge out must hold its digit in one of its other cells, the guardians. With one guardian that is a placement. With several, any candidate seeing all of them goes.</p>
-<figure><img src="figures/fig22.png" alt="Corollary 5.6 · guardians of an odd loop" loading="lazy"><figcaption>Figure 22. Corollary 5.6 · guardians of an odd loop</figcaption></figure>
-<h2 id="7-step-6-where-it-stops">7. Step 6: Where it stops</h2>
-<p><strong>A loop of weak edges alone forces nothing.</strong> Start from the empty grid, where every candidate is still possible. First a fact: every candidate is true in some solution. To see it, write r − 1 = 3q + m and c − 1 = 3s + n with q, m, s, n in {0, 1, 2}, and let G(r, c) be the digit with</p>
-<div class="tex">G(r,c) - 1 \equiv 3m + q + 3s + n \pmod 9 .</div>
-<p>Along a row, 3s + n runs through 0 to 8. Down a column, 3m + q does. Inside a box, 3m + n does. Adding a constant modulo 9 keeps nine values different, so G is a completed grid. Renaming its digits puts any digit in any cell.</p>
-<p>Now take the three 1s in the first three cells of row 1. They form a triangle of weak edges, an odd cycle. Yet each of them is true in some solution, so none can be eliminated.</p>
-<figure><img src="figures/fig23.png" alt="three 1s in one row of the empty grid · four kinds of solution" loading="lazy"><figcaption>Figure 23. three 1s in one row of the empty grid · four kinds of solution</figcaption></figure>
-<p>The Cycle Lemma is not broken here: the number of empty edges is odd every time. It just does not single out one candidate. Strong edges are what pin the answer down. Even loops are the same: four 1s in one row form a 4-cycle of weak edges and decide nothing.</p>
-<p><strong>Some rules use a whole constraint set.</strong> The last two 3D Medusa rules in [8] are of this kind.</p>
-<p><strong>Proposition 7.1.</strong> Let K0 be a color class of a component of the strong graph, and A a constraint set. If every candidate of A still in P is adjacent to some candidate of K0, then K0 is false and the other class is true.</p>
-<p><em>Why.</em> If K0 were true, every candidate of A would be false (Lemma 3.1). But a solution has a member in A. So K0 is not the true class, and by Theorem 5.1 the other one is. ∎</p>
-<p><strong>How far can edges alone go?</strong> Exactly as far as closed alternating walks. Call a true-or-false marking of P <em>edge-consistent</em> if it obeys both rules of Lemma 3.1 on every edge. Every solution is edge-consistent. An <em>alternating walk</em> from u is a sequence u = a(0), a(1), ..., a(n) whose steps are edges at even positions and strong edges at odd positions. Nodes may repeat. The walk is <em>closed</em> if n is odd, n ≥ 3 and it ends back at u.</p>
-<p><strong>Proposition 7.2 (closed walks).</strong></p>
-<ol><li><p>If a closed alternating walk starts at u, then u is false in every edge-consistent marking, and so in every solution.</p></li><li><p>If none does, some edge-consistent marking makes u true.</p></li></ol>
-<p>A closed alternating walk with no repeated node is exactly the cycle of Theorem 5.2.</p>
-<p><em>Why, part 1.</em> Suppose u is true. An edge from a true candidate leads to a false one. A strong edge from a false candidate leads to a true one. So a(0), a(2), a(4), ... are all true, including a(n − 1). But a(n − 1) is adjacent to u, and both are true. Contradiction.</p>
-<p><em>Why, part 2.</em> Let E be the candidates reached from u by alternating walks of even length, u included. Let O be the candidates adjacent to some member of E.</p>
-<ol><li><p>No two members of E are adjacent. If e and e′ were, walk from u to e, cross to e′, and return to u along the route to e′ reversed. The crossing is an even step, and the return has its strong edges at odd steps. That is a closed alternating walk, of length at least 3 because e and e′ differ. We assumed there is none. So E and O do not overlap.</p></li><li><p>A strong edge from a member o of O leads into E. Extend the walk that reaches o&#39;s neighbor in E by o, and then by the strong partner of o.</p></li><li><p>Take any solution T. Mark E true, O false, and everything else as in T.</p></li><li><p>Check each edge pq. One end in E: the other is in O, and the total is 1. No end in E, one in O: the total is at most 1, and by point 2 the edge is not strong. Neither in E nor in O: these are T&#39;s values, fine by Lemma 3.1.</p></li></ol>
-<p>So the marking is edge-consistent and makes u true. ∎</p>
-<p>In logic terms a weak edge is the clause &quot;not p or not q&quot;, and a strong edge adds &quot;p or q&quot;. Proposition 7.2 is the classical 2-SAT argument [6] in sudoku clothing.</p>
-<p><strong>Proposition 7.3 (a deduction edges cannot reach).</strong> In some state a candidate can be eliminated, although an edge-consistent marking makes it true.</p>
-<p><em>Why.</em> Take every candidate, except that the first three cells of row 1 keep only the digits 1, 2 and 3. The grid G fits, so a solution exists. In any solution those three cells hold 1, 2 and 3 in some order, so the 1 in cell 4 of row 1 is false.</p>
-<p>Yet no constraint set has exactly two candidates left. The counts are 3 for the three special cells, 6 for digits 4 to 9 in row 1 and in box 1, 8 for digits 4 to 9 in columns 1 to 3, and 9 for the rest. So there is no strong edge, and marking that one candidate true and all others false is edge-consistent. ∎</p>
-<figure><img src="figures/fig24.png" alt="Proposition 7.3 · row 1 of the example state" loading="lazy"><figcaption>Figure 24. Proposition 7.3 · row 1 of the example state</figcaption></figure>
-<p>This is a <em>naked triple</em>. It counts three cells against three digits and never uses a strong edge.</p>
-<p>So the method has a clear edge. Inside it: pairs, wings, kites, chains, loops and coloring. Outside it: naked and hidden triples, fish with three or more candidates in a line, XYZ-Wing, and chains that treat a group of cells as one node, such as the Empty Rectangle. Those need rules about three or more candidates at once. The next part supplies two of them.</p>
-<h3>Going past the edge</h3>
-<p>The edge is not the end. The same two colors, true and false, reach further in two ways: make the nodes bigger, or count across whole constraint sets.</p>
-<p><strong>1. Bigger nodes: a group as one candidate.</strong> Take one digit, and two or three of its candidates in cells of one box that share a row or column. Call that a <em>group</em>. Color a group true when one of its members is true, and false when all of them are false. A single candidate is a group of one.</p>
-<p>Two groups are <em>adjacent</em> when they share no candidate and some constraint set contains both. The edge is <em>strong</em> when together they are every candidate left in that set.</p>
-<p><strong>Lemma 7.4 (groups obey the edge rules).</strong> Let A and B be adjacent groups and T a solution. At most one of A, B is true. If the edge is strong, exactly one is.</p>
-<p><em>Why.</em> Both lie in one constraint set, which holds exactly one true candidate. That candidate cannot be in A and in B, because they share nothing. If A and B together are the whole set, it is in one of them. ∎</p>
-<p>The Cycle Lemma and Theorem 5.2 used nothing about a node except these two rules. So both hold word for word when some nodes are groups. This covers:</p>
+
+<p>Solvers call the two kinds of strong edge in Figure 6 <em>bivalue</em> and <em>bilocation</em>.</p>
+<p><strong>Lemma 3.1 (edge rules).</strong> Let T be a solution and uv an edge.</p>
+<ol type="1">
+<li><p>At most one of u, v is true: T(u) + T(v) ≤ 1.</p></li>
+<li><p>If the edge is strong, exactly one is true: T(u) + T(v) = 1.</p></li>
+</ol>
+<p><em>Proof.</em> Some constraint set A contains both, and T has exactly one member in A. This gives rule 1. If the edge is strong, A can be chosen so that u and v are its only candidates in P. The member of T in A is in P, so it is u or v. ∎</p>
+<h2 id="4-a-counting-identity-for-cycles">4. A counting identity for cycles</h2>
+<p>Take a solution T and a cycle C of length k in the candidate graph. Let</p>
 <ul>
-<li><p><strong>Locked triple</strong> (pointing or claiming with three cells). A digit has three places in one unit, all inside a second unit. The three form a group that is true in every solution, so every other candidate of that digit in the second unit is adjacent to a true node and is false.</p></li>
-<li><p><strong>Empty Rectangle</strong> and <strong>grouped X-Cycles</strong>. These are odd loops of one digit in which one or more nodes are groups.</p></li>
+<li><p>t be the number of true candidates on C;</p></li>
+<li><p>f be the number of edges of C whose endpoints are both false.</p></li>
 </ul>
-<figure><img src="figures/fig25.png" alt="A group as one node · a locked triple" loading="lazy"><figcaption>Figure 25. A group as one node · a locked triple</figcaption></figure>
-<p><strong>2. Counting across sets.</strong> Edges look at two candidates at a time. The next rule looks at whole constraint sets.</p>
-<p><strong>Theorem 7.5 (the sets rule).</strong> Let B1, ..., Bk be constraint sets that share no candidate with each other, and C1, ..., Ck be k constraint sets. Suppose every candidate still in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.</p>
-<p><em>Why.</em> Each B holds exactly one true candidate, and the B's share nothing, so they hold k true candidates between them. Each of these lies in some C. A C holds only one true candidate, so the k true candidates lie in k different C's, one each. That uses up all k of the C's: each C has its one true candidate inside the B's. So a candidate of a C outside the B's is false. ∎</p>
-<p>In colors: the k true candidates of the B's are exactly the k true candidates of the C's. Counting them twice is the whole proof, as counting round the loop was for the Cycle Lemma.</p>
-<p>In nodes: for each C, the candidates it shares with the B's form one node, as a group did above, and the count proves that node true. Every other candidate of that C is adjacent to it, so it is false. The sets rule is the Locked triple again, with a count standing in for a single constraint set.</p>
-<figure><img src="figures/fig26.png" alt="The sets rule on a naked triple · k = 3" loading="lazy"><figcaption>Figure 26. The sets rule on a naked triple · k = 3</figcaption></figure>
-<p>There is a second graph behind this. Make every constraint set a node, and draw a candidate as an edge joining two sets it belongs to, for example its cell and its row-and-digit set. That graph is bipartite: cells on one side, row-and-digit sets on the other. A solution picks edges so that every node is used once, which graph theory calls a perfect matching. The sets rule is the counting behind Hall's theorem for that graph: k nodes on one side whose edges reach only k nodes on the other must be matched with exactly those.</p>
-<figure><img src="figures/fig27.png" alt="The second graph · sets as nodes, candidates as edges" loading="lazy"><figcaption>Figure 27. The second graph · sets as nodes, candidates as edges</figcaption></figure>
-<p>What the sets rule covers:</p>
+<p><strong>Lemma 4.1.</strong></p>
+<div class="tex">f = k - 2t</div>
+
+<p><em>Proof.</em></p>
+<ol type="1">
+<li><p>No edge has two true endpoints (Lemma 3.1).</p></li>
+<li><p>Each true candidate is on exactly two edges of the cycle.</p></li>
+<li><p>So the true candidates are on 2t edges, and no edge is counted twice. Each of these edges has exactly one true endpoint.</p></li>
+<li><p>The other k − 2t edges have both endpoints false. ∎</p></li>
+</ol>
+<figure><img src="figures/fig07.png" alt="proof of Lemma 4.1 · three steps on a 7-cycle" loading="lazy"><figcaption>Figure 7. proof of Lemma 4.1 · three steps on a 7-cycle</figcaption></figure>
+
+<p>Consequences:</p>
+<ol type="1">
+<li><p><strong>Parity.</strong> f is odd when k is odd and even when k is even. So every odd cycle has at least one edge with both endpoints false.</p></li>
+<li><p><strong>Such an edge is weak.</strong> A strong edge has a true endpoint (Lemma 3.1).</p></li>
+<li><p><strong>At most half are true.</strong> Since f ≥ 0, t ≤ k/2.</p></li>
+<li><p><strong>Strong edges.</strong> If C has m strong edges forming a matching, each has its own true endpoint. So t ≥ m, and f ≤ k − 2m.</p></li>
+</ol>
+<p>Figure 8 shows three more cycles. Green candidates are true, thick edges have both endpoints false, and f = k − 2t in each.</p>
+<figure><img src="figures/fig08.png" alt="Lemma 4.1 on three cycles" loading="lazy"><figcaption>Figure 8. Lemma 4.1 on three cycles</figcaption></figure>
+
+<p>Consequence 3 on an odd cycle, t ≤ (k − 1)/2, is the odd-cycle inequality for stable sets [4].</p>
+<h2 id="5-what-a-cycle-forces">5. What a cycle forces</h2>
+<p>From here on, P is a state with at least one solution, and true and false refer to any one solution. A <em>matching</em> is a set of edges no two of which have a common endpoint. It is a <em>perfect matching</em> of a set X of nodes if the endpoints of its edges are exactly X.</p>
+<p><strong>Theorem 5.1 (strong edges are 2-colorable).</strong> The strong graph S(P) has no odd cycle. In each component K of S(P), with color classes K0 and K1, every solution makes one class all true and the other all false.</p>
+<p><em>Proof.</em> Each strong edge has exactly one true endpoint (Lemma 3.1). So true and false form a 2-coloring of the strong graph, and by Theorem 2.1 it has no odd cycle. A connected graph has two 2-colorings (Corollary 2.2): K0 true and K1 false, or the reverse. ∎</p>
+<figure><img src="figures/fig09.png" alt="Theorem 5.1 · one component, two possibilities" loading="lazy"><figcaption>Figure 9. Theorem 5.1 · one component, two possibilities</figcaption></figure>
+
+<p>Fixing one candidate of a component fixes all of it.</p>
+<p>If the strong edges of a grid contain an odd cycle, the grid has no solution.</p>
+<p><strong>Theorem 5.2 (odd cycle, elimination).</strong> Let C be a cycle in the candidate graph and v a candidate on it. If the strong edges of C contain a perfect matching of the other candidates of C, then C is odd and v is false in every solution.</p>
+<p><em>Proof.</em> Let C have length k. The matching has (k − 1)/2 edges, so k is odd. Each of them has a true endpoint other than v. If v were true, C would have (k + 1)/2 true candidates. Lemma 4.1 allows at most k/2. ∎</p>
+<figure><img src="figures/fig10.png" alt="Theorem 5.2 in four steps · a 5-cycle" loading="lazy"><figcaption>Figure 10. Theorem 5.2 in four steps · a 5-cycle</figcaption></figure>
+
+<p>Figure 10 shows the same proof as a sequence of steps: if v is true, two adjacent candidates are both true.</p>
+<p>In this case exactly one edge of the cycle has both endpoints false: the matching gives t ≥ (k − 1)/2, Lemma 4.1 gives t ≤ (k − 1)/2, so f = k − 2t = 1.</p>
+<p><strong>Theorem 5.3 (odd cycle, placement).</strong> Let v be a candidate on a cycle C, with neighbors a and b on C. If the edges va and vb are strong, and the strong edges of C contain a perfect matching of the candidates other than v, a and b, then C is odd and v is true in every solution. Every candidate adjacent to v is then false.</p>
+<p><em>Proof.</em> The matching has (k − 3)/2 edges, so k is odd. If v were false, a and b would both be true, and each edge of the matching would have another true endpoint. That gives (k + 1)/2 true candidates, more than Lemma 4.1 allows. ∎</p>
+<figure><img src="figures/fig11.png" alt="Theorem 5.3 in four steps · a 5-cycle" loading="lazy"><figcaption>Figure 11. Theorem 5.3 in four steps · a 5-cycle</figcaption></figure>
+
+<p>In Figure 11, if v is false, a strong edge has both endpoints false.</p>
+<p><strong>Theorem 5.4 (even cycle).</strong> Let C be a cycle whose strong edges contain a perfect matching of C. Then C is even, and every edge of C has exactly one true endpoint. So any candidate outside C adjacent to both endpoints of an edge of C is false.</p>
+<p><em>Proof.</em> The matching has k/2 edges, so k is even. Consequence 4 of Lemma 4.1 gives f ≤ k − 2(k/2) = 0, so every edge has a true endpoint. A candidate adjacent to both endpoints of such an edge is adjacent to a true candidate, so it is false. ∎</p>
+<figure><img src="figures/fig12.png" alt="Theorem 5.4 in four steps · a 6-cycle" loading="lazy"><figcaption>Figure 12. Theorem 5.4 in four steps · a 6-cycle</figcaption></figure>
+
+<p>Three strong edges need three true candidates among six, and no two true candidates are adjacent. Only the two alternating patterns satisfy this.</p>
+<p>Figure 13 shows Theorems 5.2 to 5.4 together. Solid lines are strong edges; dashed lines can be weak or strong.</p>
+<figure><img src="figures/fig13.png" alt="three cycle patterns · Theorems 5.2 to 5.4" loading="lazy"><figcaption>Figure 13. three cycle patterns · Theorems 5.2 to 5.4</figcaption></figure>
+
+<p><strong>Corollary 5.5 (coloring rules).</strong> Let K be a component of the strong graph with classes K0 and K1. Let K′ be another component with classes K′0 and K′1.</p>
+<ol type="1">
+<li><p><em>Rule 1.</em> If an edge joins two candidates of K0, then K0 is false and K1 is true.</p></li>
+<li><p><em>Rule 2.</em> If a candidate v outside K is adjacent to a candidate of K0 and to one of K1, then v is false.</p></li>
+<li><p><em>Rule 3.</em> Suppose an edge joins a candidate of K0 to one of K′0. If v, outside both components, is adjacent to a candidate of K1 and to one of K′1, then v is false.</p></li>
+<li><p><em>Rule 4.</em> If edges join a in K0 to c in K′0, and b in K0 to d in K′1, then K0 is false and K1 is true.</p></li>
+</ol>
+<figure><img src="figures/fig14.png" alt="Corollary 5.5 · rules 1 to 4" loading="lazy"><figcaption>Figure 14. Corollary 5.5 · rules 1 to 4</figcaption></figure>
+
+<p><em>Proof.</em> Each rule forms an odd cycle and applies Theorem 5.2. Two facts are used. Within a component, a path of strong edges joins any two candidates; its length is even if they are in the same class and odd if not. A path with an even number of nodes has a perfect matching: its 1st, 3rd, 5th, ... edges.</p>
+<ul>
+<li><p><em>Rule 1.</em> Let the edge join u and w in K0. A strong path from u to w has even length, at least 2, and with the edge it forms a cycle. Without u, an even number of nodes remain on a strong path, which has a perfect matching. Theorem 5.2 makes u false, and Theorem 5.1 then determines both classes.</p></li>
+<li><p><em>Rule 2.</em> Let v be adjacent to x in K0 and y in K1. A strong path from x to y has odd length and does not contain v. With the two edges it forms a cycle through v, and the path has a perfect matching. Theorem 5.2 makes v false.</p></li>
+<li><p><em>Rule 3.</em> Let the edge join a in K0 to c in K′0, and let v be adjacent to x in K1 and y in K′1. Strong paths from x to a and from c to y both have odd length. With the three edges they form a cycle through v. Its nodes are all different, because K, K′ and v are disjoint. Each path has a perfect matching of its own edges. Theorem 5.2 makes v false.</p></li>
+<li><p><em>Rule 4.</em> If a = b, then a is adjacent to both classes of K′, so rule 2 makes a false. Otherwise a strong path from a to b has even length and one from d to c has odd length. With the two edges they form a cycle. Without a, each part has an even number of nodes and a perfect matching. Theorem 5.2 makes a false. In both cases Theorem 5.1 makes K0 false and K1 true. ∎</p></li>
+</ul>
+<p>The next rule does not need strong edges.</p>
+<p><strong>Corollary 5.6.</strong> Take an odd cycle in the candidate graph. For each of its edges choose a constraint set containing both endpoints, and let R be the other candidates of P in the chosen sets. Then at least one candidate of R is true. So a candidate adjacent to every candidate of R is false, and if R has only one candidate, it is true.</p>
+<p><em>Proof.</em> An odd cycle has an edge uv with both endpoints false (Lemma 4.1, consequence 1). The constraint set chosen for uv has a true candidate, and it is neither u nor v. So it is in R. ∎</p>
+<h2 id="6-the-strategies">6. The strategies</h2>
+<p>Each strategy below is one of the results above applied to a particular arrangement of edges.</p>
 <div class="scroll"><table>
-<thead><tr><th>Strategy</th><th>The B's</th><th>The C's</th></tr></thead>
+<thead>
+<tr class="header">
+<th>Strategy</th>
+<th>Shape in the candidate graph</th>
+<th>Result used</th>
+<th>Result</th>
+</tr>
+</thead>
 <tbody>
-<tr><td>Naked pair, triple, quad</td><td>k cells of one unit</td><td>the k digits they hold, in that unit</td></tr>
-<tr><td>Hidden pair, triple, quad</td><td>k digits in one unit</td><td>the k cells they fit in</td></tr>
-<tr><td>X-Wing, Swordfish, Jellyfish</td><td>one digit in k rows</td><td>the same digit in k columns</td></tr>
+<tr class="odd">
+<td>Naked pair</td>
+<td>4-cycle: two cells of a unit, each holding only a and b</td>
+<td>Theorem 5.4</td>
+<td>a and b are removed from the rest of the unit</td>
+</tr>
+<tr class="even">
+<td>Hidden pair</td>
+<td>4-cycle: a and b each fit only the same two cells of a unit</td>
+<td>Theorem 5.4</td>
+<td>Other digits are removed from those two cells</td>
+</tr>
+<tr class="odd">
+<td>X-Wing</td>
+<td>4-cycle of one digit: two strong edges in parallel lines</td>
+<td>Theorem 5.4</td>
+<td>Other candidates in the two crossing lines are removed</td>
+</tr>
+<tr class="even">
+<td>Swordfish, 2-2-2 form</td>
+<td>6-cycle of one digit: three strong edges in three lines</td>
+<td>Theorem 5.4</td>
+<td>Other candidates in the three crossing lines are removed</td>
+</tr>
+<tr class="odd">
+<td>X-Cycle, continuous</td>
+<td>Even cycle of one digit, strong edges alternating</td>
+<td>Theorem 5.4</td>
+<td>Candidates adjacent to both endpoints of an edge of the cycle are removed</td>
+</tr>
+<tr class="even">
+<td>X-Cycle, two weak edges at v</td>
+<td>Odd cycle of one digit</td>
+<td>Theorem 5.2</td>
+<td>v is false</td>
+</tr>
+<tr class="odd">
+<td>X-Cycle, two strong edges at v</td>
+<td>Odd cycle of one digit</td>
+<td>Theorem 5.3</td>
+<td>v is true</td>
+</tr>
+<tr class="even">
+<td>Skyscraper</td>
+<td>5-cycle of one digit: two strong edges in parallel lines, joined by a third line</td>
+<td>Theorem 5.2</td>
+<td>A candidate adjacent to the two unmatched candidates is removed</td>
+</tr>
+<tr class="odd">
+<td>Two-String Kite</td>
+<td>5-cycle of one digit: a strong edge in a row and one in a column, joined in a box</td>
+<td>Theorem 5.2</td>
+<td>A candidate adjacent to the two unmatched candidates is removed</td>
+</tr>
+<tr class="even">
+<td>Turbot Fish</td>
+<td>Any 5-cycle of one digit with two strong edges</td>
+<td>Theorem 5.2</td>
+<td>The fifth candidate is removed</td>
+</tr>
+<tr class="odd">
+<td>XY-Wing</td>
+<td>7-cycle through three two-digit cells: pivot ab, wings ac and bc</td>
+<td>Theorem 5.2</td>
+<td>c is removed from cells adjacent to both wings</td>
+</tr>
+<tr class="even">
+<td>W-Wing</td>
+<td>7-cycle: two cells holding ab, joined by a strong edge on a</td>
+<td>Theorem 5.2</td>
+<td>b is removed from cells adjacent to both</td>
+</tr>
+<tr class="odd">
+<td>XY-Chain</td>
+<td>Longer odd cycle through two-digit cells</td>
+<td>Theorem 5.2</td>
+<td>The end digit is removed from cells adjacent to both end cells</td>
+</tr>
+<tr class="even">
+<td>Remote Pairs</td>
+<td>An even number of cells in a chain, all holding ab</td>
+<td>Theorem 5.2, twice</td>
+<td>a and b are removed from cells adjacent to both end cells</td>
+</tr>
+<tr class="odd">
+<td>Simple Coloring</td>
+<td>One component of strong edges of one digit</td>
+<td>Corollary 5.5, rules 1 and 2</td>
+<td>A color class, or a candidate adjacent to both classes, is removed</td>
+</tr>
+<tr class="even">
+<td>3D Medusa</td>
+<td>One component of strong edges across digits</td>
+<td>Corollary 5.5, rules 1 and 2</td>
+<td>The same</td>
+</tr>
+<tr class="odd">
+<td>Multi-Coloring</td>
+<td>Two components of one digit</td>
+<td>Corollary 5.5, rules 3 and 4</td>
+<td>A candidate, or a color class, is removed</td>
+</tr>
+<tr class="even">
+<td>Broken Wing</td>
+<td>Odd cycle of one digit with one weak edge</td>
+<td>Corollary 5.6</td>
+<td>A candidate of R is true, or candidates adjacent to all of R are removed</td>
+</tr>
+<tr class="odd">
+<td>Alternating Inference Chain</td>
+<td>Any cycle across digits, strong edges alternating</td>
+<td>Theorems 5.2 to 5.4</td>
+<td>As above</td>
+</tr>
 </tbody>
 </table></div>
-<p>With k = 2 these are the naked pair, hidden pair and X-Wing of Theorem 5.4. So the 4-cycle with two strong edges is the smallest case of the sets rule, and the sets rule is where the even loop leads when a set has more than two candidates left. The naked triple of Proposition 7.3 is the case k = 3.</p>
-<p><strong>3. An edge that has to be counted.</strong> Theorem 5.2 never needed a strong edge to mean "exactly one". Its proof only used one direction: if this end is false, the other is true. So an edge that says "at least one of these is true" serves just as well, wherever it comes from.</p>
-<p><strong>Lemma 7.6 (the XYZ edge).</strong> Let a cell p hold x, y and z. Let it see a cell holding x and z, and a cell holding y and z. Then at least one of the three z's in those cells is true.</p>
-<p><em>Why.</em> The cell p is x, y or z. If it is x, the cell holding x and z sees it and must be z. If it is y, the cell holding y and z must be z. Otherwise p itself is z. ∎</p>
-<p>So take the z in p and the z in the first wing as one node, and the z in the second wing as another. They cannot both be false. A candidate z that sees all three cells is adjacent to both nodes. Suppose it is true: both nodes are false, which the lemma forbids. That is the <strong>XYZ-Wing</strong>, and its shape is a triangle, like the Locked pair.</p>
-<p><strong>Lemma 7.7 (the edge inside an almost-locked set).</strong> Call n cells of one unit that hold n + 1 digits between them an <em>almost-locked set</em>: one digit too many. For each of its digits, the candidates of that digit in the set form a node. Then the nodes of two different digits cannot both be false.</p>
-<p><em>Why.</em> If both were false, the n cells would have only n − 1 digits left between them. Cells of one unit need different digits, so that is impossible. ∎</p>
-<p>So an almost-locked set supplies counted edges between its own nodes. Nodes of the same digit in two different sets are adjacent in the ordinary way when all their cells see each other. That is everything Theorem 5.2 needs, so loops may now run through almost-locked sets:</p>
-<ul>
-<li><p><strong>Two sets (ALS-XZ, WXYZ-Wing, XYZ-Wing).</strong> Sets A and B share a digit x whose places all see each other, and another digit z. The loop is: a candidate z that sees every z of both sets, the z node of A, the x node of A, the x node of B, the z node of B, and back. Suppose the candidate is true: both z nodes are false, so both x nodes are true, and they see each other.</p></li>
-<li><p><strong>Three or more sets (ALS-XY-Wing, chains of almost-locked sets).</strong> The loop simply passes through more sets, changing digit each time.</p></li>
-<li><p><strong>Two sets with two connecting digits (this includes the basic Sue de Coq).</strong> Each connecting digit is used by at most one set, which leaves no digit to spare, so every node of both sets is true.</p></li>
-</ul>
-<p><strong>Finned fish</strong> work the same way. Suppose a digit in k rows fits k columns except for a few extra places, the <em>fin</em>, all in one box. If every fin candidate is false, the sets rule applies and each column's node is true. So the fin node and a column's node cannot both be false. A candidate in that column and in the fin's box is adjacent to both, and the triangle closes.</p>
-<p><strong>4. Two remarks.</strong></p>
-<p><em>Triples as a coloring.</em> A solved grid colors the 81 cells with nine colors so that cells which see each other differ [2]. A naked triple is three cells that all see each other and share a list of three colors, so they use up all three. The sets rule says the same thing by counting.</p>
-<p><em>The unique rectangle.</em> Four cells in two rows, two columns and two boxes, each holding only a and b, form an even loop, and an even loop has exactly two colorings (Corollary 2.2). Nothing outside the four cells can tell the two apart, so both would be solutions. A proper puzzle has one solution, so that pattern can never appear, and any candidate that would complete it is false. The loop and its two colorings are graph theory. The last step is not: it uses a fact about the puzzle that is not one of the 324 constraint sets.</p>
-<p>All four were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million adjacent pairs of group nodes against Lemma 7.4, about 17,000 instances of the sets rule with k = 2, 3 and 4, about 1,700 XYZ configurations against Lemma 7.6, and about 385,000 instances for almost-locked sets against Lemma 7.7. There were no failures. The script is <code>proofs/verify_sets.py</code>.</p>
-<p><strong>What is still outside.</strong> <em>Trial and error</em> reaches its contradiction through a branching web of consequences, not a loop, a coloring or a count. So do the few very rare patterns not examined here, such as the Exocet.</p>
-<h2 id="8-has-this-been-done-before">8. Has this been done before?</h2>
-<p>Yes, in pieces. The strategies are well known, and so is the loop view. What I have not found written down is one counting rule that proves all of them.</p>
-<ul><li><p><strong>Sudoku as graph coloring.</strong> Herzberg and Murty [2] color the 81 cells with nine digits. That graph describes what a solution is. It is not the candidate graph used here.</p></li><li><p><strong>Bivalue and bilocation graphs.</strong> Eppstein [3] builds graphs from the same strong edges and reads solving rules off their cycles. His rules use edge labels, not two colors or parity. This is the closest academic precedent.</p></li><li><p><strong>Coloring.</strong> HoDoKu [7] describes Simple Colors, with the names Color Trap and Color Wrap, and Multi Colors, whose two rules are Bridge and Double bridge here. SudokuWiki [8] describes 3D Medusa.</p></li><li><p><strong>Loops.</strong> SudokuWiki [8] notes that a loop with one discontinuity has an odd number of nodes, and states the rules proved here as Theorems 5.2 and 5.3. Sudopedia [9] has the rule that is Theorem 5.4. Barker [10] observes that an odd loop of strong edges cannot occur, and describes the guardians of the Broken Wing.</p></li><li><p><strong>Background maths.</strong> Theorem 2.1 is König&#39;s [1]. The odd-cycle bound is Padberg&#39;s [4]. The 2-SAT method is due to Aspvall, Plass and Tarjan [6]. Berthier [11] treats chains in formal logic.</p></li></ul>
-<h2 id="9-summary">9. Summary</h2>
-<ol><li><p>Candidates are nodes. &quot;Not both&quot; is an edge. &quot;Exactly one&quot; is a strong edge.</p></li><li><p>Round any loop of k nodes, the empty edges number k − 2t.</p></li><li><p>Strong edges are never empty, so they 2-color.</p></li><li><p>Pair up a loop with strong edges and nothing is left to choose. An odd loop decides its leftover candidate; an even loop makes every edge either-or.</p></li><li><p>More than a dozen named strategies are that one fact in different shapes.</p></li><li><p>Triples and bigger fish need more than edges.</p></li></ol>
-<h2 id="references">References</h2>
-<ol><li><p>D. König, <em>Theorie der endlichen und unendlichen Graphen</em>, Akademische Verlagsgesellschaft, Leipzig, 1936.</p></li><li><p>A. M. Herzberg and M. R. Murty, Sudoku squares and chromatic polynomials, <em>Notices of the American Mathematical Society</em> 54 (2007), no. 6, 708–717. Summary: <a href="https://plus.maths.org/content/solving-sudokus-coloring-numbers">Plus Magazine</a>.</p></li><li><p>D. Eppstein, <a href="https://arxiv.org/abs/cs/0507053">Nonrepetitive paths and cycles in graphs with application to Sudoku</a>, arXiv:cs/0507053, 2005.</p></li><li><p>M. W. Padberg, On the facial structure of set packing polyhedra, <em>Mathematical Programming</em> 5 (1973), 199–215.</p></li><li><p>D. E. Knuth, Dancing edges, in <em>Millennial Perspectives in Computer Science</em>, Palgrave, 2000, 187–214. arXiv:cs/0011047.</p></li><li><p>B. Aspvall, M. F. Plass and R. E. Tarjan, A linear-time algorithm for testing the truth of certain quantified Boolean formulas, <em>Information Processing Letters</em> 8 (1979), 121–123.</p></li><li><p>B. Hobiger, <a href="https://hodoku.sourceforge.net/en/tech_col.php">HoDoKu: Coloring techniques</a>.</p></li><li><p>A. Stuart, SudokuWiki: <a href="https://www.sudokuwiki.org/X_Cycles_Part_2">X-Cycles, Part 2</a> and <a href="https://www.sudokuwiki.org/3D_Medusa">3D Medusa</a>.</p></li><li><p>Sudopedia, <a href="https://sudopedia.sudocue.net/index.php/Nice_Loop">Nice Loop</a>.</p></li><li><p>A. Barker, <a href="https://sudokuone.com/sweb/gen2/blacklog.htm">Odd Loops, Broken Wings, and Dark Logic</a>.</p></li><li><p>D. Berthier, <em>The Hidden Logic of Sudoku</em>, Lulu, 2007.</p></li></ol>
+<p>The smallest case is a triangle: a candidate adjacent to both endpoints of a strong edge is false (Theorem 5.2 with k = 3). Solvers call this a pointing pair or box-line reduction when the digit has two places.</p>
+<p>The examples below write candidates as (row, column, digit).</p>
+<p><strong>X-Wing.</strong> Digit 2 has two places in column 4 and two in column 8, in rows 4 and 7 both times. This gives strong edges (4,4,2)–(7,4,2) and (4,8,2)–(7,8,2). Edges along rows 4 and 7 complete a 4-cycle, and the two strong edges are a perfect matching of it. By Theorem 5.4 each row edge has exactly one true endpoint, so (4,6,2) and (7,5,2) are false.</p>
+<figure><img src="figures/fig15.png" alt="X-Wing on digit 2 · four steps on the grid" loading="lazy"><figcaption>Figure 15. X-Wing on digit 2 · four steps on the grid</figcaption></figure>
 
+<p>Steps 2 and 3 are the two colorings of the cycle. The red candidates are false in both.</p>
+<p><strong>X-Cycle.</strong> For digit 8 there are strong edges (3,2,8)–(7,2,8) in column 2, (8,3,8)–(8,9,8) in row 8 and (9,7,8)–(3,7,8) in column 7. Edges in box 7, box 9 and row 3 join them into a 6-cycle, and the strong edges are a perfect matching of it. Theorem 5.4 removes the other 8s in row 3, box 7 and box 9: (3,3,8), (3,9,8), (7,3,8) and (7,9,8).</p>
+<figure><img src="figures/fig16.png" alt="X-Cycle on digit 8 · two steps on the grid" loading="lazy"><figcaption>Figure 16. X-Cycle on digit 8 · two steps on the grid</figcaption></figure>
+
+<p><strong>Simple Coloring.</strong> For digit 6 the strong edges form one path: (2,2,6), (2,6,6), (1,5,6), (9,5,6), (9,3,6), (5,3,6). Color it alternately. The candidates (5,2,6) and (6,2,6) are each adjacent to (2,2,6), of one color, and to (5,3,6), of the other. Rule 2 makes both false.</p>
+<figure><img src="figures/fig17.png" alt="Simple Coloring on digit 6 · two steps on the grid" loading="lazy"><figcaption>Figure 17. Simple Coloring on digit 6 · two steps on the grid</figcaption></figure>
+
+<p>Each red candidate forms a 7-cycle with the path. This is the odd cycle in the proof of rule 2.</p>
+<p><strong>3D Medusa.</strong> The same coloring, except that the component may include several digits, joined through cells with two candidates. If two candidates of one color are adjacent, rule 1 removes that color. Colors can be compared only within one component.</p>
+<p><strong>Multi-Coloring.</strong> For digit 2 one component has classes K0 = {(4,6,2), (9,4,2), (1,5,2), (8,3,2)} and K1 = {(6,4,2), (8,5,2)}. A second component is the strong edge (4,1,2)–(7,1,2). Row 4 joins (4,6,2) to (4,1,2), and box 7 joins (8,3,2) to (7,1,2). So K0 is adjacent to both candidates of the second component. Rule 4 makes K0 false and K1 true, which places a 2 at row 6, column 4 and at row 8, column 5.</p>
+<figure><img src="figures/fig18.png" alt="Multi-Coloring on digit 2 · two steps on the grid" loading="lazy"><figcaption>Figure 18. Multi-Coloring on digit 2 · two steps on the grid</figcaption></figure>
+
+<p>If K0 were true, both endpoints of the strong edge (4,1,2)–(7,1,2) would be false.</p>
+<p><strong>Naked pair.</strong> Two cells of a row each hold only 4 and 7. In each cell the two candidates are joined by a strong edge. In the row the two 4s are adjacent, and so are the two 7s. This is a 4-cycle, and the two cell edges are a perfect matching of it. By Theorem 5.4 the row's 4 and 7 are both in those two cells, so the other 4s and 7s in the row are removed. A hidden pair is the same cycle with cells and digits swapped.</p>
+<figure><img src="figures/fig19.png" alt="naked pair · the 4-cycle drawn on one row" loading="lazy"><figcaption>Figure 19. naked pair · the 4-cycle drawn on one row</figcaption></figure>
+
+<p><strong>Skyscraper and Two-String Kite.</strong> Both are 5-cycles of one digit with two strong edges, so both are Theorem 5.2. In a Skyscraper the strong edges are in two columns, and one candidate of each is in the same row. In a Kite one strong edge is in a row, the other in a column, and a box joins them. Any 5-cycle of this kind is called a Turbot Fish.</p>
+<figure><img src="figures/fig20.png" alt="Skyscraper and Two-String Kite · 5-cycles on the grid" loading="lazy"><figcaption>Figure 20. Skyscraper and Two-String Kite · 5-cycles on the grid</figcaption></figure>
+
+<p><strong>XY-Wing.</strong> Three cells hold the pairs 12, 13 and 23, and the pivot (12) is adjacent to both wings. The cycle is: 3 in the first wing, 1 in the first wing, 1 in the pivot, 2 in the pivot, 2 in the second wing, 3 in the second wing, and a 3 adjacent to both wings. The three cell edges are strong and form a perfect matching of six of the seven candidates. Theorem 5.2 removes the seventh. W-Wing, XY-Chain and Remote Pairs are longer cycles of the same kind.</p>
+<figure><img src="figures/fig21.png" alt="XY-Wing · on the grid and as a 7-cycle" loading="lazy"><figcaption>Figure 21. XY-Wing · on the grid and as a 7-cycle</figcaption></figure>
+
+<p><strong>Broken Wing.</strong> Take an odd cycle of one digit in which every edge but one is strong. By Corollary 5.6, the row, column or box of the weak edge has the digit in one of its other cells, the set R. If R has one candidate, it is true. Otherwise a candidate adjacent to all of R is removed.</p>
+<figure><img src="figures/fig22.png" alt="Corollary 5.6 · an odd cycle with one weak edge" loading="lazy"><figcaption>Figure 22. Corollary 5.6 · an odd cycle with one weak edge</figcaption></figure>
+
+<h2 id="7-limits-and-extensions">7. Limits and extensions</h2>
+<p><strong>A cycle of weak edges does not eliminate anything.</strong> In the empty grid, every candidate is true in some solution. To show this, write r − 1 = 3q + m and c − 1 = 3s + n with q, m, s, n in {0, 1, 2}, and let G(r, c) be the digit with</p>
+<div class="tex">G(r,c) - 1 \equiv 3m + q + 3s + n \pmod 9 .</div>
+
+<p>Along a row, 3s + n takes the values 0 to 8. Down a column, 3m + q does. In a box, 3m + n does. Adding a constant modulo 9 keeps nine values different, so G is a completed grid. Renaming its digits puts any digit in any cell.</p>
+<p>The three 1s in the first three cells of row 1 form a triangle of weak edges, an odd cycle. Each of them is true in some solution, so none can be eliminated.</p>
+<figure><img src="figures/fig23.png" alt="three 1s in one row of the empty grid · four kinds of solution" loading="lazy"><figcaption>Figure 23. three 1s in one row of the empty grid · four kinds of solution</figcaption></figure>
+
+<p>Lemma 4.1 still holds: the number of edges with both endpoints false is odd in each case. It does not determine which edge has both endpoints false; strong edges are needed for that. The same holds for even cycles: four 1s in one row form a 4-cycle of weak edges and determine nothing.</p>
+<p><strong>Rules that use a whole constraint set.</strong> The last two 3D Medusa rules in [8] are of this kind.</p>
+<p><strong>Proposition 7.1.</strong> Let K0 be a color class of a component of the strong graph, and A a constraint set. If every candidate of A in P is adjacent to some candidate of K0, then K0 is false and the other class is true.</p>
+<p><em>Proof.</em> If K0 were true, every candidate of A would be false (Lemma 3.1). A solution has a member in A, so K0 is not true, and by Theorem 5.1 the other class is. ∎</p>
+<p><strong>What edges alone can prove.</strong> Exactly what closed alternating walks prove. Read each weak edge uv as the clause ¬u ∨ ¬v, and each strong edge as the two clauses ¬u ∨ ¬v and u ∨ v. A true/false assignment on P that satisfies all these clauses is a <em>model</em> of the edges. Every solution is a model of the edges. An <em>alternating walk</em> from u is a sequence u = a(0), a(1), ..., a(n) in which steps at even positions are edges and steps at odd positions are strong edges. Nodes may repeat. The walk is <em>closed</em> if n is odd, n ≥ 3 and a(n) = u.</p>
+<p><strong>Proposition 7.2 (closed walks).</strong></p>
+<ol type="1">
+<li><p>If a closed alternating walk starts at u, then u is false in every model of the edges, and so in every solution.</p></li>
+<li><p>If none does, some model of the edges makes u true.</p></li>
+</ol>
+<p>A closed alternating walk with no repeated node is the cycle of Theorem 5.2.</p>
+<p><em>Proof, part 1.</em> Suppose u is true. An edge from a true candidate leads to a false one, and a strong edge from a false candidate leads to a true one. So a(0), a(2), a(4), ... are true, including a(n − 1). But a(n − 1) is adjacent to u, and both are true, which contradicts Lemma 3.1.</p>
+<p><em>Proof, part 2.</em> Let E be the candidates reached from u by alternating walks of even length, u included. Let O be the candidates adjacent to some member of E.</p>
+<ol type="1">
+<li><p>No two members of E are adjacent. If e and e′ were, then the walk from u to e, the edge to e′, and the walk to e′ reversed would form a closed alternating walk. The edge to e′ is an even step, and the reversed walk has its strong edges at odd steps. Its length is at least 3 because e and e′ differ. This contradicts the assumption. So E and O are disjoint.</p></li>
+<li><p>A strong edge from a member o of O leads into E: extend the walk that reaches the neighbor of o in E by o, then by the other endpoint of the strong edge.</p></li>
+<li><p>Take any solution T. Make E true, O false, and everything else as in T.</p></li>
+<li><p>Check each edge pq. If one endpoint is in E, the other is in O, and the sum is 1. If no endpoint is in E and one is in O, the sum is at most 1, and by point 2 the edge is not strong. If neither endpoint is in E or O, the values are those of T, which satisfy Lemma 3.1.</p></li>
+</ol>
+<p>So the assignment is a model of the edges and makes u true. ∎</p>
+<p>The clauses form a 2-SAT instance, and Proposition 7.2 is the 2-SAT argument [6] applied to it.</p>
+<p><strong>Proposition 7.3 (a deduction edges do not reach).</strong> In some state a candidate can be eliminated, although a model of the edges makes it true.</p>
+<p><em>Proof.</em> Take every candidate, except that the first three cells of row 1 keep only the digits 1, 2 and 3. The grid G fits, so a solution exists. In any solution those three cells hold 1, 2 and 3 in some order, so the 1 in cell 4 of row 1 is false.</p>
+<p>No constraint set has exactly two candidates left. The counts are 3 for the three restricted cells, 6 for digits 4 to 9 in row 1 and in box 1, 8 for digits 4 to 9 in columns 1 to 3, and 9 for the rest. So there is no strong edge, and making that candidate true and all others false is a model of the edges. ∎</p>
+<figure><img src="figures/fig24.png" alt="Proposition 7.3 · row 1 of the example state" loading="lazy"><figcaption>Figure 24. Proposition 7.3 · row 1 of the example state</figcaption></figure>
+
+<p>This is a <em>naked triple</em>. It counts three cells against three digits and uses no strong edge.</p>
+<p>So edges alone cover pairs, wings, kites, chains, cycles and coloring. They do not cover naked and hidden triples, fish with three or more candidates in a line, XYZ-Wing, or chains in which a group of cells acts as one node, such as the Empty Rectangle. These need rules about three or more candidates at once. The rest of this section gives them.</p>
+<h3 id="extensions">Extensions</h3>
+<p>Two extensions keep the true/false coloring: larger nodes, and counting over whole constraint sets.</p>
+<p><strong>1. Groups as nodes.</strong> Take one digit, and two or three of its candidates in cells of one box that share a row or column. Call that a <em>group</em>. A group is true when one of its members is true, and false when all of them are false. A single candidate is a group of one.</p>
+<p>Two groups are <em>adjacent</em> when they have no common candidate and some constraint set contains both. The edge is <em>strong</em> when together they are all the candidates left in that set.</p>
+<p><strong>Lemma 7.4 (groups satisfy the edge rules).</strong> Let A and B be adjacent groups and T a solution. At most one of A, B is true. If the edge is strong, exactly one is.</p>
+<p><em>Proof.</em> Both are in one constraint set, which has exactly one true candidate. That candidate is not in both A and B, because they have no common candidate. If A and B together are the whole set, it is in one of them. ∎</p>
+<p>Lemma 4.1 and Theorem 5.2 use only these two rules, so they hold when some nodes are groups. This covers:</p>
+<ul>
+<li><p><strong>Locked triple.</strong> A digit has three places in one unit, all inside a second unit. The three form a group that is true in every solution, so every other candidate of that digit in the second unit is adjacent to a true node and is false.</p></li>
+<li><p><strong>Empty Rectangle</strong> and <strong>grouped X-Cycles.</strong> These are odd cycles of one digit in which some nodes are groups.</p></li>
+</ul>
+<figure><img src="figures/fig25.png" alt="A group as one node · a locked triple" loading="lazy"><figcaption>Figure 25. A group as one node · a locked triple</figcaption></figure>
+
+<p><strong>2. Counting over constraint sets.</strong></p>
+<p><strong>Theorem 7.5 .</strong> Let B1, ..., Bk be constraint sets with no common candidates, and C1, ..., Ck be k constraint sets. Suppose every candidate in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.</p>
+<p><em>Proof.</em> Each B has exactly one true candidate, and the B's are disjoint, so they have k true candidates. Each of these is in some C. A C has only one true candidate, so the k true candidates are in k different C's. That is all k of the C's, so each C has its true candidate in the B's. A candidate of a C outside the B's is therefore false. ∎</p>
+<p>As with Lemma 4.1, the proof counts true candidates in two ways.</p>
+<p>As nodes: for each C, the candidates it shares with the B's form one group node, and the count shows that node is true. Every other candidate of that C is adjacent to it, so it is false. This is the locked triple argument with a count in place of a single constraint set.</p>
+<figure><img src="figures/fig26.png" alt="Theorem 7.5 on a naked triple · k = 3" loading="lazy"><figcaption>Figure 26. Theorem 7.5 on a naked triple · k = 3</figcaption></figure>
+
+<p>This also has a graph form. Make each constraint set a node, and each candidate an edge joining two of its sets, for example its cell and its row-and-digit set. This graph is bipartite: cells on one side, row-and-digit sets on the other. A solution chooses edges so that every node is used once, a perfect matching. Theorem 7.5 is the counting step of Hall's theorem for this graph: k nodes on one side whose edges reach only k nodes on the other side must be matched to exactly those.</p>
+<figure><img src="figures/fig27.png" alt="The second graph · sets as nodes, candidates as edges" loading="lazy"><figcaption>Figure 27. The second graph · sets as nodes, candidates as edges</figcaption></figure>
+
+<p>Cases of Theorem 7.5:</p>
+<div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Strategy</th>
+<th>The B's</th>
+<th>The C's</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Naked pair, triple, quad</td>
+<td>k cells of one unit</td>
+<td>the k digits they hold, in that unit</td>
+</tr>
+<tr class="even">
+<td>Hidden pair, triple, quad</td>
+<td>k digits in one unit</td>
+<td>the k cells they fit in</td>
+</tr>
+<tr class="odd">
+<td>X-Wing, Swordfish, Jellyfish</td>
+<td>one digit in k rows</td>
+<td>the same digit in k columns</td>
+</tr>
+</tbody>
+</table></div>
+<p>With k = 2 these are the naked pair, hidden pair and X-Wing of Theorem 5.4: the 4-cycle with two strong edges is the case k = 2. The naked triple of Proposition 7.3 is the case k = 3.</p>
+<p><strong>3. Clauses u ∨ v from counting.</strong> The proof of Theorem 5.2 uses each strong edge in one direction only: if one endpoint is false, the other is true. So it also holds when some strong edges are replaced by pairs of nodes that are not both false, that is, by clauses u ∨ v without ¬u ∨ ¬v.</p>
+<p><strong>Lemma 7.6 (XYZ-Wing).</strong> Let a cell p hold x, y and z. Let p be adjacent to a cell holding x and z, and to a cell holding y and z. Then at least one of the three z's in those cells is true.</p>
+<p><em>Proof.</em> The cell p is x, y or z. If it is x, the cell holding x and z is z. If it is y, the cell holding y and z is z. Otherwise p is z. ∎</p>
+<p>So the z in p and the z in the first wing form one node, and the z in the second wing another. They cannot both be false. A candidate z adjacent to all three cells is adjacent to both nodes. If it were true, both nodes would be false, which the lemma excludes. This is the <strong>XYZ-Wing</strong>, a triangle like the Locked pair.</p>
+<p><strong>Lemma 7.7 (almost-locked set).</strong> An <em>almost-locked set</em> is n cells of one unit that hold n + 1 digits between them. For each of its digits, the candidates of that digit in the set form a node. The nodes of two different digits cannot both be false.</p>
+<p><em>Proof.</em> If both were false, the n cells would have n − 1 digits between them. Cells of one unit need different digits, so this is impossible. ∎</p>
+<p>So in an almost-locked set, nodes of two different digits satisfy the clause u ∨ v. Nodes of the same digit in two different sets are adjacent in the usual way when all their cells are adjacent. This is all Theorem 5.2 needs, so cycles can pass through almost-locked sets:</p>
+<ul>
+<li><p><strong>Two sets (ALS-XZ, WXYZ-Wing, XYZ-Wing).</strong> Sets A and B share a digit x whose candidates are all adjacent across the sets, and another digit z. The cycle is: a candidate z adjacent to every z of both sets, the z node of A, the x node of A, the x node of B, the z node of B. If the candidate were true, both z nodes would be false, so both x nodes would be true, and they are adjacent.</p></li>
+<li><p><strong>Three or more sets (ALS-XY-Wing, chains of almost-locked sets).</strong> The cycle passes through more sets, changing digit at each.</p></li>
+<li><p><strong>Two sets with two connecting digits (including the basic Sue de Coq).</strong> Each connecting digit is used by at most one set, so neither set has a spare digit, and every node of both sets is true.</p></li>
+</ul>
+<p><strong>Finned fish.</strong> Suppose a digit in k rows fits k columns except for a few extra places, the <em>fin</em>, all in one box. If every fin candidate is false, Theorem 7.5 applies and each column's node is true. So the fin node and a column's node cannot both be false. A candidate in that column and in the fin's box is adjacent to both, which forms a triangle.</p>
+<p><strong>4. Remarks.</strong></p>
+<p><em>Triples as a coloring.</em> A solved grid colors the 81 cells with nine colors so that adjacent cells differ [2]. A naked triple is three mutually adjacent cells with the same list of three colors, so they use all three. Theorem 7.5 states the same by counting.</p>
+<p><em>Unique rectangle.</em> Four cells in two rows, two columns and two boxes, each holding only a and b, form an even cycle, which has exactly two colorings (Corollary 2.2). Nothing outside the four cells distinguishes them, so both would be solutions. A proper puzzle has one solution, so this pattern cannot occur, and a candidate that would complete it is false. The cycle and its two colorings are graph theory. The last step is not: it uses a property of the puzzle that is not one of the 324 constraint sets.</p>
+<p>All four lemmas were checked by brute force on about 1,100 random states that contain a known solution: 1.1 million adjacent pairs of group nodes for Lemma 7.4, about 17,000 instances of Theorem 7.5 with k = 2, 3 and 4, about 1,700 XYZ configurations for Lemma 7.6, and about 385,000 almost-locked set instances for Lemma 7.7. There were no failures. The script is <code>proofs/verify_sets.py</code>.</p>
+<p><strong>Not covered.</strong> Trial and error reaches a contradiction through branching consequences rather than a cycle, a coloring or a count. The same applies to rare patterns such as the Exocet, which are not examined here.</p>
+<h2 id="8-related-work">8. Related work</h2>
+<p>The strategies and the cycle view of them are known. I have not found a single counting rule that proves all of them.</p>
+<ul>
+<li><p><strong>Sudoku as graph coloring.</strong> Herzberg and Murty [2] color the 81 cells with nine digits. That graph describes a solution; it is not the candidate graph used here.</p></li>
+<li><p><strong>Bivalue and bilocation graphs.</strong> Eppstein [3] builds graphs from the same strong edges and derives solving rules from their cycles. His rules use edge labels rather than 2-coloring or parity. This is the closest prior work.</p></li>
+<li><p><strong>Coloring.</strong> HoDoKu [7] describes Simple Colors and Multi Colors, which are rules 1 to 4 of Corollary 5.5. SudokuWiki [8] describes 3D Medusa.</p></li>
+<li><p><strong>Cycles.</strong> SudokuWiki [8] notes that a nice loop with one discontinuity has an odd number of nodes, and states the rules proved here as Theorems 5.2 and 5.3. Sudopedia [9] has the rule that is Theorem 5.4. Barker [10] observes that an odd cycle of strong edges cannot occur, and describes the Broken Wing (Corollary 5.6).</p></li>
+<li><p><strong>Background.</strong> Theorem 2.1 is König's [1]. The odd-cycle bound is Padberg's [4]. The 2-SAT method is due to Aspvall, Plass and Tarjan [6]. Berthier [11] treats chains in formal logic.</p></li>
+</ul>
+<h2 id="references">References</h2>
+<ol type="1">
+<li><p>D. König, <em>Theorie der endlichen und unendlichen Graphen</em>, Akademische Verlagsgesellschaft, Leipzig, 1936.</p></li>
+<li><p>A. M. Herzberg and M. R. Murty, Sudoku squares and chromatic polynomials, <em>Notices of the American Mathematical Society</em> 54 (2007), no. 6, 708–717. Summary: <a href="https://plus.maths.org/content/solving-sudokus-coloring-numbers">Plus Magazine</a>.</p></li>
+<li><p>D. Eppstein, <a href="https://arxiv.org/abs/cs/0507053">Nonrepetitive paths and cycles in graphs with application to Sudoku</a>, arXiv:cs/0507053, 2005.</p></li>
+<li><p>M. W. Padberg, On the facial structure of set packing polyhedra, <em>Mathematical Programming</em> 5 (1973), 199–215.</p></li>
+<li><p>D. E. Knuth, Dancing links, in <em>Millennial Perspectives in Computer Science</em>, Palgrave, 2000, 187–214. arXiv:cs/0011047.</p></li>
+<li><p>B. Aspvall, M. F. Plass and R. E. Tarjan, A linear-time algorithm for testing the truth of certain quantified Boolean formulas, <em>Information Processing Letters</em> 8 (1979), 121–123.</p></li>
+<li><p>B. Hobiger, <a href="https://hodoku.sourceforge.net/en/tech_col.php">HoDoKu: Coloring techniques</a>.</p></li>
+<li><p>A. Stuart, SudokuWiki: <a href="https://www.sudokuwiki.org/X_Cycles_Part_2">X-Cycles, Part 2</a> and <a href="https://www.sudokuwiki.org/3D_Medusa">3D Medusa</a>.</p></li>
+<li><p>Sudopedia, <a href="https://sudopedia.sudocue.net/index.php/Nice_Loop">Nice Loop</a>.</p></li>
+<li><p>A. Barker, <a href="https://sudokuone.com/sweb/gen2/blacklog.htm">Odd Loops, Broken Wings, and Dark Logic</a>.</p></li>
+<li><p>D. Berthier, <em>The Hidden Logic of Sudoku</em>, Lulu, 2007.</p></li>
+</ol>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script>

@@ -9,19 +9,19 @@
 :root {
   /* layout: board on the left, explanation on the right; one column on phones */
   --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78; --soft: #d6ecee; --soft-line: #8fc4ca; --on-soft: #0a4a51;
-  --true: #1b8f4b; --false: #86919d; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
+  --true: #1b8f4b; --false: #2767cf; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
   --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-    --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+    --true: #45c680; --false: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-  --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+  --true: #45c680; --false: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -108,11 +108,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .sw { width: 22px; height: 0; border-top: 3px solid var(--ink); }
 .sw.weak { border-top: 2px dashed var(--muted); }
 .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
-.dot.t { background: var(--true); border-color: var(--true); }
-.dot.f { background: var(--false); border-color: var(--false); }
+.dot.t { border-color: var(--true); background: color-mix(in srgb, var(--true) 35%, transparent); }
+.dot.f { border-color: var(--false); background: color-mix(in srgb, var(--false) 35%, transparent); }
 .dot.o { border-color: var(--out); background: color-mix(in srgb, var(--out) 25%, transparent); }
-.dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
-.dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
+.dot.n { border-color: var(--muted); background: color-mix(in srgb, var(--muted) 18%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
 label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -164,12 +163,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
   <div class="cols">
       <div class="legend" id="key" aria-label="Key">
-        <span><i class="sw"></i>strong edge: exactly one end true</span>
-        <span><i class="sw weak"></i>weak edge: at most one end true</span>
+        <span><i class="sw"></i>strong edge: exactly one endpoint true</span>
+        <span><i class="sw weak"></i>weak edge: at most one endpoint true</span>
+        <span><i class="dot n"></i>candidate</span>
+        <span><i class="dot t"></i>assumed true</span>
+        <span><i class="dot f"></i>assumed false</span>
         <span><i class="dot o"></i>can be removed</span>
-        <span><i class="dot t"></i>true in this step</span>
-        <span><i class="dot f"></i>false in this step</span>
-        <span><i class="dot a"></i><i class="dot b"></i>the two colors of a chain</span>
       </div>
     <div class="stack">
       <section class="card board" aria-label="Board">
@@ -207,7 +206,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
       <section class="card" id="explain" aria-label="Explanation">
         <h2 id="tname">Pick a technique</h2>
-        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Click it to see the loop.</p>
+        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Click it to see the cycle.</p>
         <ol id="steps"></ol>
         <div class="row" id="stepnav" hidden>
           <button id="apply" type="button" class="primary">Apply</button>
@@ -234,7 +233,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     { name: 'Two-String Kite', puzzle: '.4...52.....1..7...619....8.2.4.....9....3..7......36....5...2..3.7.6..949....6..', tech: 'kite' },
     { name: 'XY-Wing', puzzle: '..41.5....7.4......8..7..2...5.173......3..8.6......794.8.....6...6..2...9.....1.', tech: 'xywing' },
     { name: 'Simple Coloring', puzzle: '......7...6...2.3.35.6...4..1......3..5.8...47.9.2.6..6..2.3.5......1..75.1..4...', tech: 'color' },
-    { name: 'One-digit odd loop (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
+    { name: 'One-digit odd cycle (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
     { name: '3D Medusa', puzzle: '5.........8.....4...2.1...6.9...6.31.4.8.......6...9..2....7.....7...68...1.6.3.4', tech: 'medusa' },
     { name: 'Alternating chain', puzzle: '.23..5.96....7..2.........5.5.........9.24......893..4.753.....24875..3......2..1', tech: 'chain' },
     /* The loop rule with a group of cells as one dot. */
@@ -288,15 +287,34 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var bow = Math.min(18, 9 + len * 0.05);
     return '<path d="M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + ((p.x + q.x) / 2 + dy / len * bow).toFixed(1) + ' ' + ((p.y + q.y) / 2 - dx / len * bow).toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" fill="none" ' + style + ' stroke-linecap="round"/>';
   }
+  /* Node colors. Gray: a candidate with no value assumed. Green: assumed true. Blue: assumed false. Red: can be removed.
+     A chain of strong edges uses the same colors: one class assumed true, the other assumed false. */
+  var NODE_COLORS = { loop: ['var(--muted)', 'var(--muted)', 0.16], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.35], f: ['var(--false)', 'var(--false)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
+  NODE_COLORS.k0 = NODE_COLORS.t; NODE_COLORS.k1 = NODE_COLORS.f;
   function ring(id, kind) {
-    var p = pos(id), map = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
+    var p = pos(id), map = NODE_COLORS;
     var m = map[kind] || map.loop;
     var out = '<circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="var(--panel)"/><circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="' + m[1] + '" fill-opacity="' + m[2] + '" stroke="' + m[0] + '" stroke-width="2"/>';
-    if (kind === 'f') out += '<line x1="' + (p.x - 6) + '" y1="' + (p.y + 6) + '" x2="' + (p.x + 6) + '" y2="' + (p.y - 6) + '" stroke="var(--false)" stroke-width="2"/>';
     return out;
   }
 
   /* ---------- overlay for the current view ---------- */
+  /* Which part of a move is on screen. 'plain': the nodes and edges only, how play starts a move.
+     'step': one step of the argument, without the outcome. 'result': the outcome, shown at the last step,
+     while the move is applied, and straight away when a technique is clicked or play runs Moves only. */
+  function phase() {
+    if (view.kind !== 'result' || removing) return 'result';
+    if (view.step === null) return view.plain ? 'plain' : 'result';
+    var sp = view.res.steps[view.step];
+    return view.step === view.res.steps.length - 1 && !sp.marks ? 'result' : 'step';
+  }
+  function kindOf(res, role, id) {
+    var ph = phase();
+    if (ph === 'plain') return 'loop';
+    if (ph === 'step') { var sp = res.steps[view.step]; return sp.marks && sp.marks[id] ? sp.marks[id] : (role === 'elim' ? 'loop' : role); }
+    if (res.wrapClass !== undefined) return role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+    return role;
+  }
   function overlay(skip) {
     var links = '', rings = '', marked = {}; drawn = [];
     if (view.kind === 'result') {
@@ -312,16 +330,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           var blocked = others.some(function (o) { var t = ((o.x - A.x) * dx + (o.y - A.y) * dy) / len, dist = Math.abs((o.x - A.x) * dy - (o.y - A.y) * dx) / len; return t > 4 && t < len - 4 && dist < 22; });
           dpath += blocked ? ' Q' + ((A.x + B.x) / 2 + dy / len * 42) + ' ' + ((A.y + B.y) / 2 - dx / len * 42) + ' ' + B.x + ' ' + B.y : ' L' + B.x + ' ' + B.y;
         }
-        links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>'
+        links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--muted)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>'
           + '<path d="' + dpath + '" fill="none" stroke="var(--panel)" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>'
-          + '<path d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-opacity="0.1" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>';
+          + '<path d="' + dpath + '" fill="none" stroke="var(--muted)" stroke-opacity="0.1" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>';
       });
-      res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash ? 'clash' : l.strong ? 'strong' : 'weak'); });
+      var ph = phase();
+      res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash && ph === 'result' ? 'clash' : l.strong ? 'strong' : 'weak'); });
       if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');
       res.nodes.forEach(function (role, id) {
-        var kind = role;
-        if (step && step.marks) kind = step.marks[id] ? step.marks[id] : (role === 'elim' ? 'loop' : role);
-        if (res.wrapClass !== undefined && view.step === null) kind = role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+        var kind = kindOf(res, role, id);
         if (!skip[id]) rings += ring(id, kind);
         marked[id] = 1;
       });
@@ -387,7 +404,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   function scan() { avail = {}; var any = false; E.TECHNIQUES.forEach(function (t) { avail[t.key] = E.solved(st) || ((t.lastResort || t.late) && any) ? [] : t.find(st); if (avail[t.key].length) any = true; }); }
   function drawTechs() {
     var h = '';
-    var section = '', heads = { count: 'Counting across sets (the sets rule): used when no loop or coloring applies', unique: 'Outside the coloring: needs the one-solution fact, or a guess as the last resort', last: null };
+    var section = '', heads = { count: 'Counting across sets (the sets rule): used when no cycle or coloring applies', unique: 'Outside the coloring: needs the one-solution fact, or a guess as the last resort', last: null };
     /* shown by section, and inside a section from most used to least; the order they are tried in stays simplest first */
     var rankSec = { count: 1, unique: 2, last: 3 }, shown = E.TECHNIQUES.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
       return (a.t.easy ? -1 : rankSec[a.t.section] || 0) - (b.t.easy ? -1 : rankSec[b.t.section] || 0) || (b.t.used || 0) - (a.t.used || 0) || a.i - b.i; }).map(function (x) { return x.t; });
@@ -498,14 +515,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var xl = 170, xr = 350, yOf = function (i) { return top + i * GAP; }, s = '', going = removing;
     var posL = {}, posR = {}; M.left.forEach(function (x, i) { posL[x.key] = yOf(i); }); M.right.forEach(function (x, i) { posR[x.key] = yOf(i); });
     s += '<text x="260" y="24" text-anchor="middle" font-family="var(--font-body)" font-size="13" fill="var(--muted)">' + M.title + '</text>';
-    s += '<rect x="' + (xl - 92) + '" y="' + (top - 22) + '" width="' + (xr - xl + 184) + '" height="' + ((M.k - 1) * GAP + 44) + '" rx="14" fill="var(--k0)" fill-opacity="0.07" stroke="var(--k0)" stroke-width="1.5" stroke-dasharray="6 5"/>';
+    s += '<rect x="' + (xl - 92) + '" y="' + (top - 22) + '" width="' + (xr - xl + 184) + '" height="' + ((M.k - 1) * GAP + 44) + '" rx="14" fill="var(--muted)" fill-opacity="0.07" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="6 5"/>';
+    var ph = phase(), show = function (k) { return ph === 'plain' ? 'other' : ph === 'step' && k === 'elim' ? 'other' : k; };
     var edge = function (e) {
-      var y1 = posL[e.l], y2 = posR[e.r], st = e.kind === 'block' ? 'stroke="var(--true)" stroke-width="2.4"' : e.kind === 'elim' ? 'stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"' : 'stroke="var(--muted)" stroke-opacity="0.55" stroke-width="1.3"';
+      var kind = show(e.kind), y1 = posL[e.l], y2 = posR[e.r], st = kind === 'block' ? 'stroke="var(--ink)" stroke-width="2.4"' : kind === 'elim' ? 'stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"' : 'stroke="var(--muted)" stroke-opacity="0.55" stroke-width="1.3"';
       return '<line x1="' + (xl + 14) + '" y1="' + y1 + '" x2="' + (xr - 14) + '" y2="' + y2 + '" ' + st + ' stroke-linecap="round"/>';
     };
-    M.edges.filter(function (e) { return e.kind === 'other'; }).forEach(function (e) { s += edge(e); });
-    M.edges.filter(function (e) { return e.kind === 'block'; }).forEach(function (e) { s += edge(e); });
-    var red = M.edges.filter(function (e) { return e.kind === 'elim'; }).map(edge).join('');
+    M.edges.filter(function (e) { return show(e.kind) === 'other'; }).forEach(function (e) { s += edge(e); });
+    M.edges.filter(function (e) { return show(e.kind) === 'block'; }).forEach(function (e) { s += edge(e); });
+    var red = M.edges.filter(function (e) { return show(e.kind) === 'elim'; }).map(edge).join('');
     s += going ? '<g class="going-edges">' + red + '</g>' : red;
     var node = function (x, y, label, left) {
       return '<g data-node="' + (left ? 'L' : 'R') + x.key + '"><circle cx="' + (left ? xl : xr) + '" cy="' + y + '" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/></g>'
@@ -514,8 +532,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     M.left.forEach(function (x) { s += node(x, posL[x.key], x.label, true); });
     M.right.forEach(function (x) { s += node(x, posR[x.key], x.label, false); });
     var ly = H - 12;
-    s += '<line x1="70" y1="' + (ly - 4) + '" x2="94" y2="' + (ly - 4) + '" stroke="var(--true)" stroke-width="2.4"/><text x="100" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">paired up by the count</text>'
-       + '<line x1="270" y1="' + (ly - 4) + '" x2="294" y2="' + (ly - 4) + '" stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"/><text x="300" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">can never be used: removed</text>';
+    s += '<line x1="70" y1="' + (ly - 4) + '" x2="94" y2="' + (ly - 4) + '" stroke="var(--ink)" stroke-width="2.4"/><text x="100" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">edge inside the block</text>'
+       + '<line x1="270" y1="' + (ly - 4) + '" x2="294" y2="' + (ly - 4) + '" stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"/><text x="300" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">edge leaving the block: removed</text>';
     svg.setAttribute('viewBox', '0 0 520 ' + H);
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
     svg.innerHTML = s;
@@ -527,13 +545,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
     var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
     if (removing) res.elim.forEach(function (id) { going[id] = 1; });
-    var color = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3] };
-    var kindOf = function (n) {
-      var id = n.ids[0], role = res.nodes.get(id) || 'loop', kind = role;
-      if (step && step.marks) kind = step.marks[id] ? step.marks[id] : (role === 'elim' ? 'loop' : role);
-      if (res.wrapClass !== undefined && view.step === null) kind = role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
-      return kind;
-    };
+    var color = NODE_COLORS;
+    var nodeKind = function (n) { var id = n.ids[0]; return kindOf(res, res.nodes.get(id) || 'loop', id); };
     /* An edge is straight unless that would put it on top of another edge or through a dot; then it bows to the freer side. */
     var laid = [];
     var line = function (a, b, style) {
@@ -552,7 +565,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     g.edges.forEach(function (e) { s += line(e.a, e.b, e.strong ? 'stroke="var(--ink)" stroke-width="3"' : 'stroke="var(--muted)" stroke-width="1.8" stroke-dasharray="6 5"'); });
     if (step && step.clash && g.owner[step.clash[0]] && g.owner[step.clash[1]] && g.owner[step.clash[0]] !== g.owner[step.clash[1]]) { laid = []; s += line(g.owner[step.clash[0]], g.owner[step.clash[1]], 'stroke="var(--out)" stroke-width="4"'); }
     g.nodes.forEach(function (n) {
-      var c = color[kindOf(n)] || color.loop, r = n.group ? 21 : 16, out = n.ids.some(function (id) { return going[id]; });
+      var c = color[nodeKind(n)] || color.loop, r = n.group ? 21 : 16, out = n.ids.some(function (id) { return going[id]; });
       var body = (n.group ? '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + (r + 4) + '" fill="none" stroke="' + c[0] + '" stroke-width="1.5"/>' : '')
         + '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="var(--panel)"/><circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="' + c[1] + '" fill-opacity="' + c[2] + '" stroke="' + c[0] + '" stroke-width="2.2"/>'
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
@@ -580,11 +593,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       nav.hidden = true;
     } else if (view.kind === 'digit') {
       $('tname').textContent = 'Strong edges of digit ' + view.d;
-      $('theorem').textContent = 'Each chain is colored with two colors. In every chain one color is all true and the other all false (Theorem 5.1).';
+      $('theorem').textContent = 'In each chain one class is assumed true and the other assumed false. In every solution one class is all true and the other all false (Theorem 5.1).';
       ol.innerHTML = ''; nav.hidden = true;
     } else {
       $('tname').textContent = E.solved(st) ? 'Solved' : 'Pick a technique';
-      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Click it to see the loop.';
+      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Click it to see the cycle.';
       ol.innerHTML = ''; nav.hidden = true;
     }
     var dg = '';
@@ -663,7 +676,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (view.kind !== 'result') {
       var r = nextStep(false);
       if (r === 'none') { stopPlay(); return; }
-      if (r === 'shown') { say('Playing: ' + view.res.tech + '.'); if (view.res.easy) { view.step = 0; render(); } }
+      if (r === 'shown') { say('Playing: ' + view.res.tech + '.'); if (view.res.easy) { view.step = 0; render(); } else if (!skipSteps()) { view.plain = true; render(); } }
       schedule(E.solved(st) ? 0 : pace());
       return;
     }
@@ -678,8 +691,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (playing || E.solved(st)) return;
     cancelRemoval();
     if (view.kind !== 'result') view = { kind: 'none' };
+    else if (view.step === null && !view.res.easy && !skipSteps()) view.plain = true;
     playing = true; paused = false; render(); say('Playing. Click Pause or the board to stop.');
-    schedule(instant() ? 0 : 350);
+    schedule(instant() ? 0 : view.plain ? pace() : 350);
   }
 
   /* ---------- wiring ---------- */

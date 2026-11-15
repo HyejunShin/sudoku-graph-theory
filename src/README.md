@@ -6,7 +6,7 @@ This is the code behind [the solver](https://hyejunshin.github.io/sudoku-graph-t
 
 | Path | What it is |
 | --- | --- |
-| [`writeup/README.md`](../writeup/README.md) | The write-up, readable on GitHub: six steps, 27 figures, a short proof for every claim |
+| [`writeup/README.md`](../writeup/README.md) | The write-up: definitions, proofs and 27 figures |
 | [`writeup/index.html`](../writeup/index.html) | The same write-up as a web page |
 | [`index.html`](../index.html) | The solver: one self-contained page, built from the two files below. Open it in a browser; it needs no server |
 | [`src/engine.js`](engine.js) | The engine: candidates, edges, strong edges, the puzzle check, a finder and an explanation for each technique, and the random puzzle maker |
@@ -26,6 +26,6 @@ npm test                 # engine check on 120 generated puzzles, then the page 
 python3 proofs/verify_cycles.py   # and the other scripts in proofs/
 ```
 
-`npm test` fails loudly if any technique ever removes a candidate that belongs to the solution.
+`npm test` fails if any technique removes a candidate that belongs to the solution.
 
 Edit only the files in `src/`. `index.html` at the top level is generated, so changes made there are lost on the next build.

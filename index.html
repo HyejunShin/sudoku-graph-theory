@@ -9,19 +9,19 @@
 :root {
   /* layout: board on the left, explanation on the right; one column on phones */
   --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78; --soft: #d6ecee; --soft-line: #8fc4ca; --on-soft: #0a4a51;
-  --true: #1b8f4b; --false: #86919d; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
+  --true: #1b8f4b; --false: #2767cf; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
   --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-    --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+    --true: #45c680; --false: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-  --true: #45c680; --false: #7a8692; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+  --true: #45c680; --false: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -108,11 +108,10 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .sw { width: 22px; height: 0; border-top: 3px solid var(--ink); }
 .sw.weak { border-top: 2px dashed var(--muted); }
 .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
-.dot.t { background: var(--true); border-color: var(--true); }
-.dot.f { background: var(--false); border-color: var(--false); }
+.dot.t { border-color: var(--true); background: color-mix(in srgb, var(--true) 35%, transparent); }
+.dot.f { border-color: var(--false); background: color-mix(in srgb, var(--false) 35%, transparent); }
 .dot.o { border-color: var(--out); background: color-mix(in srgb, var(--out) 25%, transparent); }
-.dot.a { border-color: var(--k0); background: color-mix(in srgb, var(--k0) 35%, transparent); }
-.dot.b { border-color: var(--k1); background: color-mix(in srgb, var(--k1) 35%, transparent); }
+.dot.n { border-color: var(--muted); background: color-mix(in srgb, var(--muted) 18%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
 label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -164,12 +163,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
   <div class="cols">
       <div class="legend" id="key" aria-label="Key">
-        <span><i class="sw"></i>strong edge: exactly one end true</span>
-        <span><i class="sw weak"></i>weak edge: at most one end true</span>
+        <span><i class="sw"></i>strong edge: exactly one endpoint true</span>
+        <span><i class="sw weak"></i>weak edge: at most one endpoint true</span>
+        <span><i class="dot n"></i>candidate</span>
+        <span><i class="dot t"></i>assumed true</span>
+        <span><i class="dot f"></i>assumed false</span>
         <span><i class="dot o"></i>can be removed</span>
-        <span><i class="dot t"></i>true in this step</span>
-        <span><i class="dot f"></i>false in this step</span>
-        <span><i class="dot a"></i><i class="dot b"></i>the two colors of a chain</span>
       </div>
     <div class="stack">
       <section class="card board" aria-label="Board">
@@ -207,7 +206,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
 
       <section class="card" id="explain" aria-label="Explanation">
         <h2 id="tname">Pick a technique</h2>
-        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Click it to see the loop.</p>
+        <p class="theorem" id="theorem">A number on a technique means it can be used on the board right now. Click it to see the cycle.</p>
         <ol id="steps"></ol>
         <div class="row" id="stepnav" hidden>
           <button id="apply" type="button" class="primary">Apply</button>
@@ -326,7 +325,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     for (let i = 1; i + 1 < chain.length; i += 2) if (!linked(chain[i], chain[i + 1])) return null;
     targets = targets.filter(t => alive(st, t) && !chain.includes(t) && linked(t, chain[0]) && linked(t, chain[chain.length - 1]));
     if (!targets.length) return null;
-    const res = mkResult(tech, 'Theorem 5.2: an odd loop forces a false');
+    const res = mkResult(tech, 'Theorem 5.2: odd cycle, elimination');
     chain.forEach(c => res.nodes.set(c, 'loop'));
     targets.forEach(t => res.nodes.set(t, 'elim'));
     for (let i = 0; i + 1 < chain.length; i++) addLink(res, st, chain[i], chain[i + 1], i % 2 === 0);
@@ -335,7 +334,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     const v = targets[0], marks = {};
     const snap = () => Object.assign({}, marks);
     if (intro) say(res, intro);
-    say(res, 'The loop has ' + (chain.length + 1) + ' candidates: the red one plus ' + chain.length + ' that the strong edges pair up.');
+    say(res, 'The cycle has ' + (chain.length + 1) + ' candidates: the red one plus ' + chain.length + ' on which the strong edges form a perfect matching.');
     marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
     marks[chain[0]] = 'f'; say(res, 'Then ' + candName(chain[0]) + ' is false: ' + linkWhy(v, chain[0]) + '.', snap());
     for (let i = 1; i < chain.length; i++) {
@@ -352,7 +351,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     const n = loop.length;
     for (let i = 0; i < n; i += 2) if (!strongInfo(st, loop[i], loop[i + 1])) return null;
     for (let i = 1; i < n; i += 2) if (!linked(loop[i], loop[(i + 1) % n])) return null;
-    const res = mkResult(tech, 'Theorem 5.4: an even loop makes every edge either-or');
+    const res = mkResult(tech, 'Theorem 5.4: even cycle');
     loop.forEach(c => res.nodes.set(c, 'loop'));
     const elim = new Set();
     for (let i = 0; i < n; i++) {
@@ -366,11 +365,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     for (const x of res.elim) for (let i = 0; i < n; i++) { const a = loop[i], b = loop[(i + 1) % n]; if (linked(x, a) && linked(x, b)) { const far = c => Math.abs(ROW(cCell(x)) - ROW(cCell(c))) + Math.abs(COL(cCell(x)) - COL(cCell(c))); res.links.push({ a: x, b: far(a) <= far(b) ? a : b, strong: false }); break; } }
     const pat = k => { const m = {}; loop.forEach((c, i) => { m[c] = i % 2 === k ? 't' : 'f'; }); res.elim.forEach(c => { m[c] = 'f'; }); return m; };
     if (intro) say(res, intro);
-    say(res, 'The ' + n + ' circled candidates form a loop. Its ' + (n / 2) + ' strong edges pair them all up, so exactly ' + (n / 2) + ' of them are true.');
-    say(res, 'True candidates are never adjacent, so true and false alternate round the loop. Only two patterns do that.');
-    say(res, 'Pattern A: ' + list(loop.filter((_, i) => i % 2 === 0)) + ' are true.', pat(0));
-    say(res, 'Pattern B: ' + list(loop.filter((_, i) => i % 2 === 1)) + ' are true.', pat(1));
-    say(res, 'In both patterns every dashed edge has exactly one true end. A candidate adjacent to both ends of a dashed edge is therefore false.');
+    say(res, 'The ' + n + ' circled candidates form a cycle. Its ' + (n / 2) + ' strong edges form a perfect matching of them, so exactly ' + (n / 2) + ' of them are true.');
+    say(res, 'True candidates are never adjacent, so true and false alternate round the cycle. Only two patterns do that.');
+    say(res, 'Pattern A: assume ' + list(loop.filter((_, i) => i % 2 === 0)) + ' are true.', pat(0));
+    say(res, 'Pattern B: assume ' + list(loop.filter((_, i) => i % 2 === 1)) + ' are true.', pat(1));
+    say(res, 'In both patterns every dashed edge has exactly one true endpoint. A candidate adjacent to both endpoints of a dashed edge is therefore false.');
     say(res, 'That removes: ' + list(res.elim) + '.');
     return res;
   }
@@ -383,7 +382,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       for (const u2 of commonUnits(cs[0], cs[1])) if (u2 !== u) {
         const targets = cellsFor(st, u2, d).filter(c => c !== cs[0] && c !== cs[1]).map(c => cid(c, d));
         const r = oddLoop(st, 'Locked pair', [cid(cs[0], d), cid(cs[1], d)], targets,
-          'In ' + unitName(u) + ' the digit ' + d + ' has only two places, and both lie in ' + unitName(u2) + '. This is the smallest loop: a triangle.');
+          'In ' + unitName(u) + ' the digit ' + d + ' has only two places, and both lie in ' + unitName(u2) + '. This is the smallest cycle: a triangle.');
         if (r) out.push(r);
       }
     }
@@ -396,7 +395,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       for (let i = 0; i < bi.length; i++) for (let j = i + 1; j < bi.length; j++) if (st.cand[bi[i]] === st.cand[bi[j]]) {
         const [a, b] = digits(st.cand[bi[i]]), X = bi[i], Y = bi[j];
         const r = evenLoop(st, 'Naked pair', [cid(X, a), cid(X, b), cid(Y, b), cid(Y, a)],
-          'Cells ' + cellName(X) + ' and ' + cellName(Y) + ' both hold only ' + a + ' and ' + b + ', and they see each other.');
+          'Cells ' + cellName(X) + ' and ' + cellName(Y) + ' both hold only ' + a + ' and ' + b + ', and they are adjacent.');
         if (r && !out.some(o => o.elim.join() === r.elim.join())) out.push(r);
       }
     }
@@ -443,7 +442,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (cross(p1) !== cross(p2) || cross(q1) === cross(q2)) continue;
         const targets = PEERS[q1].filter(c => sees(c, q2) && has(st, c, d)).map(c => cid(c, d));
         const r = oddLoop(st, 'Skyscraper', [cid(q1, d), cid(p1, d), cid(p2, d), cid(q2, d)], targets,
-          'Digit ' + d + ' has only two places in each of two parallel lines, and one end of each shares a line.');
+          'Digit ' + d + ' has only two places in each of two parallel lines, and one endpoint of each is in a common line.');
         if (r) out.push(r);
       }
     }
@@ -460,7 +459,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           if (BOX(B) !== BOX(C) || BOX(A) === BOX(B) || BOX(D) === BOX(C)) continue;
           const targets = PEERS[A].filter(c => sees(c, D) && has(st, c, d)).map(c => cid(c, d));
           const r = oddLoop(st, 'Two-String Kite', [cid(A, d), cid(B, d), cid(C, d), cid(D, d)], targets,
-            'Digit ' + d + ' has only two places in ' + unitName(ru) + ' and only two in ' + unitName(cu) + '. One end of each lies in the same box.');
+            'Digit ' + d + ' has only two places in ' + unitName(ru) + ' and only two in ' + unitName(cu) + '. One endpoint of each lies in the same box.');
           if (r) out.push(r);
         }
       }
@@ -513,17 +512,17 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   function nameChain(st, v, chain) {
     const all = [v].concat(chain), one = all.every(x => cDig(x) === cDig(v)), k = all.length;
     const kinds = []; for (let i = 0; i < chain.length; i += 2) kinds.push(strongInfo(st, chain[i], chain[i + 1]).kind);
-    if (one) return k === 5 ? 'Turbot Fish' : 'X-Cycle (odd loop of ' + k + ')';
-    if (kinds.every(x => x === 'cell')) return k === 7 ? 'XY-Wing' : 'XY-Chain (loop of ' + k + ')';
+    if (one) return k === 5 ? 'Turbot Fish' : 'X-Cycle (odd cycle of ' + k + ')';
+    if (kinds.every(x => x === 'cell')) return k === 7 ? 'XY-Wing' : 'XY-Chain (cycle of ' + k + ')';
     if (k === 7 && kinds.join() === 'cell,unit,cell' && st.cand[cCell(chain[0])] === st.cand[cCell(chain[5])]) return 'W-Wing';
-    return 'Alternating chain (loop of ' + k + ')';
+    return 'Alternating chain (cycle of ' + k + ')';
   }
   function findChains(st, sameDigit, maxPairs, limit) {
     const out = [];
     for (let id = 0; id < 729 && out.length < (limit || 1); id++) if (alive(st, id)) {
       const chain = chainFor(st, id, sameDigit, maxPairs || 5);
       if (!chain) continue;
-      const r = oddLoop(st, nameChain(st, id, chain), chain, [id], 'A chain of alternating edges starts and ends next to the red candidate.');
+      const r = oddLoop(st, nameChain(st, id, chain), chain, [id], 'A path of alternating edges has both endpoints adjacent to the red candidate.');
       if (r) out.push(r);
     }
     return out;
@@ -545,16 +544,16 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       const cls = [nodes.filter(n => color.get(n) === 0), nodes.filter(n => color.get(n) === 1)];
       const base = (tech) => { const r = mkResult(tech, 'Theorem 5.1 and Corollary 5.5: coloring'); nodes.forEach(n => r.nodes.set(n, color.get(n) === 0 ? 'k0' : 'k1')); edges.forEach(([x, y]) => r.links.push({ a: x, b: y, strong: true }));
         say(r, (digit ? 'For digit ' + digit + ', ' : 'Across all digits, ') + nodes.length + ' candidates are chained together by strong edges.');
-        say(r, 'Along a strong edge exactly one end is true. So coloring the chain alternately gives two colors, and one whole color is true while the other is false.'); return r; };
+        say(r, 'Along a strong edge exactly one endpoint is true. Assume one candidate is true and color the chain: true and false alternate. In every solution either this coloring or the one with true and false swapped holds.'); return r; };
       const name = digit ? 'Simple Coloring' : '3D Medusa';
       let wrap = null;
       for (let k = 0; k < 2 && !wrap; k++) for (let i = 0; i < cls[k].length && !wrap; i++) for (let j = i + 1; j < cls[k].length; j++) if (linked(cls[k][i], cls[k][j])) { wrap = [k, cls[k][i], cls[k][j]]; break; }
       if (wrap) {
-        const [k, a, b] = wrap, r = base(name + ' (wrap)'), word = k === 0 ? 'blue' : 'orange', otherWord = k === 0 ? 'orange' : 'blue';
+        const [k, a, b] = wrap, r = base(name + ' (rule 1)'), word = k === 0 ? 'assumed true' : 'assumed false', otherWord = k === 0 ? 'assumed false' : 'assumed true';
         r.links.push({ a, b, strong: false, clash: true });
         r.elim = cls[k].slice(); r.place = cls[1 - k].slice();
-        say(r, 'Two ' + word + ' candidates, ' + candName(a) + ' and ' + candName(b) + ', are adjacent: ' + linkWhy(a, b) + '. They cannot both be true.', null, [a, b]);
-        say(r, 'So ' + word + ' is not the true color. Every ' + word + ' candidate goes, and every ' + otherWord + ' candidate is placed.');
+        say(r, 'Two candidates ' + word + ', ' + candName(a) + ' and ' + candName(b) + ', are adjacent: ' + linkWhy(a, b) + '. They cannot both be true.', null, [a, b]);
+        say(r, 'So the candidates ' + word + ' are all false and are removed, and the candidates ' + otherWord + ' are all true and are placed.');
         r.wrapClass = k; out.push(r); continue;
       }
       const trap = [];
@@ -563,11 +562,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (s0 !== undefined && s1 !== undefined) trap.push([id, s0, s1]);
       }
       if (trap.length) {
-        const r = base(name + ' (trap)');
+        const r = base(name + ' (rule 2)');
         for (const [id, s0, s1] of trap) { r.elim.push(id); r.nodes.set(id, 'elim'); r.links.push({ a: id, b: s0, strong: false }); r.links.push({ a: id, b: s1, strong: false }); }
         const [id, s0, s1] = trap[0];
-        say(r, candName(id) + ' is adjacent to a blue candidate (' + candName(s0) + ') and to an orange one (' + candName(s1) + ').');
-        say(r, 'One of the two colors is true, so ' + candName(id) + ' is adjacent to a true candidate. It is false.');
+        say(r, candName(id) + ' is adjacent to a candidate assumed true (' + candName(s0) + ') and to one assumed false (' + candName(s1) + ').');
+        say(r, 'In every solution one of these two is true, so ' + candName(id) + ' is adjacent to a true candidate. It is false.');
         if (trap.length > 1) say(r, 'The same argument removes: ' + list(trap.slice(1).map(t => t[0])) + '.');
         out.push(r);
       }
@@ -620,11 +619,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
         const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one node');
-        group.forEach(g => res.nodes.set(g, 'k0')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
+        group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
         res.elim = targets; linkToGroups(res);
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
-        say(res, 'One of the three blue ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. An edge joins only two candidates, so treat the three as one group: a single node that is true when one of them is.');
+        say(res, 'One of the three outlined ' + d + 's is true, because ' + unitName(u) + ' needs a ' + d + '. An edge joins only two candidates, so treat the three as one group: a single node that is true when one of them is.');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
         group.forEach(g => { marks[g] = 'f'; }); say(res, 'Then all three ' + d + 's of the group are false: each shares ' + unitName(u2) + ' with it.', snap());
         say(res, 'Now ' + unitName(u) + ' has no place for ' + d + '. Contradiction, so ' + candName(v) + ' is false.', snap());
@@ -675,9 +674,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: cs.includes(c) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each cell takes one digit', cellName, d => String(d), ed, cs, digits(m)); }
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
-        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one blue node. The count proves every blue node true.');
+        say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one node (outlined). The count proves every such node true.');
         say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
@@ -691,9 +690,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: where.includes(c) && dd.includes(d) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each digit takes one cell', cellName, d => String(d), ed, where, dd); }
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
-        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one blue node. The count proves every blue node true.');
+        say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one node (outlined). The count proves every such node true.');
         say(res, 'Any other candidate in these cells shares its cell with a true node, so it is false. That removes: ' + list(elim) + '.');
         push(res, elim);
       }
@@ -716,13 +715,13 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const num = k === 3 ? 'three' : 'four';
         const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5, the sets rule: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
         res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         { const ed = []; for (let c = 0; c < 81; c++) if (has(st, c, d)) { const id = cid(c, d), l = baseOf(c), r = coverOf(c); ed.push({ l, r, id, kind: bi.includes(l) && cv.includes(r) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           const b1 = bn.slice(0, -1), c1 = cn.slice(0, -1);
           matchingFor(res, 'The ' + d + 's as edges between ' + bn + ' and ' + cn + ': each ' + b1 + ' takes one ' + c1, i => b1 + ' ' + (i + 1), i => c1 + ' ' + (i + 1), ed, bi, cv); }
         say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).join(', ') + '.');
-        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one blue node. The count proves every blue node true.');
+        say(res, 'Each of the ' + num + ' ' + bn + ' needs its ' + d + ' in a different one of those ' + cn + ', so every one of the ' + cn + ' gets its ' + d + ' from these ' + bn + '. In each of the ' + cn + ', join those ' + d + 's into one node (outlined). The count proves every such node true.');
         say(res, 'Any other ' + d + ' in those ' + cn + ' is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
         linkToGroups(res);
         out.push(res);
@@ -751,15 +750,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const [ga, gb, xa, xb] = first === w2 ? [w2, w1, y, x] : [w1, w2, x, y];
         const zp = cid(p, z), zg = cid(ga, z), zo = cid(gb, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
         for (const c of [p, w1, w2]) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
-        res.nodes.set(zp, 'k0'); res.nodes.set(zg, 'k0'); res.groups = first === undefined ? [] : [[zp, zg]];
+        res.nodes.set(zp, 'loop'); res.nodes.set(zg, 'loop'); res.groups = first === undefined ? [] : [[zp, zg]];
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         res.links.push({ a: v, b: zp, strong: false }); res.links.push({ a: zg, b: zo, strong: true, group: true }); res.links.push({ a: zo, b: v, strong: false });
         for (const e of elim.slice(1)) { res.links.push({ a: e, b: zp, strong: false }); res.links.push({ a: e, b: zo, strong: false }); }
-        say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It sees ' + cellName(ga) + ', which holds ' + digitList([xa, z].sort()) + ', and ' + cellName(gb) + ', which holds ' + digitList([xb, z].sort()) + '.');
-        say(res, 'Take the two blue ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one node: true when one of them is ' + z + '.');
-        say(res, 'If the blue node is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So the blue node and ' + candName(zo) + ' cannot both be false: an edge found by counting (solid line).');
+        say(res, 'The pivot ' + cellName(p) + ' holds ' + digitList([x, y, z].sort()) + '. It is adjacent to ' + cellName(ga) + ', which holds ' + digitList([xa, z].sort()) + ', and ' + cellName(gb) + ', which holds ' + digitList([xb, z].sort()) + '.');
+        say(res, 'Take the two outlined ' + z + 's, in ' + cellName(p) + ' and ' + cellName(ga) + ', as one node: true when one of them is ' + z + '.');
+        say(res, 'If the outlined node is false, the pivot is not ' + z + ' and ' + cellName(ga) + ' is ' + xa + ', so the pivot is ' + xb + ' and ' + cellName(gb) + ' must be ' + z + '. So at least one of the outlined node and ' + candName(zo) + ' is true (solid line).');
         marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
-        marks[zp] = 'f'; marks[zg] = 'f'; say(res, 'Then the blue node is false: ' + cellName(cCell(v)) + ' sees both of its cells.', snap());
+        marks[zp] = 'f'; marks[zg] = 'f'; say(res, 'Then the outlined node is false: ' + cellName(cCell(v)) + ' is adjacent to both of its cells.', snap());
         marks[zo] = 't'; say(res, 'Then ' + candName(zo) + ' is true, by the counted edge.', snap());
         say(res, 'But ' + candName(zo) + ' and ' + candName(v) + ' cannot both be true: ' + linkWhy(zo, v) + '. Contradiction, so ' + candName(v) + ' is false.', snap(), [zo, v]);
         if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
@@ -806,16 +805,16 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (!hit) continue;
         const path = []; for (let x = hit; x && x.f !== null; x = x.prev) path.unshift(x);
         if (!path.some(x => nodes[x.f].length > 1 || nodes[x.t].length > 1)) continue;      // no group in it: an ordinary loop, left to the link techniques
-        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Lemma 7.4 and Theorem 5.2: an odd loop with a group as one node'), marks = {}, snap = () => Object.assign({}, marks);
+        const vid = cid(nodes[v][0], d), res = mkResult('Grouped chain', 'Lemma 7.4 and Theorem 5.2: an odd cycle with a group as one node'), marks = {}, snap = () => Object.assign({}, marks);
         const ids = A => A.map(c => cid(c, d)), near = (A, B) => { let best = null; for (const a of A) for (const b of B) { const dist = Math.abs(ROW(a) - ROW(b)) + Math.abs(COL(a) - COL(b)); if (!best || dist < best[2]) best = [a, b, dist]; } return best; };
         const link = (A, B, strongLink) => { const pr = near(A, B); res.links.push({ a: cid(pr[0], d), b: cid(pr[1], d), strong: strongLink, group: true }); };
         res.groups = [];
-        for (const x of path) for (const A of [nodes[x.f], nodes[x.t]]) { ids(A).forEach(id => res.nodes.set(id, A.length > 1 ? 'k0' : 'loop')); if (A.length > 1) res.groups.push(ids(A)); }
+        for (const x of path) for (const A of [nodes[x.f], nodes[x.t]]) { ids(A).forEach(id => res.nodes.set(id, 'loop')); if (A.length > 1) res.groups.push(ids(A)); }
         res.nodes.set(vid, 'elim'); res.elim = [vid];
         let prev = nodes[v];
         for (const x of path) { link(prev, nodes[x.f], false); link(nodes[x.f], nodes[x.t], true); prev = nodes[x.t]; }
         link(prev, nodes[v], false);
-        say(res, 'This is an odd loop for the digit ' + d + ', but some of its nodes are groups (blue): cells of one box that share a row or column. A group counts as true when one of its cells holds the ' + d + '.');
+        say(res, 'This is an odd cycle for the digit ' + d + ', but some of its nodes are groups (outlined): cells of one box that share a row or column. A group counts as true when one of its cells holds the ' + d + '.');
         marks[vid] = 't'; say(res, 'Suppose ' + candName(vid) + ' were true.', snap());
         for (const x of path) {
           ids(nodes[x.f]).forEach(id => { marks[id] = 'f'; }); say(res, 'Then ' + nm(nodes[x.f]) + ' is false: it shares ' + unitName(x.uw) + ' with the one before.', snap());
@@ -877,15 +876,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const elim = outsideSeeing(of(A, z).concat(of(B, z)), z, [A, B]);
         const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
         const ZA = dot(A, z), ZB = dot(B, z), XA = dot(A, x), XB = dot(B, x), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
-        const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of nodes through two almost-locked sets', [A, B]);
-        XA.concat(XB).forEach(id => res.nodes.set(id, 'k1')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZB]; res.dots = [XA, XB];
+        const res = start('Almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd cycle of nodes through two almost-locked sets', [A, B]);
+        XA.concat(XB).forEach(id => res.nodes.set(id, 'loop')); ZA.concat(ZB).forEach(id => res.nodes.set(id, 'loop')); res.groups = [ZA, ZB]; res.dots = [XA, XB];
         solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, ZB);
         say(res, describe(A, 'A') + ', one too many. ' + describe(B, 'B') + '.');
-        say(res, 'In such a set, two digits cannot both be missing: the cells would be short of digits. So inside A the blue ' + z + 's and the orange ' + x + 's cannot both be false (solid line), and the same inside B.');
-        say(res, 'The orange ' + x + 's of A and of B all see each other, so they cannot both be true (dashed line). With the red ' + z + ' this is an odd loop.');
-        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true. It sees every blue ' + z + ', so both blue nodes are false.', snap());
+        say(res, 'In such a set, two digits cannot both be missing: the cells would be short of digits. So inside A the ' + z + 's and the ' + x + 's are not both false (solid line), and the same inside B.');
+        say(res, 'The ' + x + 's of A and of B are all adjacent, so they cannot both be true (dashed line). With the red ' + z + ' this is an odd cycle.');
+        marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true. It is adjacent to every ' + z + ' of A and B, so the ' + z + ' nodes of A and B are false.', snap());
         ZA.concat(ZB).forEach(id => { marks[id] = 'f'; }); XA.concat(XB).forEach(id => { marks[id] = 't'; });
-        say(res, 'Then the orange ' + x + 's are true in A and in B. But they see each other. Contradiction, so ' + candName(v) + ' is false.', snap());
+        say(res, 'Then the ' + x + ' nodes of A and B are both true. But they are adjacent. Contradiction, so ' + candName(v) + ' is false.', snap());
         if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
         finish(res, elim);
       }
@@ -898,11 +897,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       for (const x of [x1, x2]) { const e = outsideSeeing(of(A, x).concat(of(B, x)), x, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(A, x).concat(dot(B, x))); } }
       const uniq = [...new Set(elim)], key = uniq.join(','); if (!uniq.length || done.has(key)) continue; done.add(key);
       const res = start('Almost-locked sets (two connecting digits)', 'Lemma 7.7 twice: every digit is pinned to its own set', [A, B]);
-      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'k0'))); res.groups = groups;
+      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop'))); res.groups = groups;
       const nA = A.cs.length, nB = B.cs.length;
       say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. The digits ' + x1 + ' and ' + x2 + ' each have all their places in A in sight of all their places in B.');
-      say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every blue node is true.');
-      say(res, 'Any candidate outside the sets that sees a whole blue node of its own digit is adjacent to a true node. That removes: ' + list(uniq) + '.');
+      say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every outlined node is true.');
+      say(res, 'Any candidate outside the sets that is adjacent to a whole outlined node of its own digit is adjacent to a true node. That removes: ' + list(uniq) + '.');
       finish(res, uniq);
     }
 
@@ -917,16 +916,16 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           const elim = outsideSeeing(of(A, z).concat(of(C, z)), z, [A, B, C]);
           const key = elim.join(','); if (!elim.length || done.has(key)) continue; done.add(key);
           const ZA = dot(A, z), XA = dot(A, x), XB = dot(B, x), YB = dot(B, y), YC = dot(C, y), ZC = dot(C, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
-          const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd loop of nodes through three almost-locked sets', [A, B, C]);
-          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'k1'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'k0')); res.groups = [ZA, ZC]; res.dots = [XA, XB, YB, YC];
+          const res = start('Chain of almost-locked sets', 'Lemma 7.7 and Theorem 5.2: an odd cycle of nodes through three almost-locked sets', [A, B, C]);
+          [XA, XB, YB, YC].forEach(g => g.forEach(id => res.nodes.set(id, 'loop'))); ZA.concat(ZC).forEach(id => res.nodes.set(id, 'loop')); res.groups = [ZA, ZC]; res.dots = [XA, XB, YB, YC];
           solid(res, ZA, XA); dashed(res, XA, XB); solid(res, XB, YB); dashed(res, YB, YC); solid(res, YC, ZC);
           say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. ' + describe(C, 'C') + '. Each has one digit too many.');
-          say(res, 'Inside each set two digits cannot both be missing (solid lines). The ' + x + 's of A and B all see each other, and so do the ' + y + 's of B and C (dashed lines). With the red ' + z + ' this is an odd loop.');
-          marks[v] = 't'; ZA.forEach(id => { marks[id] = 'f'; }); say(res, 'Suppose ' + candName(v) + ' were true. Then the blue ' + z + 's of A are false, so A uses ' + x + '.', snap());
+          say(res, 'Inside each set two digits cannot both be missing (solid lines). The ' + x + 's of A and B are all adjacent, and so are the ' + y + 's of B and C (dashed lines). With the red ' + z + ' this is an odd cycle.');
+          marks[v] = 't'; ZA.forEach(id => { marks[id] = 'f'; }); say(res, 'Suppose ' + candName(v) + ' were true. Then the ' + z + 's of A are false, so A uses ' + x + '.', snap());
           XA.forEach(id => { marks[id] = 't'; }); XB.forEach(id => { marks[id] = 'f'; }); YB.forEach(id => { marks[id] = 't'; });
           say(res, 'Then B cannot use ' + x + ', so B uses ' + y + '.', snap());
           YC.forEach(id => { marks[id] = 'f'; }); ZC.forEach(id => { marks[id] = 't'; });
-          say(res, 'Then C cannot use ' + y + ', so one of the blue ' + z + 's of C is true. But ' + candName(v) + ' sees them all. Contradiction, so ' + candName(v) + ' is false.', snap());
+          say(res, 'Then C cannot use ' + y + ', so one of the ' + z + 's of C is true. But ' + candName(v) + ' is adjacent to all of them. Contradiction, so ' + candName(v) + ' is false.', snap());
           if (elim.length > 1) say(res, 'The same argument removes: ' + list(elim.slice(1)) + '.');
           finish(res, elim);
           if (out.length >= LIMIT) break;
@@ -959,14 +958,14 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           const v = elim[0], line = coverOf(cCell(v)), dot = all.filter(c => coverOf(c) === line).map(c => cid(c, d)), F = fins.map(c => cid(c, d));
           if (!dot.length) continue;
           const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a fish with a counted edge'), marks = {}, snap = () => Object.assign({}, marks);
-          all.forEach(c => res.nodes.set(cid(c, d), 'loop')); F.concat(dot).forEach(id => res.nodes.set(id, 'k0')); res.groups = [F, dot];
+          all.forEach(c => res.nodes.set(cid(c, d), 'loop')); F.concat(dot).forEach(id => res.nodes.set(id, 'loop')); res.groups = [F, dot];
           elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
           res.links.push({ a: F[0], b: dot[0], strong: true, group: true });
           res.links.push({ a: v, b: F[0], strong: false, group: true }); res.links.push({ a: v, b: dot[0], strong: false, group: true });
           for (const e of elim.slice(1)) res.links.push({ a: e, b: F[0], strong: false, group: true });
           const one = cn.slice(0, -1);
           say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).sort().join(', ') + ', except for the fin: ' + list(F) + ', in box ' + (box + 1) + '.');
-          say(res, 'The fin is one blue node. The ' + d + 's of these ' + bn + ' in ' + one + ' ' + (line + 1) + ' are another. If the fin is false, this is a plain fish and the count proves the second node true. So the two cannot both be false: an edge found by counting (solid line).');
+          say(res, 'The fin is one node (outlined). The ' + d + 's of these ' + bn + ' in ' + one + ' ' + (line + 1) + ' are another. If the fin is false, this is a plain fish and the count proves the second node true. So at least one of the two is true (solid line).');
           marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true.', snap());
           F.concat(dot).forEach(id => { marks[id] = 'f'; }); say(res, 'It shares box ' + (box + 1) + ' with the fin and ' + one + ' ' + (line + 1) + ' with the other node, so both are false. That breaks the counted edge. Contradiction, so ' + candName(v) + ' is false.', snap());
           if (elim.length > 1) say(res, 'The same argument, with the node of its own ' + one + ', removes: ' + list(elim.slice(1)) + '.');
@@ -989,11 +988,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       const m = st.cand[pair[0]], odd = cells.find(c => !pair.includes(c));
       if ((st.cand[odd] & m) !== m || bits(st.cand[odd]) < 3) continue;
       const ab = digits(m), elim = ab.map(d => cid(odd, d));
-      const res = mkResult('Unique rectangle', 'An even loop with two colorings, plus the fact that the puzzle has one solution');
+      const res = mkResult('Unique rectangle', 'An even cycle with two colorings, plus the fact that the puzzle has one solution');
       for (const c of pair) for (const d of ab) res.nodes.set(cid(c, d), 'loop');
       elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
       say(res, 'The cells ' + cellList(pair) + ' hold only ' + digitList(ab) + '. With ' + cellName(odd) + ' they form a rectangle across two rows, two columns and two boxes.');
-      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would form an even loop holding only ' + digitList(ab) + '. An even loop can be colored two ways, and nothing outside it could tell them apart, so there would be two solutions.');
+      say(res, 'If ' + cellName(odd) + ' were ' + ab[0] + ' or ' + ab[1] + ', the four corners would form an even cycle holding only ' + digitList(ab) + '. An even cycle can be colored two ways, and nothing outside it could tell them apart, so there would be two solutions.');
       say(res, 'A proper sudoku has exactly one solution, so ' + cellName(odd) + ' is neither. That removes: ' + list(elim) + '. The two colorings are graph theory; the one-solution fact is an extra assumption about the puzzle.');
       out.push(res);
     }
@@ -1023,7 +1022,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       let v = -1; for (let id = 0; id < 729 && v < 0; id++) if (alive(st, id) && sol[cCell(id)] !== cDig(id)) v = id;
       if (v < 0) return [];
       res.nodes.set(v, 'elim'); res.elim = [v];
-      say(res, 'No loop, coloring or counting argument applies here, so the only move left is a guess.');
+      say(res, 'No cycle, coloring or counting argument applies here, so the only move left is a guess.');
       say(res, 'Suppose ' + candName(v) + ' were true.', { [v]: 't' });
       say(res, 'Filling single candidate cells does not settle it, so everything that follows was searched in full. No solution has ' + candName(v) + '.', { [v]: 't' });
       say(res, 'So ' + candName(v) + ' is false.');
@@ -1031,7 +1030,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     }
     const v = best.id, marks = {}, snap = () => Object.assign({}, marks);
     res.nodes.set(v, 'elim'); best.forced.forEach(f => res.nodes.set(f.id, 'loop')); res.elim = [v];
-    say(res, 'No loop, coloring or counting argument applies here, so the only move left is a guess.');
+    say(res, 'No cycle, coloring or counting argument applies here, so the only move left is a guess.');
     marks[v] = 't'; say(res, 'Suppose ' + candName(v) + ' were true, and fill the single candidate cells that follow.', snap());
     const shown = best.forced.slice(0, 5), rest = best.forced.slice(5);
     for (const f of shown) { marks[f.id] = 't'; say(res, 'Then ' + candName(f.id) + ': ' + f.why.charAt(0).toLowerCase() + f.why.slice(1) + '.', snap()); }
@@ -1044,19 +1043,19 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
      1,100 random puzzles with that order; the page lists the buttons of each section from most used to least. */
   const TECHNIQUES = [
     { key: 'single', name: 'Single candidate', loop: 'only one choice', find: findSingles, blurb: 'A cell with one candidate left, or a digit with one place left.', easy: true },
-    { key: 'locked', used: 3945, name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate that sees both ends of a strong edge.' },
-    { key: 'naked', used: 755, name: 'Naked pair', loop: 'loop of 4', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
-    { key: 'hidden', used: 463, name: 'Hidden pair', loop: 'loop of 4', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
-    { key: 'xwing', used: 180, name: 'X-Wing', loop: 'loop of 4', find: findXWing, blurb: 'One digit, two lines, the same two crossing lines.' },
-    { key: 'sky', used: 416, name: 'Skyscraper', loop: 'loop of 5', find: findSkyscraper, blurb: 'Two parallel strong edges that share a line at one end.' },
-    { key: 'kite', used: 382, name: 'Two-String Kite', loop: 'loop of 5', find: findKite, blurb: 'A row edge and a column edge joined inside a box.' },
-    { key: 'xywing', used: 430, name: 'XY-Wing', loop: 'loop of 7', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
+    { key: 'locked', used: 3945, name: 'Locked pair', loop: 'triangle', find: findLockedPair, blurb: 'A candidate adjacent to both endpoints of a strong edge.' },
+    { key: 'naked', used: 755, name: 'Naked pair', loop: '4-cycle', find: findNakedPair, blurb: 'Two cells that share the same two digits.' },
+    { key: 'hidden', used: 463, name: 'Hidden pair', loop: '4-cycle', find: findHiddenPair, blurb: 'Two digits that share the same two cells.' },
+    { key: 'xwing', used: 180, name: 'X-Wing', loop: '4-cycle', find: findXWing, blurb: 'One digit, two lines, the same two crossing lines.' },
+    { key: 'sky', used: 416, name: 'Skyscraper', loop: '5-cycle', find: findSkyscraper, blurb: 'Two strong edges in parallel lines, with one endpoint of each in a common line.' },
+    { key: 'kite', used: 382, name: 'Two-String Kite', loop: '5-cycle', find: findKite, blurb: 'A row edge and a column edge joined inside a box.' },
+    { key: 'xywing', used: 430, name: 'XY-Wing', loop: '7-cycle', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
     { key: 'color', used: 72, name: 'Simple Coloring', loop: '2-coloring', find: findSimpleColoring, blurb: 'Color one digit’s strong edges with two colors.' },
-    { key: 'xchain', used: 217, name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Coloring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd loop of one digit.' },
+    { key: 'xchain', used: 217, name: 'One-digit cycle', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Coloring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd cycle of one digit.' },
     { key: 'medusa', used: 574, name: '3D Medusa', loop: '2-coloring', find: st => findColoring(st, 0), blurb: 'Coloring that hops between digits.' },
-    { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd loop with alternating strong edges.' },
+    { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd cycle with alternating strong edges.' },
     { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one node', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
-    { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one node: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd loop of one digit in which a node may be a group of cells.'},
+    { key: 'gchain', used: 29, name: 'Grouped chain', loop: 'a group as one node: Empty Rectangle, grouped X-Cycle', find: findGroupedChains, blurb: 'An odd cycle of one digit in which a node may be a group of cells.'},
     { key: 'xyz', used: 6, name: 'XYZ-Wing', loop: 'triangle with a counted edge', find: findXYZWing, blurb: 'A pivot with three candidates and two wings.' },
     /* Beyond links. These are tried only after every loop and coloring above has failed. */
     { key: 'subset', used: 11, name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
@@ -1135,7 +1134,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     { name: 'Two-String Kite', puzzle: '.4...52.....1..7...619....8.2.4.....9....3..7......36....5...2..3.7.6..949....6..', tech: 'kite' },
     { name: 'XY-Wing', puzzle: '..41.5....7.4......8..7..2...5.173......3..8.6......794.8.....6...6..2...9.....1.', tech: 'xywing' },
     { name: 'Simple Coloring', puzzle: '......7...6...2.3.35.6...4..1......3..5.8...47.9.2.6..6..2.3.5......1..75.1..4...', tech: 'color' },
-    { name: 'One-digit odd loop (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
+    { name: 'One-digit odd cycle (Turbot Fish, X-Cycle)', puzzle: '3......75..9.4..2..28.....3........2.4..5......59.71..9..1.475.....6..1......86..', tech: 'xchain' },
     { name: '3D Medusa', puzzle: '5.........8.....4...2.1...6.9...6.31.4.8.......6...9..2....7.....7...68...1.6.3.4', tech: 'medusa' },
     { name: 'Alternating chain', puzzle: '.23..5.96....7..2.........5.5.........9.24......893..4.753.....24875..3......2..1', tech: 'chain' },
     /* The loop rule with a group of cells as one dot. */
@@ -1189,15 +1188,34 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var bow = Math.min(18, 9 + len * 0.05);
     return '<path d="M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + ((p.x + q.x) / 2 + dy / len * bow).toFixed(1) + ' ' + ((p.y + q.y) / 2 - dx / len * bow).toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" fill="none" ' + style + ' stroke-linecap="round"/>';
   }
+  /* Node colors. Gray: a candidate with no value assumed. Green: assumed true. Blue: assumed false. Red: can be removed.
+     A chain of strong edges uses the same colors: one class assumed true, the other assumed false. */
+  var NODE_COLORS = { loop: ['var(--muted)', 'var(--muted)', 0.16], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.35], f: ['var(--false)', 'var(--false)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
+  NODE_COLORS.k0 = NODE_COLORS.t; NODE_COLORS.k1 = NODE_COLORS.f;
   function ring(id, kind) {
-    var p = pos(id), map = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
+    var p = pos(id), map = NODE_COLORS;
     var m = map[kind] || map.loop;
     var out = '<circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="var(--panel)"/><circle cx="' + p.x + '" cy="' + p.y + '" r="9" fill="' + m[1] + '" fill-opacity="' + m[2] + '" stroke="' + m[0] + '" stroke-width="2"/>';
-    if (kind === 'f') out += '<line x1="' + (p.x - 6) + '" y1="' + (p.y + 6) + '" x2="' + (p.x + 6) + '" y2="' + (p.y - 6) + '" stroke="var(--false)" stroke-width="2"/>';
     return out;
   }
 
   /* ---------- overlay for the current view ---------- */
+  /* Which part of a move is on screen. 'plain': the nodes and edges only, how play starts a move.
+     'step': one step of the argument, without the outcome. 'result': the outcome, shown at the last step,
+     while the move is applied, and straight away when a technique is clicked or play runs Moves only. */
+  function phase() {
+    if (view.kind !== 'result' || removing) return 'result';
+    if (view.step === null) return view.plain ? 'plain' : 'result';
+    var sp = view.res.steps[view.step];
+    return view.step === view.res.steps.length - 1 && !sp.marks ? 'result' : 'step';
+  }
+  function kindOf(res, role, id) {
+    var ph = phase();
+    if (ph === 'plain') return 'loop';
+    if (ph === 'step') { var sp = res.steps[view.step]; return sp.marks && sp.marks[id] ? sp.marks[id] : (role === 'elim' ? 'loop' : role); }
+    if (res.wrapClass !== undefined) return role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+    return role;
+  }
   function overlay(skip) {
     var links = '', rings = '', marked = {}; drawn = [];
     if (view.kind === 'result') {
@@ -1213,16 +1231,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           var blocked = others.some(function (o) { var t = ((o.x - A.x) * dx + (o.y - A.y) * dy) / len, dist = Math.abs((o.x - A.x) * dy - (o.y - A.y) * dx) / len; return t > 4 && t < len - 4 && dist < 22; });
           dpath += blocked ? ' Q' + ((A.x + B.x) / 2 + dy / len * 42) + ' ' + ((A.y + B.y) / 2 - dx / len * 42) + ' ' + B.x + ' ' + B.y : ' L' + B.x + ' ' + B.y;
         }
-        links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>'
+        links += '<path class="group" d="' + dpath + '" fill="none" stroke="var(--muted)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>'
           + '<path d="' + dpath + '" fill="none" stroke="var(--panel)" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>'
-          + '<path d="' + dpath + '" fill="none" stroke="var(--k0)" stroke-opacity="0.1" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>';
+          + '<path d="' + dpath + '" fill="none" stroke="var(--muted)" stroke-opacity="0.1" stroke-width="20.5" stroke-linecap="round" stroke-linejoin="round"/>';
       });
-      res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash ? 'clash' : l.strong ? 'strong' : 'weak'); });
+      var ph = phase();
+      res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash && ph === 'result' ? 'clash' : l.strong ? 'strong' : 'weak'); });
       if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');
       res.nodes.forEach(function (role, id) {
-        var kind = role;
-        if (step && step.marks) kind = step.marks[id] ? step.marks[id] : (role === 'elim' ? 'loop' : role);
-        if (res.wrapClass !== undefined && view.step === null) kind = role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+        var kind = kindOf(res, role, id);
         if (!skip[id]) rings += ring(id, kind);
         marked[id] = 1;
       });
@@ -1288,7 +1305,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   function scan() { avail = {}; var any = false; E.TECHNIQUES.forEach(function (t) { avail[t.key] = E.solved(st) || ((t.lastResort || t.late) && any) ? [] : t.find(st); if (avail[t.key].length) any = true; }); }
   function drawTechs() {
     var h = '';
-    var section = '', heads = { count: 'Counting across sets (the sets rule): used when no loop or coloring applies', unique: 'Outside the coloring: needs the one-solution fact, or a guess as the last resort', last: null };
+    var section = '', heads = { count: 'Counting across sets (the sets rule): used when no cycle or coloring applies', unique: 'Outside the coloring: needs the one-solution fact, or a guess as the last resort', last: null };
     /* shown by section, and inside a section from most used to least; the order they are tried in stays simplest first */
     var rankSec = { count: 1, unique: 2, last: 3 }, shown = E.TECHNIQUES.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
       return (a.t.easy ? -1 : rankSec[a.t.section] || 0) - (b.t.easy ? -1 : rankSec[b.t.section] || 0) || (b.t.used || 0) - (a.t.used || 0) || a.i - b.i; }).map(function (x) { return x.t; });
@@ -1399,14 +1416,15 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var xl = 170, xr = 350, yOf = function (i) { return top + i * GAP; }, s = '', going = removing;
     var posL = {}, posR = {}; M.left.forEach(function (x, i) { posL[x.key] = yOf(i); }); M.right.forEach(function (x, i) { posR[x.key] = yOf(i); });
     s += '<text x="260" y="24" text-anchor="middle" font-family="var(--font-body)" font-size="13" fill="var(--muted)">' + M.title + '</text>';
-    s += '<rect x="' + (xl - 92) + '" y="' + (top - 22) + '" width="' + (xr - xl + 184) + '" height="' + ((M.k - 1) * GAP + 44) + '" rx="14" fill="var(--k0)" fill-opacity="0.07" stroke="var(--k0)" stroke-width="1.5" stroke-dasharray="6 5"/>';
+    s += '<rect x="' + (xl - 92) + '" y="' + (top - 22) + '" width="' + (xr - xl + 184) + '" height="' + ((M.k - 1) * GAP + 44) + '" rx="14" fill="var(--muted)" fill-opacity="0.07" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="6 5"/>';
+    var ph = phase(), show = function (k) { return ph === 'plain' ? 'other' : ph === 'step' && k === 'elim' ? 'other' : k; };
     var edge = function (e) {
-      var y1 = posL[e.l], y2 = posR[e.r], st = e.kind === 'block' ? 'stroke="var(--true)" stroke-width="2.4"' : e.kind === 'elim' ? 'stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"' : 'stroke="var(--muted)" stroke-opacity="0.55" stroke-width="1.3"';
+      var kind = show(e.kind), y1 = posL[e.l], y2 = posR[e.r], st = kind === 'block' ? 'stroke="var(--ink)" stroke-width="2.4"' : kind === 'elim' ? 'stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"' : 'stroke="var(--muted)" stroke-opacity="0.55" stroke-width="1.3"';
       return '<line x1="' + (xl + 14) + '" y1="' + y1 + '" x2="' + (xr - 14) + '" y2="' + y2 + '" ' + st + ' stroke-linecap="round"/>';
     };
-    M.edges.filter(function (e) { return e.kind === 'other'; }).forEach(function (e) { s += edge(e); });
-    M.edges.filter(function (e) { return e.kind === 'block'; }).forEach(function (e) { s += edge(e); });
-    var red = M.edges.filter(function (e) { return e.kind === 'elim'; }).map(edge).join('');
+    M.edges.filter(function (e) { return show(e.kind) === 'other'; }).forEach(function (e) { s += edge(e); });
+    M.edges.filter(function (e) { return show(e.kind) === 'block'; }).forEach(function (e) { s += edge(e); });
+    var red = M.edges.filter(function (e) { return show(e.kind) === 'elim'; }).map(edge).join('');
     s += going ? '<g class="going-edges">' + red + '</g>' : red;
     var node = function (x, y, label, left) {
       return '<g data-node="' + (left ? 'L' : 'R') + x.key + '"><circle cx="' + (left ? xl : xr) + '" cy="' + y + '" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/></g>'
@@ -1415,8 +1433,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     M.left.forEach(function (x) { s += node(x, posL[x.key], x.label, true); });
     M.right.forEach(function (x) { s += node(x, posR[x.key], x.label, false); });
     var ly = H - 12;
-    s += '<line x1="70" y1="' + (ly - 4) + '" x2="94" y2="' + (ly - 4) + '" stroke="var(--true)" stroke-width="2.4"/><text x="100" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">paired up by the count</text>'
-       + '<line x1="270" y1="' + (ly - 4) + '" x2="294" y2="' + (ly - 4) + '" stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"/><text x="300" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">can never be used: removed</text>';
+    s += '<line x1="70" y1="' + (ly - 4) + '" x2="94" y2="' + (ly - 4) + '" stroke="var(--ink)" stroke-width="2.4"/><text x="100" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">edge inside the block</text>'
+       + '<line x1="270" y1="' + (ly - 4) + '" x2="294" y2="' + (ly - 4) + '" stroke="var(--out)" stroke-width="2.4" stroke-dasharray="6 5"/><text x="300" y="' + ly + '" font-family="var(--font-body)" font-size="12" fill="var(--muted)">edge leaving the block: removed</text>';
     svg.setAttribute('viewBox', '0 0 520 ' + H);
     svg.style.setProperty('--dur', (removalMs() || 1100) + 'ms');
     svg.innerHTML = s;
@@ -1428,13 +1446,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var res = view.res, g = layouts.get(res); if (!g) { g = buildGraph(res); layouts.set(res, g); }
     var step = view.step === null ? null : res.steps[view.step], going = {}, s = '';
     if (removing) res.elim.forEach(function (id) { going[id] = 1; });
-    var color = { loop: ['var(--ink)', 'var(--panel)', 1], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.4], f: ['var(--false)', 'var(--false)', 0.3], k0: ['var(--k0)', 'var(--k0)', 0.3], k1: ['var(--k1)', 'var(--k1)', 0.3] };
-    var kindOf = function (n) {
-      var id = n.ids[0], role = res.nodes.get(id) || 'loop', kind = role;
-      if (step && step.marks) kind = step.marks[id] ? step.marks[id] : (role === 'elim' ? 'loop' : role);
-      if (res.wrapClass !== undefined && view.step === null) kind = role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
-      return kind;
-    };
+    var color = NODE_COLORS;
+    var nodeKind = function (n) { var id = n.ids[0]; return kindOf(res, res.nodes.get(id) || 'loop', id); };
     /* An edge is straight unless that would put it on top of another edge or through a dot; then it bows to the freer side. */
     var laid = [];
     var line = function (a, b, style) {
@@ -1453,7 +1466,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     g.edges.forEach(function (e) { s += line(e.a, e.b, e.strong ? 'stroke="var(--ink)" stroke-width="3"' : 'stroke="var(--muted)" stroke-width="1.8" stroke-dasharray="6 5"'); });
     if (step && step.clash && g.owner[step.clash[0]] && g.owner[step.clash[1]] && g.owner[step.clash[0]] !== g.owner[step.clash[1]]) { laid = []; s += line(g.owner[step.clash[0]], g.owner[step.clash[1]], 'stroke="var(--out)" stroke-width="4"'); }
     g.nodes.forEach(function (n) {
-      var c = color[kindOf(n)] || color.loop, r = n.group ? 21 : 16, out = n.ids.some(function (id) { return going[id]; });
+      var c = color[nodeKind(n)] || color.loop, r = n.group ? 21 : 16, out = n.ids.some(function (id) { return going[id]; });
       var body = (n.group ? '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + (r + 4) + '" fill="none" stroke="' + c[0] + '" stroke-width="1.5"/>' : '')
         + '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="var(--panel)"/><circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="' + c[1] + '" fill-opacity="' + c[2] + '" stroke="' + c[0] + '" stroke-width="2.2"/>'
         + '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 5).toFixed(1) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="' + (n.big.length > 2 ? 11 : 14) + '" font-weight="600" fill="var(--ink)">' + n.big + '</text>'
@@ -1481,11 +1494,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       nav.hidden = true;
     } else if (view.kind === 'digit') {
       $('tname').textContent = 'Strong edges of digit ' + view.d;
-      $('theorem').textContent = 'Each chain is colored with two colors. In every chain one color is all true and the other all false (Theorem 5.1).';
+      $('theorem').textContent = 'In each chain one class is assumed true and the other assumed false. In every solution one class is all true and the other all false (Theorem 5.1).';
       ol.innerHTML = ''; nav.hidden = true;
     } else {
       $('tname').textContent = E.solved(st) ? 'Solved' : 'Pick a technique';
-      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Click it to see the loop.';
+      $('theorem').textContent = E.solved(st) ? 'Every cell is filled. Load another puzzle to keep going.' : 'A number on a technique means it can be used on the board right now. Click it to see the cycle.';
       ol.innerHTML = ''; nav.hidden = true;
     }
     var dg = '';
@@ -1564,7 +1577,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (view.kind !== 'result') {
       var r = nextStep(false);
       if (r === 'none') { stopPlay(); return; }
-      if (r === 'shown') { say('Playing: ' + view.res.tech + '.'); if (view.res.easy) { view.step = 0; render(); } }
+      if (r === 'shown') { say('Playing: ' + view.res.tech + '.'); if (view.res.easy) { view.step = 0; render(); } else if (!skipSteps()) { view.plain = true; render(); } }
       schedule(E.solved(st) ? 0 : pace());
       return;
     }
@@ -1579,8 +1592,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     if (playing || E.solved(st)) return;
     cancelRemoval();
     if (view.kind !== 'result') view = { kind: 'none' };
+    else if (view.step === null && !view.res.easy && !skipSteps()) view.plain = true;
     playing = true; paused = false; render(); say('Playing. Click Pause or the board to stop.');
-    schedule(instant() ? 0 : 350);
+    schedule(instant() ? 0 : view.plain ? pace() : 350);
   }
 
   /* ---------- wiring ---------- */

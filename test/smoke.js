@@ -217,10 +217,10 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const o = [...sel.options].find(x => x.textContent === nm); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
     for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=' + key + ']:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
     click(document.querySelector('#techs button[data-key=' + key + ']'));
-    if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error(nm + ' is not drawn with group dots');
-    if (!/blue node/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
+    if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--muted)"]')) throw new Error(nm + ' is not drawn with group dots');
+    if (!/outlined/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
     if (!$('grid').querySelector('[stroke-dasharray]')) throw new Error(nm + ' has no dashed edges from the removed candidates to the group nodes');
-    { const red = $('graph').querySelectorAll('line[stroke="var(--out)"]').length, gr = $('graph').querySelectorAll('line[stroke="var(--true)"]').length;
+    { const red = $('graph').querySelectorAll('line[stroke="var(--out)"]').length, gr = $('graph').querySelectorAll('line[stroke="var(--ink)"]').length;
       const elimCount = $('grid').querySelectorAll('circle[stroke="var(--out)"]').length;
       if (red - 1 !== elimCount || gr < 3) throw new Error(nm + ': the graph should show the paired-up edges and one red edge per removed candidate (' + red + ' red, ' + gr + ' green, ' + elimCount + ' removed)'); }
   }
@@ -234,13 +234,13 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const o = [...sel.options].find(x => x.textContent === 'Almost-locked sets and finned fish'); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
     const seenNames = new Set(); let okPicture = true;
     const w3 = setInterval(() => { const t = $('tname').textContent.replace(/ \(.*/, ''); if ($('stepnav').hidden) return; seenNames.add(t);
-      if ((t === 'Almost-locked sets' || t.indexOf('Finned') === 0) && ($('grid').querySelectorAll('path.group').length < 1 || !/blue node/.test($('steps').textContent))) okPicture = false; }, 0);
+      if ((t === 'Almost-locked sets' || t.indexOf('Finned') === 0) && ($('grid').querySelectorAll('path.group').length < 1 || !/outlined|node|set/.test($('steps').textContent))) okPicture = false; }, 0);
     click(play); await until(() => play.textContent !== 'Pause', 30000, 'play to finish the almost-locked-set example'); clearInterval(w3);
     if ($('tname').textContent !== 'Solved' || !seenNames.has('Almost-locked sets') || ![...seenNames].some(n => n.indexOf('Finned') === 0) || seenNames.has('Trial and error')) throw new Error('almost-locked-set example: ' + $('tname').textContent + ' using ' + [...seenNames].join(', '));
     if (!okPicture) throw new Error('almost-locked sets or finned fish shown without group dots');
   }
   const xz = [...sel.options].find(o => o.textContent === 'XYZ-Wing'); sel.value = xz.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-  if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--k0)"]')) throw new Error('the XYZ-Wing does not show its group dot');
+  if ($('tname').textContent.indexOf('XYZ-Wing') !== 0 || $('grid').querySelectorAll('.group').length > 1 || !$('grid').querySelector('circle[stroke="var(--muted)"]')) throw new Error('the XYZ-Wing does not show its group dot');
   if (document.querySelectorAll('#techs .beyond').length !== 2) throw new Error('expected two dividers: counting, and outside the coloring');
   // 6j. the easy-cell switch and "Random easy sudoku"
   const auto = $('autofill'), easyBtn = () => document.querySelector('#techs button[data-key=single]');
