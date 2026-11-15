@@ -217,7 +217,7 @@ const loadSample = i => { sel.value = String(i); sel.dispatchEvent(new dom.windo
     const o = [...sel.options].find(x => x.textContent === nm); sel.value = o.value; sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
     for (let g = 0; g < 80 && !document.querySelector('#techs button[data-key=' + key + ']:not([disabled])'); g++) { click(document.querySelector('#techs button[data-key]:not([disabled])')); click($('apply')); }
     click(document.querySelector('#techs button[data-key=' + key + ']'));
-    if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--muted)"]')) throw new Error(nm + ' is not drawn with group dots');
+    if (!$('grid').querySelector('path.group') || !$('grid').querySelector('circle[stroke="var(--must)"]')) throw new Error(nm + ' is not drawn with group dots');
     if (!/outlined/.test($('steps').textContent)) throw new Error(nm + ' is not explained with group dots');
     if (!$('grid').querySelector('[stroke-dasharray]')) throw new Error(nm + ' has no dashed edges from the removed candidates to the group nodes');
     { const red = $('graph').querySelectorAll('line[stroke="var(--out)"]').length, gr = $('graph').querySelectorAll('line[stroke="var(--ink)"]').length;

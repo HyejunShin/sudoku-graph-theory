@@ -406,7 +406,7 @@
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
         const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one node');
-        group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
+        group.forEach(g => res.nodes.set(g, 'must')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
         res.elim = targets; linkToGroups(res);
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
@@ -462,7 +462,7 @@
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: cs.includes(c) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each cell takes one digit', cellName, d => String(d), ed, cs, digits(m)); }
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
         say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one node (outlined). The count proves every such node true.');
         say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
@@ -478,7 +478,7 @@
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: where.includes(c) && dd.includes(d) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each digit takes one cell', cellName, d => String(d), ed, where, dd); }
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
         say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one node (outlined). The count proves every such node true.');
         say(res, 'Any other candidate in these cells shares its cell with a true node, so it is false. That removes: ' + list(elim) + '.');
@@ -503,7 +503,7 @@
         const num = k === 3 ? 'three' : 'four';
         const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
         res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         { const ed = []; for (let c = 0; c < 81; c++) if (has(st, c, d)) { const id = cid(c, d), l = baseOf(c), r = coverOf(c); ed.push({ l, r, id, kind: bi.includes(l) && cv.includes(r) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           const b1 = bn.slice(0, -1), c1 = cn.slice(0, -1);
@@ -687,7 +687,7 @@
       for (const x of [x1, x2]) { const e = outsideSeeing(of(A, x).concat(of(B, x)), x, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(A, x).concat(dot(B, x))); } }
       const uniq = [...new Set(elim)], key = uniq.join(','); if (!uniq.length || done.has(key)) continue; done.add(key);
       const res = start('Almost-locked sets (two connecting digits)', 'Lemma 7.7 twice: every digit is pinned to its own set', [A, B]);
-      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop'))); res.groups = groups;
+      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must'))); res.groups = groups;
       const nA = A.cs.length, nB = B.cs.length;
       say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. The digits ' + x1 + ' and ' + x2 + ' each have all their places in A in sight of all their places in B.');
       say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every outlined node is true.');

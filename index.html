@@ -9,19 +9,19 @@
 :root {
   /* layout: board on the left, explanation on the right; one column on phones */
   --paper: #f3f5f7; --panel: #ffffff; --ink: #18212b; --muted: #5a6775; --line: #c7cfd8; --accent: #0d6e78; --soft: #d6ecee; --soft-line: #8fc4ca; --on-soft: #0a4a51;
-  --true: #1b8f4b; --false: #d96d14; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
+  --true: #1b8f4b; --false: #d96d14; --must: #2767cf; --out: #cf3b3b; --k0: #2767cf; --k1: #d96d14;
   --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-    --true: #45c680; --false: #ffa457; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+    --true: #45c680; --false: #ffa457; --must: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #11161c; --panel: #19212a; --ink: #e6ecf2; --muted: #9ba8b5; --line: #37434f; --accent: #56c4cf; --soft: #56c4cf; --soft-line: #56c4cf; --on-soft: #19212a;
-  --true: #45c680; --false: #ffa457; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
+  --true: #45c680; --false: #ffa457; --must: #6fa8ff; --out: #ff7070; --k0: #6fa8ff; --k1: #ffa457; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -111,6 +111,7 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .dot.t { border-color: var(--true); background: color-mix(in srgb, var(--true) 35%, transparent); }
 .dot.f { border-color: var(--false); background: color-mix(in srgb, var(--false) 35%, transparent); }
 .dot.o { border-color: var(--out); background: linear-gradient(45deg, transparent 42%, var(--out) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--out) 42% 58%, transparent 58%), color-mix(in srgb, var(--out) 15%, transparent); }
+.dot.m { border-color: var(--must); background: color-mix(in srgb, var(--must) 35%, transparent); }
 .dot.n { border-color: var(--muted); background: color-mix(in srgb, var(--muted) 18%, transparent); }
 select#speed { flex: 0 0 auto; padding: 7px 8px; }
 label.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
@@ -168,6 +169,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         <span><i class="dot n"></i>candidate</span>
         <span><i class="dot t"></i>assumed true</span>
         <span><i class="dot f"></i>assumed false</span>
+        <span><i class="dot m"></i>true in every solution</span>
         <span><i class="dot o"></i>can be removed</span>
       </div>
     <div class="stack">
@@ -625,7 +627,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         if (!targets.length) continue;
         const group = cs.map(c => cid(c, d)), v = targets[0], marks = {};
         const res = mkResult('Locked triple', 'Lemma 7.4: three candidates act as one node');
-        group.forEach(g => res.nodes.set(g, 'loop')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
+        group.forEach(g => res.nodes.set(g, 'must')); targets.forEach(t => res.nodes.set(t, 'elim')); res.groups = [group];
         res.elim = targets; linkToGroups(res);
         const snap = () => Object.assign({}, marks);
         say(res, 'In ' + unitName(u) + ' the digit ' + d + ' has only three places, and all three lie in ' + unitName(u2) + '.');
@@ -681,7 +683,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = digits(m).map(d => cs.filter(c => has(st, c, d)).map(c => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: cs.includes(c) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each cell takes one digit', cellName, d => String(d), ed, cs, digits(m)); }
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must')));
         say(res, 'In ' + unitName(u) + ', the cells ' + cellList(cs) + ' hold only the digits ' + digitList(digits(m)) + ' between them.');
         say(res, num + ' cells need ' + num.toLowerCase() + ' different digits, so each of ' + digitList(digits(m)) + ' is used inside these cells. For each digit, join its candidates there into one node (outlined). The count proves every such node true.');
         say(res, 'Any other candidate of ' + unitName(u) + ' with one of those digits is adjacent to a true node, so it is false. That removes: ' + list(elim) + '.');
@@ -697,7 +699,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         res.groups = where.map(c => dd.filter(d => has(st, c, d)).map(d => cid(c, d))); res.groupStyle = 'arc';
         { const ed = []; for (const c of cells) for (const d of digits(st.cand[c])) { const id = cid(c, d); ed.push({ l: c, r: d, id, kind: where.includes(c) && dd.includes(d) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           matchingFor(res, 'Cells and digits of ' + unitName(u) + ': each digit takes one cell', cellName, d => String(d), ed, where, dd); }
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must')));
         say(res, 'In ' + unitName(u) + ', the digits ' + digitList(dd) + ' fit only in the cells ' + cellList(where) + '.');
         say(res, num + ' digits need ' + num.toLowerCase() + ' different cells, so each of these cells holds one of ' + digitList(dd) + '. In each cell, join those candidates into one node (outlined). The count proves every such node true.');
         say(res, 'Any other candidate in these cells shares its cell with a true node, so it is false. That removes: ' + list(elim) + '.');
@@ -722,7 +724,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const num = k === 3 ? 'three' : 'four';
         const res = mkResult(k === 3 ? 'Swordfish' : 'Jellyfish', 'Theorem 7.5: ' + k + ' ' + bn + ' need ' + k + ' ' + cn);
         res.groups = cv.map(x => { const g = []; for (const l of ls) for (const c of l.cs) if (coverOf(c) === x) g.push(cid(c, d)); return g; }); res.groupStyle = 'arc';
-        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop')));
+        res.groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must')));
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         { const ed = []; for (let c = 0; c < 81; c++) if (has(st, c, d)) { const id = cid(c, d), l = baseOf(c), r = coverOf(c); ed.push({ l, r, id, kind: bi.includes(l) && cv.includes(r) ? 'block' : elim.includes(id) ? 'elim' : 'other' }); }
           const b1 = bn.slice(0, -1), c1 = cn.slice(0, -1);
@@ -906,7 +908,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       for (const x of [x1, x2]) { const e = outsideSeeing(of(A, x).concat(of(B, x)), x, [A, B]); if (e.length) { elim.push(...e); groups.push(dot(A, x).concat(dot(B, x))); } }
       const uniq = [...new Set(elim)], key = uniq.join(','); if (!uniq.length || done.has(key)) continue; done.add(key);
       const res = start('Almost-locked sets (two connecting digits)', 'Lemma 7.7 twice: every digit is pinned to its own set', [A, B]);
-      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'loop'))); res.groups = groups;
+      groups.forEach(g => g.forEach(id => res.nodes.set(id, 'must'))); res.groups = groups;
       const nA = A.cs.length, nB = B.cs.length;
       say(res, describe(A, 'A') + '. ' + describe(B, 'B') + '. The digits ' + x1 + ' and ' + x2 + ' each have all their places in A in sight of all their places in B.');
       say(res, 'So ' + x1 + ' is used by at most one of the two sets, and so is ' + x2 + '. That leaves at most ' + (nA + nB) + ' digit uses for ' + (nA + nB) + ' cells, so none can be spared: every outlined node is true.');
@@ -1201,9 +1203,9 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var bow = Math.min(18, 9 + len * 0.05);
     return '<path d="M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + ((p.x + q.x) / 2 + dy / len * bow).toFixed(1) + ' ' + ((p.y + q.y) / 2 - dx / len * bow).toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" fill="none" ' + style + ' stroke-linecap="round"/>';
   }
-  /* Node colors. Gray: a candidate with no value assumed. Green: assumed true. Orange: assumed false. Red with a cross: can be removed.
+  /* Node colors. Gray: a candidate with no value assumed. Green: assumed true. Orange: assumed false. Blue: true in every solution. Red with a cross: can be removed.
      A chain of strong edges uses the same colors: one class assumed true, the other assumed false. */
-  var NODE_COLORS = { loop: ['var(--muted)', 'var(--muted)', 0.16], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.35], f: ['var(--false)', 'var(--false)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
+  var NODE_COLORS = { loop: ['var(--muted)', 'var(--muted)', 0.16], elim: ['var(--out)', 'var(--out)', 0.2], t: ['var(--true)', 'var(--true)', 0.35], f: ['var(--false)', 'var(--false)', 0.3], must: ['var(--must)', 'var(--must)', 0.3], probe: ['var(--accent)', 'var(--accent)', 0.3] };
   NODE_COLORS.k0 = NODE_COLORS.t; NODE_COLORS.k1 = NODE_COLORS.f;
   function ring(id, kind) {
     var p = pos(id), map = NODE_COLORS;
@@ -1229,7 +1231,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     var ph = phase();
     if (ph === 'plain') return 'loop';
     if (ph === 'step') { var sp = res.steps[view.step]; return sp.marks && sp.marks[id] ? sp.marks[id] : (role === 'elim' ? 'loop' : role); }
-    if (res.wrapClass !== undefined) return role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 't';
+    if (res.wrapClass !== undefined) return role === (res.wrapClass === 0 ? 'k0' : 'k1') ? 'elim' : 'must';
+    if (res.place && res.place.indexOf(id) >= 0) return 'must';
     return role;
   }
   function overlay(skip) {
