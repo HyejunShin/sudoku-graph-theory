@@ -845,7 +845,7 @@
     { key: 'kite', used: 382, name: 'Two-String Kite', loop: '5-cycle', find: findKite, blurb: 'A row edge and a column edge joined inside a box.' },
     { key: 'xywing', used: 430, name: 'XY-Wing', loop: '7-cycle', find: findXYWing, blurb: 'Three two-digit cells: a pivot and two wings.' },
     { key: 'color', used: 72, name: 'Simple Coloring', loop: '2-coloring', find: findSimpleColoring, blurb: 'Color one digit’s strong edges with two colors.' },
-    { key: 'xchain', used: 217, name: 'One-digit cycle', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Coloring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd cycle of one digit.' },
+    { key: 'xchain', used: 217, name: 'One-digit loop', loop: 'Turbot Fish, X-Cycle, 2-2-2 Swordfish, Multi-Coloring', find: st => findChains(st, true, 5, 1), blurb: 'A longer odd cycle of one digit.' },
     { key: 'medusa', used: 574, name: '3D Medusa', loop: '2-coloring', find: st => findColoring(st, 0), blurb: 'Coloring that hops between digits.' },
     { key: 'chain', used: 1599, name: 'Alternating chain', loop: 'W-Wing, XY-Chain, Remote Pairs', find: st => findChains(st, false, 6, 1), blurb: 'Any odd cycle with alternating strong edges.' },
     { key: 'group', used: 14, name: 'Locked triple', loop: 'a group as one node', find: findLockedGroup, blurb: 'A digit confined to three cells that share a second line or box.' },
