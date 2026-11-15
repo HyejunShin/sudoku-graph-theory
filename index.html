@@ -105,6 +105,8 @@ ol#steps li.on { background: color-mix(in srgb, var(--accent) 24%, transparent);
 .digits button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .br { display: none; }
+@media (min-width: 900px) { .legend .br { display: block; flex-basis: 100%; height: 0; } }
 .sw { width: 22px; height: 0; border-top: 3px solid var(--ink); }
 .sw.weak { border-top: 2px dashed var(--muted); }
 .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
@@ -166,11 +168,12 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       <div class="legend" id="key" aria-label="Key">
         <span><i class="sw"></i>strong edge: exactly one endpoint true</span>
         <span><i class="sw weak"></i>weak edge: at most one endpoint true</span>
+        <i class="br" aria-hidden="true"></i>
         <span><i class="dot n"></i>candidate</span>
         <span><i class="dot t"></i>assumed true</span>
         <span><i class="dot f"></i>assumed false</span>
         <span><i class="dot m"></i>true</span>
-        <span><i class="dot o"></i>can be removed</span>
+        <span><i class="dot o"></i>false</span>
       </div>
     <div class="stack">
       <section class="card board" aria-label="Board">
