@@ -1245,7 +1245,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       /* A group is one dot: one gray boundary round its candidates. The boundary is a tube from member to member.
          Where a candidate that is not in the group lies in the way, the tube bends round it. */
       var outside = res.elim.slice();   // only candidates being removed must stay outside a boundary
-      (res.groups || []).forEach(function (g) {
+      (res.groups || []).concat(res.dots || []).forEach(function (g) {
         if (g.length < 2) return;
         var qs = g.map(pos).sort(function (m, n) { return m.x - n.x || m.y - n.y; }), others = outside.filter(function (id) { return g.indexOf(id) < 0; }).map(pos), dpath = 'M' + qs[0].x + ' ' + qs[0].y;
         for (var gi = 0; gi + 1 < qs.length; gi++) {
