@@ -451,7 +451,7 @@ Lemma 4.1 and Theorem 5.2 use only these two rules, so they hold when some nodes
 
 **2. Counting over constraint sets.**
 
-**Theorem 7.5 .** Let B1, ..., Bk be constraint sets with no common candidates, and C1, ..., Ck be k constraint sets. Suppose every candidate in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.
+**Theorem 7.5.** Let B1, ..., Bk be constraint sets with no common candidates, and C1, ..., Ck be k constraint sets. Suppose every candidate in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.
 
 *Proof.* Each B has exactly one true candidate, and the B's are disjoint, so they have k true candidates. Each of these is in some C. A C has only one true candidate, so the k true candidates are in k different C's. That is all k of the C's, so each C has its true candidate in the B's. A candidate of a C outside the B's is therefore false. ∎
 

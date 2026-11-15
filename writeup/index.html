@@ -403,7 +403,7 @@ code { font-size: 0.92em; }
 <figure><img src="figures/fig25.png" alt="A group as one node · a locked triple" loading="lazy"><figcaption>Figure 25. A group as one node · a locked triple</figcaption></figure>
 
 <p><strong>2. Counting over constraint sets.</strong></p>
-<p><strong>Theorem 7.5 .</strong> Let B1, ..., Bk be constraint sets with no common candidates, and C1, ..., Ck be k constraint sets. Suppose every candidate in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.</p>
+<p><strong>Theorem 7.5.</strong> Let B1, ..., Bk be constraint sets with no common candidates, and C1, ..., Ck be k constraint sets. Suppose every candidate in the B's is also in some C. Then every candidate in the C's that is in no B is false in every solution.</p>
 <p><em>Proof.</em> Each B has exactly one true candidate, and the B's are disjoint, so they have k true candidates. Each of these is in some C. A C has only one true candidate, so the k true candidates are in k different C's. That is all k of the C's, so each C has its true candidate in the B's. A candidate of a C outside the B's is therefore false. ∎</p>
 <p>As with Lemma 4.1, the proof counts true candidates in two ways.</p>
 <p>As nodes: for each C, the candidates it shares with the B's form one group node, and the count shows that node is true. Every other candidate of that C is adjacent to it, so it is false. This is the locked triple argument with a count in place of a single constraint set.</p>
