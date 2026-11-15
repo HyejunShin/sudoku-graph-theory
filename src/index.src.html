@@ -346,11 +346,20 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
       var ph = phase();
       res.links.forEach(function (l) { links += seg(l.a, l.b, l.clash && ph === 'result' ? 'clash' : l.strong ? 'strong' : 'weak'); });
       if (step && step.clash) links += seg(step.clash[0], step.clash[1], 'clash');
+      /* The board rings exactly the candidates that are nodes of the graph. Other candidates of the pattern's cells
+         (the rest of an almost-locked set, the rest of a fish) are not nodes; their cells are shaded instead. */
+      var gr = res.matching ? null : (layouts.get(res) || (function () { var x = buildGraph(res); layouts.set(res, x); return x; })()), shaded = {}, shade = '';
       res.nodes.forEach(function (role, id) {
+        if (gr && !gr.owner[id]) {
+          var c = E.cCell(id);
+          if (!shaded[c]) { shaded[c] = 1; shade += '<rect x="' + (M + E.COL(c) * S + 1) + '" y="' + (M + E.ROW(c) * S + 1) + '" width="' + (S - 2) + '" height="' + (S - 2) + '" fill="var(--muted)" fill-opacity="0.12"/>'; }
+          return;
+        }
         var kind = kindOf(res, role, id);
         if (!skip[id]) rings += ring(id, kind);
         marked[id] = 1;
       });
+      links = shade + links;
     } else if (view.kind === 'probe') {
       var v = view.id, strong = E.strongPartners(st, v);
       E.neighbors(st, v).forEach(function (n) { links += seg(v, n, strong.indexOf(n) >= 0 ? 'strong' : 'weak'); rings += ring(n, 'loop'); marked[n] = 1; });
