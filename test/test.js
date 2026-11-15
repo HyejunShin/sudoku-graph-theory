@@ -20,6 +20,12 @@ function check(st, sol, res, tag) {
   if (!res.elim.length && !res.place.length) throw new Error(tag + ': empty result');
   // every removed candidate must have a line drawn to it, except where the argument is not about links at all
   if (res.tech !== 'Unique rectangle' && res.tech !== 'Trial and error') for (const id of res.elim) if (!res.links.some(l => l.a === id || l.b === id)) throw new Error(tag + ': ' + res.tech + ' removes ' + E.candName(id) + ' without drawing a link to it');
+  // every removed candidate is drawn with the reason it goes: edges to nodes it is adjacent to as a whole, one of which is true
+  if (res.tech !== 'Unique rectangle' && res.tech !== 'Trial and error' && !/\(rule 1\)/.test(res.tech)) for (const x of res.elim) {
+    const nodes = res.links.filter(l => l.a === x || l.b === x).map(l => l.a === x ? l.b : l.a).map(m => (res.groups || []).find(g => g.length > 1 && g.includes(m)) || [m]);
+    for (const nd of nodes) if (!nd.every(m => E.linked(x, m))) throw new Error(tag + ': ' + E.candName(x) + ' is drawn to a node it is not adjacent to as a whole');
+    if (!nodes.some(nd => nd.some(m => sol[E.cCell(m)] === E.cDig(m)))) throw new Error(tag + ': ' + E.candName(x) + ' is not drawn to any node that is true');
+  }
   for (const l of res.links) { if (!l.group && !E.linked(l.a, l.b)) throw new Error(tag + ': drawn link is not a link'); if (l.strong && !l.group && !E.strongInfo(st, l.a, l.b)) throw new Error(tag + ': drawn strong link is not strong'); }
 }
 const used = {}, firstAfterSingles = {}, counts = { puzzles: 0, solvedByThese: 0, results: 0 };

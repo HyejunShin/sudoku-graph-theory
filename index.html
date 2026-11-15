@@ -644,7 +644,8 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
   function linkToGroups(res) {
     for (const e of res.elim) {
       let best = null;
-      for (const g of res.groups) for (const m of g) if (linked(e, m)) {
+      const whole = res.groups.filter(g => g.every(m => linked(e, m)));
+      for (const g of (whole.length ? whole : res.groups)) for (const m of g) if (linked(e, m)) {
         const dist = Math.abs(ROW(cCell(e)) - ROW(cCell(m))) * 3 + Math.abs(COL(cCell(e)) - COL(cCell(m))) * 3 + Math.abs(cDig(e) - cDig(m)) * 0.1;
         if (!best || dist < best[1]) best = [m, dist];
       }
@@ -752,11 +753,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
         const inLine = w => ROW(w) === ROW(p) || COL(w) === COL(p);
         // ...but not if a removed candidate would sit inside the outline drawn round the two
         const between = w => elim.some(e => { const c = cCell(e); return ROW(c) >= Math.min(ROW(p), ROW(w)) && ROW(c) <= Math.max(ROW(p), ROW(w)) && COL(c) >= Math.min(COL(p), COL(w)) && COL(c) <= Math.max(COL(p), COL(w)); });
-        const first = [w1, w2].filter(w => !between(w)).sort((a, b) => inLine(b) - inLine(a))[0];
+        const first = [w1, w2].filter(w => !between(w)).sort((a, b) => inLine(b) - inLine(a))[0] || w1;
         const [ga, gb, xa, xb] = first === w2 ? [w2, w1, y, x] : [w1, w2, x, y];
         const zp = cid(p, z), zg = cid(ga, z), zo = cid(gb, z), v = elim[0], marks = {}, snap = () => Object.assign({}, marks);
         for (const c of [p, w1, w2]) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop');
-        res.nodes.set(zp, 'loop'); res.nodes.set(zg, 'loop'); res.groups = first === undefined ? [] : [[zp, zg]];
+        res.nodes.set(zp, 'loop'); res.nodes.set(zg, 'loop'); res.groups = [[zp, zg]];
         elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
         res.links.push({ a: v, b: zp, strong: false }); res.links.push({ a: zg, b: zo, strong: true, group: true }); res.links.push({ a: zo, b: v, strong: false });
         for (const e of elim.slice(1)) { res.links.push({ a: e, b: zp, strong: false }); res.links.push({ a: e, b: zo, strong: false }); }
@@ -859,9 +860,11 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     const start = (name, theorem, used) => { const res = mkResult(name, theorem); for (const S of used) for (const c of S.cs) for (const d of digits(st.cand[c])) res.nodes.set(cid(c, d), 'loop'); return res; };
     const finish = (res, elim) => {
       elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
-      // the first removed candidate closes the loop: a dashed link to every blue dot it sees whole; the others get one each
-      for (const g of res.groups) if (g.length && g.every(m => linked(elim[0], m))) dashedLater.push([res, [elim[0]], g]);
-      linkToGroups(res); out.push(res);
+      // every removed candidate gets a dashed edge to every node it is adjacent to as a whole: those nodes are why it goes
+      const lone = [];
+      for (const e of elim) { const whole = res.groups.filter(g => g.length && g.every(m => linked(e, m))); whole.forEach(g => dashedLater.push([res, [e], g])); if (!whole.length) lone.push(e); }
+      if (lone.length) { const keep = res.elim; res.elim = lone; linkToGroups(res); res.elim = keep; }
+      out.push(res);
     };
     const solid = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: true, group: true }); };
     const dashed = (res, X, Y) => { const n = nearest(X, Y); res.links.push({ a: n[0], b: n[1], strong: false, group: true }); };
@@ -963,12 +966,16 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
           const key = elim.join(','); if (seen.has(key)) continue; seen.add(key);
           const v = elim[0], line = coverOf(cCell(v)), dot = all.filter(c => coverOf(c) === line).map(c => cid(c, d)), F = fins.map(c => cid(c, d));
           if (!dot.length) continue;
-          const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a fish with a fin'), marks = {}, snap = () => Object.assign({}, marks);
+          const res = mkResult(k === 2 ? 'Finned X-Wing' : 'Finned Swordfish', 'Theorem 7.5, Lemma 7.7 and Theorem 5.2: a triangle'), marks = {}, snap = () => Object.assign({}, marks);
           all.forEach(c => res.nodes.set(cid(c, d), 'loop')); F.concat(dot).forEach(id => res.nodes.set(id, 'loop')); res.groups = [F, dot];
           elim.forEach(e => res.nodes.set(e, 'elim')); res.elim = elim;
           res.links.push({ a: F[0], b: dot[0], strong: true, group: true });
           res.links.push({ a: v, b: F[0], strong: false, group: true }); res.links.push({ a: v, b: dot[0], strong: false, group: true });
-          for (const e of elim.slice(1)) res.links.push({ a: e, b: F[0], strong: false, group: true });
+          for (const e of elim.slice(1)) {
+            const own = all.filter(c => coverOf(c) === coverOf(cCell(e))).map(c => cid(c, d));
+            res.links.push({ a: e, b: F[0], strong: false, group: true });
+            if (own.length) { res.links.push({ a: e, b: own[0], strong: false, group: true }); if (own.length > 1 && !res.groups.some(g => g.join() === own.join())) res.groups.push(own); }
+          }
           const one = cn.slice(0, -1);
           say(res, 'In ' + bn + ' ' + bi.map(i => i + 1).join(', ') + ' the digit ' + d + ' fits only in ' + cn + ' ' + cv.map(i => i + 1).sort().join(', ') + ', except for the fin: ' + list(F) + ', in box ' + (box + 1) + '.');
           say(res, 'The fin is one node (outlined). The ' + d + 's of these ' + bn + ' in ' + one + ' ' + (line + 1) + ' are another. If the fin is false, this is a plain fish and the count proves the second node true. So at least one of the two is true (solid line).');
@@ -1066,7 +1073,7 @@ svg .landing { animation: landing var(--dur, 1100ms) ease-in-out; }
     /* Beyond links. These are tried only after every loop and coloring above has failed. */
     { key: 'subset', used: 11, name: 'Triples and quads', loop: 'naked or hidden', find: findSubsets, blurb: 'Three or four cells that must share three or four digits.', beyond: true, section: 'count' },
     { key: 'fish', used: 0, name: 'Bigger fish', loop: 'Swordfish, Jellyfish', find: findFish, blurb: 'One digit: three or four rows that fit only three or four columns.', beyond: true, section: 'count' },
-    { key: 'finned', used: 2, name: 'Finned fish', loop: 'a fish with a fin', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
+    { key: 'finned', used: 2, name: 'Finned fish', loop: 'triangle', find: findFinnedFish, blurb: 'A fish spoiled by a few extra places in one box.', beyond: true, section: 'count', late: true },
     { key: 'als', used: 81, name: 'Almost-locked sets', loop: 'ALS-XZ, WXYZ-Wing, ALS chain, Sue de Coq', find: findALS, blurb: 'Two sets of cells with one digit too many, joined by a shared digit.', beyond: true, section: 'count', late: true },
     { key: 'ur', used: 1, name: 'Unique rectangle', loop: 'uses: one solution', find: findUniqueRectangle, blurb: 'Four corners that would allow two solutions.', beyond: true, section: 'unique' },
     { key: 'guess', used: 0, name: 'Trial and error', loop: 'last resort', find: findGuess, blurb: 'Suppose a candidate is true and follow the single candidate cells to a contradiction.', beyond: true, section: 'last', lastResort: true }
